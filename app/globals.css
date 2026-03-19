@@ -1,0 +1,23 @@
+@import "tailwindcss";
+
+@theme {
+  --color-dark-bg: #0A0A0A;
+  --color-neon-cyan: #00F5D4;
+  --color-neon-purple: #7B61FF;
+  --color-glass: rgba(255, 255, 255, 0.05);
+  --color-glass-border: rgba(255, 255, 255, 0.1);
+}
+
+@layer base {
+  body {
+    @apply bg-dark-bg text-white antialiased overflow-x-hidden;
+    font-family: 'Cairo', sans-serif;
+  }
+
+  /* تأثير التوهج في الخلفية */
+  .glow-mesh {
+    background: 
+      radial-gradient(circle at 20% 30%, rgba(0, 245, 212, 0.15) 0%, transparent 40%),
+      radial-gradient(circle at 80% 70%, rgba(123, 97, 255, 0.15) 0%, transparent 40%);
+  }
+}
