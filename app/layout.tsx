@@ -1,16 +1,23 @@
-// app/layout.js
+import type { ReactNode } from "react";
+import { Cairo } from "next/font/google";
 import "./globals.css";
-import { ReactNode } from "react";
+
+const cairo = Cairo({
+  subsets: ["arabic", "latin"],
+  weight: ["400", "600", "700", "900"],
+  variable: "--font-cairo",
+  display: "swap",
+});
 
 export const metadata = {
-  title: "Ali Hajali | Design & Development",
-  description: "خبير تصميم وبرمجة في قطر",
+  title: "Ali Hajali | مبرمج مواقع احترافي",
+  description: "متخصص في برمجة مواقع Next.js وتصميم واجهات فخمة في قطر",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="ar" dir="rtl">
-      <body className="bg-white text-gray-900 font-sans">{children}</body>
+    <html lang="ar" dir="rtl" className={cairo.variable}>
+      <body>{children}</body>
     </html>
   );
 }
