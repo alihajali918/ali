@@ -76,7 +76,10 @@ function UsersSection() {
 
   const load = () => {
     setLoading(true);
-    fetch("/api/admin/users").then(r => r.json()).then(data => { setUsers(Array.isArray(data) ? data : []); setLoading(false); });
+    fetch("/api/admin/users")
+      .then(r => r.ok ? r.json() : [])
+      .then(data => { setUsers(Array.isArray(data) ? data : []); setLoading(false); })
+      .catch(() => setLoading(false));
   };
 
   useEffect(() => { load(); }, []);

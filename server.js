@@ -1,3 +1,5 @@
+process.env.UV_THREADPOOL_SIZE = "16";
+
 const { createServer } = require("http");
 const { parse } = require("url");
 const next = require("next");
