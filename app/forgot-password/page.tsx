@@ -1,32 +1,28 @@
 "use client";
 
 import { useState } from "react";
-import { Eye, EyeOff, User, Mail, Lock, Loader2, CheckCircle } from "lucide-react";
+import { Mail, Loader2, CheckCircle } from "lucide-react";
 import Link from "next/link";
 
-export default function RegisterPage() {
-  const [name,     setName]     = useState("");
-  const [email,    setEmail]    = useState("");
-  const [password, setPassword] = useState("");
-  const [show,     setShow]     = useState(false);
-  const [loading,  setLoading]  = useState(false);
-  const [error,    setError]    = useState("");
-  const [done,     setDone]     = useState(false);
+export default function ForgotPasswordPage() {
+  const [email,   setEmail]   = useState("");
+  const [loading, setLoading] = useState(false);
+  const [done,    setDone]    = useState(false);
+  const [error,   setError]   = useState("");
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(""); setLoading(true);
     try {
-      const res = await fetch("/api/auth/register", {
+      await fetch("/api/auth/forgot-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({ email }),
       });
-      const data = await res.json();
-      if (!res.ok) { setError(data.error || "خطأ"); setLoading(false); return; }
       setDone(true);
     } catch {
       setError("تعذّر الاتصال");
+    } finally {
       setLoading(false);
     }
   };
@@ -36,10 +32,9 @@ export default function RegisterPage() {
       <div className="w-full max-w-sm text-center">
         <div className="glass-card rounded-3xl p-8 flex flex-col items-center gap-4">
           <CheckCircle size={48} className="text-neon-cyan" />
-          <h2 className="text-xl font-black text-white">تحقق من بريدك!</h2>
+          <h2 className="text-xl font-black text-white">تحقق من بريدك</h2>
           <p className="text-gray-400 text-sm leading-relaxed">
-            أرسلنا رابط التأكيد إلى <span className="text-neon-cyan font-bold">{email}</span>
-            <br />افتح بريدك واضغط على الرابط لتفعيل حسابك.
+            إذا كان البريد مسجلاً، سيصلك رابط إعادة التعيين خلال دقيقة.
           </p>
           <Link href="/login" className="mt-2 text-xs text-gray-500 hover:text-white transition-colors">
             العودة لتسجيل الدخول
@@ -59,21 +54,11 @@ export default function RegisterPage() {
             </div>
             <span className="font-black text-white text-lg">Ali Hajali</span>
           </Link>
-          <h1 className="text-2xl font-black text-white">إنشاء حساب</h1>
-          <p className="text-gray-500 text-sm mt-1">أنشئ حسابك مجاناً</p>
+          <h1 className="text-2xl font-black text-white">نسيت كلمة المرور؟</h1>
+          <p className="text-gray-500 text-sm mt-1">أدخل بريدك وسنرسل لك رابط الاسترداد</p>
         </div>
 
         <form onSubmit={submit} className="glass-card rounded-3xl p-6 flex flex-col gap-4">
-          <div>
-            <label className="text-xs font-bold text-gray-400 mb-1.5 block">الاسم الكامل</label>
-            <div className="relative">
-              <User size={15} className="absolute top-1/2 -translate-y-1/2 right-3 text-gray-500" />
-              <input type="text" value={name} onChange={e => setName(e.target.value)}
-                required placeholder="محمد أحمد"
-                className="w-full bg-glass border border-glass-border rounded-xl pr-9 pl-3 py-2.5 text-sm text-white placeholder-gray-700 outline-none focus:border-neon-cyan/40 transition-colors" />
-            </div>
-          </div>
-
           <div>
             <label className="text-xs font-bold text-gray-400 mb-1.5 block">البريد الإلكتروني</label>
             <div className="relative">
@@ -84,30 +69,15 @@ export default function RegisterPage() {
             </div>
           </div>
 
-          <div>
-            <label className="text-xs font-bold text-gray-400 mb-1.5 block">كلمة المرور</label>
-            <div className="relative">
-              <Lock size={15} className="absolute top-1/2 -translate-y-1/2 right-3 text-gray-500" />
-              <input type={show ? "text" : "password"} value={password}
-                onChange={e => setPassword(e.target.value)}
-                required placeholder="8 أحرف على الأقل" dir="ltr"
-                className="w-full bg-glass border border-glass-border rounded-xl pr-9 pl-9 py-2.5 text-sm text-white placeholder-gray-700 outline-none focus:border-neon-cyan/40 transition-colors" />
-              <button type="button" onClick={() => setShow(v => !v)}
-                className="absolute top-1/2 -translate-y-1/2 left-3 text-gray-500 hover:text-gray-300 transition-colors">
-                {show ? <EyeOff size={15} /> : <Eye size={15} />}
-              </button>
-            </div>
-          </div>
-
           {error && <p className="text-red-400 text-xs font-semibold text-center bg-red-500/10 py-2 rounded-xl border border-red-500/20">{error}</p>}
 
           <button type="submit" disabled={loading}
             className="flex items-center justify-center gap-2 py-3 rounded-2xl bg-neon-cyan text-dark-bg font-black text-sm disabled:opacity-60 hover:scale-105 active:scale-95 transition-all mt-1">
-            {loading ? <><Loader2 size={16} className="animate-spin" /> جارٍ الإنشاء...</> : "إنشاء الحساب"}
+            {loading ? <><Loader2 size={16} className="animate-spin" /> جارٍ الإرسال...</> : "إرسال رابط الاسترداد"}
           </button>
 
           <p className="text-center text-xs text-gray-600">
-            عندك حساب؟{" "}
+            تذكرت كلمة المرور؟{" "}
             <Link href="/login" className="text-neon-cyan hover:underline font-bold">تسجيل الدخول</Link>
           </p>
         </form>

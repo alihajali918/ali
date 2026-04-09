@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "../../../lib/prisma";
+import { sendVerificationEmail } from "../../../lib/mailer";
 import bcrypt from "bcryptjs";
+import crypto from "crypto";
 
 export async function POST(req: NextRequest) {
   try {
@@ -17,11 +19,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "البريد الإلكتروني مستخدم بالفعل" }, { status: 409 });
 
     const hashed = await bcrypt.hash(password, 12);
-    const user = await prisma.user.create({
-      data: { name, email, password: hashed, role: "user" },
+    const verifyToken = crypto.randomBytes(32).toString("hex");
+    const verifyExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 ساعة
+
+    await prisma.user.create({
+      data: { name, email, password: hashed, role: "user", verifyToken, verifyExpires },
     });
 
-    return NextResponse.json({ ok: true, name: user.name });
+    await sendVerificationEmail(email, name, verifyToken);
+
+    return NextResponse.json({ ok: true });
   } catch {
     return NextResponse.json({ error: "حدث خطأ" }, { status: 500 });
   }
