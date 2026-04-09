@@ -12,27 +12,32 @@ export async function POST(req: NextRequest) {
     const { email, password } = await req.json();
 
     const user = await prisma.user.findUnique({ where: { email } });
-    if (!user) {
+    if (!user)
       return NextResponse.json({ error: "البريد أو كلمة المرور غير صحيحة" }, { status: 401 });
-    }
 
     const valid = await bcrypt.compare(password, user.password);
-    if (!valid) {
+    if (!valid)
       return NextResponse.json({ error: "البريد أو كلمة المرور غير صحيحة" }, { status: 401 });
-    }
 
-    const token = await new SignJWT({ id: user.id, email: user.email, role: user.role })
+    const token = await new SignJWT({ id: user.id, email: user.email, role: user.role, name: user.name })
       .setProtectedHeader({ alg: "HS256" })
       .setExpirationTime("7d")
       .sign(SECRET);
 
-    const res = NextResponse.json({ ok: true, name: user.name });
-    res.cookies.set("admin_token", token, {
-      httpOnly: true,
-      maxAge:   60 * 60 * 24 * 7,
-      path:     "/",
-      sameSite: "lax",
+    const res = NextResponse.json({ ok: true, name: user.name, role: user.role });
+
+    // كوكي للأدمن
+    if (user.role === "admin") {
+      res.cookies.set("admin_token", token, {
+        httpOnly: true, maxAge: 60 * 60 * 24 * 7, path: "/", sameSite: "lax",
+      });
+    }
+
+    // كوكي للمستخدم العادي
+    res.cookies.set("user_token", token, {
+      httpOnly: true, maxAge: 60 * 60 * 24 * 7, path: "/", sameSite: "lax",
     });
+
     return res;
   } catch {
     return NextResponse.json({ error: "حدث خطأ" }, { status: 500 });
