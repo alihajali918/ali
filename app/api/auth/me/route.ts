@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify } from "jose";
-import { prisma } from "../../lib/prisma";
+import { prisma } from "../../../lib/prisma";
 
 const SECRET = new TextEncoder().encode(
   process.env.NEXTAUTH_SECRET || "ali-secret-2026"
