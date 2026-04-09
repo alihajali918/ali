@@ -7,10 +7,6 @@ const nextConfig: NextConfig = {
     ],
   },
   reactStrictMode: true,
-  // استخدم webpack بدل Turbopack للبناء على السيرفر
-  experimental: {
-    turbo: undefined,
-  },
   output: "standalone",
 };
 
