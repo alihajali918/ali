@@ -32,7 +32,7 @@ export default function Navbar() {
       .then(r => r.json())
       .then(d => setUser(d.user ? { name: d.user.name, role: d.user.role } : null))
       .catch(() => {});
-  }, [pathname]);
+  }, []);
 
   const logout = async () => {
     await fetch("/api/auth/user-logout", { method: "POST" });
