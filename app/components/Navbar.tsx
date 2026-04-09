@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
-import { Menu, X } from "lucide-react";
+import { Menu, X, LogOut, LayoutDashboard } from "lucide-react";
 
 const links = [
   { href: "/", label: "الرئيسية" },
@@ -14,8 +14,10 @@ const links = [
 
 export default function Navbar() {
   const pathname = usePathname();
-  const [scrolled, setScrolled] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
+  const router   = useRouter();
+  const [scrolled,  setScrolled]  = useState(false);
+  const [menuOpen,  setMenuOpen]  = useState(false);
+  const [user,      setUser]      = useState<{ name: string; role: string } | null>(null);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -24,6 +26,20 @@ export default function Navbar() {
   }, []);
 
   useEffect(() => { setMenuOpen(false); }, [pathname]);
+
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then(r => r.json())
+      .then(d => setUser(d.user ? { name: d.user.name, role: d.user.role } : null))
+      .catch(() => {});
+  }, [pathname]);
+
+  const logout = async () => {
+    await fetch("/api/auth/user-logout", { method: "POST" });
+    setUser(null);
+    router.push("/");
+    router.refresh();
+  };
 
   return (
     <>
@@ -47,11 +63,8 @@ export default function Navbar() {
               return (
                 <Link key={href} href={href}
                   className={`px-4 py-2 text-sm font-semibold rounded-xl transition-all duration-300 ${
-                    active
-                      ? "text-neon-cyan bg-neon-cyan/8"
-                      : "text-gray-400 hover:text-white hover:bg-white/5"
-                  }`}
-                >
+                    active ? "text-neon-cyan bg-neon-cyan/8" : "text-gray-400 hover:text-white hover:bg-white/5"
+                  }`}>
                   {label}
                 </Link>
               );
@@ -59,22 +72,36 @@ export default function Navbar() {
           </div>
 
           {/* أزرار */}
-          <div className="hidden md:flex items-center gap-3">
-            <Link href="/login" className="px-4 py-2 text-sm font-semibold text-gray-400 hover:text-white transition-colors">
-              دخول
-            </Link>
-            <Link href="/products"
-              className="btn-shimmer px-5 py-2 bg-neon-cyan text-dark-bg text-sm font-black rounded-xl glow-cyan-sm hover:scale-105 active:scale-95 transition-transform duration-200"
-            >
-              المنتجات
-            </Link>
+          <div className="hidden md:flex items-center gap-2">
+            {user ? (
+              <>
+                <Link href={user.role === "admin" ? "/admin" : "/dashboard"}
+                  className="flex items-center gap-1.5 px-3 py-2 text-sm font-bold text-gray-300 hover:text-white hover:bg-white/5 rounded-xl transition-all">
+                  <LayoutDashboard size={14} />
+                  {user.name.split(" ")[0]}
+                </Link>
+                <button onClick={logout}
+                  className="flex items-center gap-1.5 px-3 py-2 text-sm font-bold text-gray-500 hover:text-red-400 hover:bg-red-500/8 rounded-xl transition-all">
+                  <LogOut size={14} /> خروج
+                </button>
+              </>
+            ) : (
+              <>
+                <Link href="/login" className="px-4 py-2 text-sm font-semibold text-gray-400 hover:text-white transition-colors">
+                  دخول
+                </Link>
+                <Link href="/register"
+                  className="btn-shimmer px-5 py-2 bg-neon-cyan text-dark-bg text-sm font-black rounded-xl glow-cyan-sm hover:scale-105 active:scale-95 transition-transform duration-200">
+                  إنشاء حساب
+                </Link>
+              </>
+            )}
           </div>
 
           {/* موبايل */}
-          <button onClick={() => setMenuOpen((v) => !v)}
+          <button onClick={() => setMenuOpen(v => !v)}
             className="md:hidden p-2 rounded-xl text-gray-300 hover:text-white hover:bg-white/5 transition-colors"
-            aria-label="القائمة"
-          >
+            aria-label="القائمة">
             {menuOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
         </div>
@@ -89,26 +116,36 @@ export default function Navbar() {
               return (
                 <Link key={href} href={href}
                   className={`px-5 py-4 text-base font-bold rounded-2xl transition-all ${
-                    active
-                      ? "text-neon-cyan bg-neon-cyan/8 border border-neon-cyan/15"
-                      : "text-gray-300 hover:text-white hover:bg-white/5"
-                  }`}
-                >
+                    active ? "text-neon-cyan bg-neon-cyan/8 border border-neon-cyan/15" : "text-gray-300 hover:text-white hover:bg-white/5"
+                  }`}>
                   {label}
                 </Link>
               );
             })}
             <div className="mt-4 flex flex-col gap-3">
-              <Link href="/login"
-                className="text-center px-5 py-3.5 text-sm font-semibold text-gray-400 border border-glass-border rounded-2xl hover:border-white/20 transition-colors"
-              >
-                دخول
-              </Link>
-              <Link href="/products"
-                className="text-center px-5 py-3.5 text-base font-black bg-neon-cyan text-dark-bg rounded-2xl"
-              >
-                استعرض المنتجات
-              </Link>
+              {user ? (
+                <>
+                  <Link href={user.role === "admin" ? "/admin" : "/dashboard"}
+                    className="text-center px-5 py-3.5 text-sm font-bold text-neon-cyan border border-neon-cyan/20 rounded-2xl">
+                    لوحة التحكم — {user.name.split(" ")[0]}
+                  </Link>
+                  <button onClick={logout}
+                    className="text-center px-5 py-3.5 text-sm font-bold text-red-400 border border-red-500/20 rounded-2xl">
+                    خروج
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link href="/login"
+                    className="text-center px-5 py-3.5 text-sm font-semibold text-gray-400 border border-glass-border rounded-2xl hover:border-white/20 transition-colors">
+                    دخول
+                  </Link>
+                  <Link href="/register"
+                    className="text-center px-5 py-3.5 text-base font-black bg-neon-cyan text-dark-bg rounded-2xl">
+                    إنشاء حساب
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </div>

@@ -28,7 +28,7 @@ function LoginForm() {
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error || "خطأ"); setLoading(false); return; }
-      router.push(data.role === "admin" ? "/admin" : "/");
+      router.push(data.role === "admin" ? "/admin" : "/dashboard");
     } catch {
       setError("تعذّر الاتصال");
       setLoading(false);
