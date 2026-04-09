@@ -1,5 +1,12 @@
 process.env.UV_THREADPOOL_SIZE = "16";
 
+process.on("uncaughtException", (err) => {
+  console.error("[CRASH] uncaughtException:", err);
+});
+process.on("unhandledRejection", (reason) => {
+  console.error("[CRASH] unhandledRejection:", reason);
+});
+
 const { createServer } = require("http");
 const { parse } = require("url");
 const next = require("next");
@@ -17,11 +24,14 @@ app.prepare().then(() => {
       const parsedUrl = parse(req.url, true);
       await handle(req, res, parsedUrl);
     } catch (err) {
-      console.error("Error:", err);
+      console.error("[REQ ERROR]", err);
       res.statusCode = 500;
       res.end("Internal Server Error");
     }
   }).listen(port, hostname, () => {
     console.log(`> Ready on http://${hostname}:${port}`);
   });
+}).catch((err) => {
+  console.error("[STARTUP ERROR]", err);
+  process.exit(1);
 });
