@@ -2,12 +2,13 @@ import nodemailer from "nodemailer";
 
 export const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST || "mail.alihajali.com",
-  port: 465,
-  secure: true,
+  port: 587,
+  secure: false,
   auth: {
     user: process.env.SMTP_USER || "noreply@alihajali.com",
     pass: process.env.SMTP_PASS,
   },
+  tls: { rejectUnauthorized: false },
 });
 
 export async function sendVerificationEmail(to: string, name: string, token: string) {
