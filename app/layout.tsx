@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { Cairo } from "next/font/google";
+import Tracker from "./components/Tracker";
 import "./globals.css";
 
 const cairo = Cairo({
@@ -17,7 +18,10 @@ export const metadata = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="ar" dir="rtl" className={cairo.variable}>
-      <body>{children}</body>
+      <body>
+        <Tracker />
+        {children}
+      </body>
     </html>
   );
 }

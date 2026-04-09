@@ -9,11 +9,18 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@prisma/client": "^5.22.0",
     "@types/qrcode": "^1.5.6",
+    "bcryptjs": "^3.0.3",
+    "dotenv": "^17.4.1",
     "framer-motion": "^11.18.2",
+    "html2canvas": "^1.4.1",
+    "jose": "^6.2.2",
     "jszip": "^3.10.1",
     "lucide-react": "^0.474.0",
     "next": "15.1.0",
+    "next-auth": "^5.0.0-beta.30",
+    "prisma": "^5.22.0",
     "qrcode": "^1.5.4",
     "qrcode.react": "^4.2.0",
     "react": "19.0.0",
@@ -22,12 +29,14 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.0.0",
+    "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "15.1.0",
     "postcss": "^8",
+    "ssh2": "^1.17.0",
     "tailwindcss": "^4.0.0",
     "typescript": "^5"
   }
