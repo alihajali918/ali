@@ -1,9 +1,5 @@
 process.env.UV_THREADPOOL_SIZE = "16";
 
-// Increase heap for runtime (not just build)
-const v8 = require("v8");
-v8.setFlagsFromString("--max-old-space-size=512");
-
 const { createServer } = require("http");
 const { parse } = require("url");
 const next = require("next");
