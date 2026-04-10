@@ -1,6 +1,6 @@
 export const dynamic = "force-static";
 
-import Footer from "../components/Footer";
+import Footer from "../../components/Footer";
 import { ExternalLink } from "lucide-react";
 
 const projects = [

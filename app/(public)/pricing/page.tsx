@@ -1,6 +1,6 @@
 export const dynamic = "force-static";
 
-import Footer from "../components/Footer";
+import Footer from "../../components/Footer";
 import { Check, Zap } from "lucide-react";
 
 const plans = [

@@ -1,4 +1,4 @@
-import Footer from "../components/Footer";
+import Footer from "../../components/Footer";
 import { Code2, Palette, Fingerprint, BarChart3, Award, ShoppingCart } from "lucide-react";
 
 const services = [

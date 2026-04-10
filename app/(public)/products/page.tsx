@@ -1,8 +1,9 @@
-export const dynamic = "force-static";
-
 "use client";
 
-import Footer from "../components/Footer";
+export const dynamic = "force-static";
+
+
+import Footer from "../../components/Footer";
 import { motion } from "framer-motion";
 import { QrCode, FileText, Award, Check, ArrowLeft, Zap, Lock } from "lucide-react";
 

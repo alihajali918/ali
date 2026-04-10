@@ -30,7 +30,11 @@
       "Bash(git push:*)",
       "Bash(grep -l \"import Navbar\" c:/Users/USER/Desktop/ali/app/**/*.tsx c:/Users/USER/Desktop/ali/app/*.tsx)",
       "Bash(ssh -p 65002 -o StrictHostKeyChecking=no -o ConnectTimeout=15 u707000441@147.93.42.216 \"echo connected && free -m && echo '---' && df -h / && echo '---' && node --version && echo '---' && pm2 list 2>/dev/null || echo 'no pm2'\")",
-      "Bash(sshpass -p '@Ster1234512345' ssh -p 65002 -o StrictHostKeyChecking=no -o ConnectTimeout=15 u707000441@147.93.42.216 \"echo connected && free -m && echo '---' && node --version && echo '---' && ps aux | grep -E 'node|passenger' | grep -v grep\")"
+      "Bash(sshpass -p '@Ster1234512345' ssh -p 65002 -o StrictHostKeyChecking=no -o ConnectTimeout=15 u707000441@147.93.42.216 \"echo connected && free -m && echo '---' && node --version && echo '---' && ps aux | grep -E 'node|passenger' | grep -v grep\")",
+      "Bash(git commit -m 'Fix import paths after moving page to \\(public\\) route group:*)",
+      "Bash(sed -i '1,3{/^export const dynamic.*$/d; /^\"use client\";$/d; /^$/d}' \"c:/Users/USER/Desktop/ali/app/\\(public\\)/products/page.tsx\")",
+      "Bash(sed -i '1s/^/\"use client\";\\\\n\\\\nexport const dynamic = \"force-static\";\\\\n\\\\n/' \"c:/Users/USER/Desktop/ali/app/\\(public\\)/products/page.tsx\")",
+      "Bash(sed -i 's|from \"\\\\.\\\\./components/|from \"../../components/|g' \"c:/Users/USER/Desktop/ali/app/\\(public\\)/products/page.tsx\")"
     ]
   }
 }
