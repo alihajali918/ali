@@ -244,30 +244,24 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen bg-dark-bg" dir="rtl">
-      {/* شريط علوي */}
-      <header className="border-b border-glass-border px-6 py-4 flex items-center justify-between sticky top-0 bg-dark-bg/90 backdrop-blur-xl z-20">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-xl bg-neon-cyan flex items-center justify-center">
-            <span className="text-dark-bg font-black text-xs">AH</span>
-          </div>
-          <div>
-            <p className="font-black text-white text-sm">لوحة التحكم</p>
-            <p className="text-[10px] text-gray-600">Ali Hajali · Admin</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <button onClick={fetchStats}
-            className="p-2 rounded-xl text-gray-500 hover:text-neon-cyan hover:bg-neon-cyan/8 transition-all">
-            <RefreshCw size={15} />
-          </button>
-          <button onClick={logout}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-gray-500 hover:text-red-400 hover:bg-red-500/8 transition-all text-xs font-bold">
-            <LogOut size={14} /> خروج
-          </button>
-        </div>
-      </header>
 
-      <div className="max-w-7xl mx-auto px-4 md:px-6 py-8 flex flex-col gap-8">
+      {/* أزرار التحكم — أعلى اليمين */}
+      <div className="fixed top-4 left-4 z-50 flex items-center gap-2">
+        <button onClick={fetchStats}
+          className="p-2 rounded-xl bg-dark-bg/80 backdrop-blur border border-glass-border text-gray-500 hover:text-neon-cyan hover:border-neon-cyan/30 transition-all">
+          <RefreshCw size={15} />
+        </button>
+        <button onClick={logout}
+          className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-dark-bg/80 backdrop-blur border border-glass-border text-gray-500 hover:text-red-400 hover:border-red-500/30 transition-all text-xs font-bold">
+          <LogOut size={14} /> خروج
+        </button>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 md:px-6 pt-20 pb-8 flex flex-col gap-8">
+        <div>
+          <p className="text-xl font-black text-white">لوحة التحكم</p>
+          <p className="text-xs text-gray-600 mt-0.5">Ali Hajali · Admin</p>
+        </div>
 
         {/* ── إحصاءات الزوار ── */}
         <section>

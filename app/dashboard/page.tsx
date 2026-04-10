@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { User, Mail, Calendar, LogOut, Shield, Loader2, CheckCircle, Edit2, Lock, Send, X, Eye, EyeOff } from "lucide-react";
+import { User, Mail, Calendar, Shield, Loader2, CheckCircle, Edit2, Lock, Send, X, Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 
 interface UserInfo {
@@ -103,20 +103,8 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-dark-bg" dir="rtl">
-      <header className="border-b border-glass-border px-6 py-4 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-neon-cyan flex items-center justify-center">
-            <span className="text-dark-bg font-black text-xs">AH</span>
-          </div>
-          <span className="font-black text-white text-sm">Ali <span className="text-neon-cyan">Hajali</span></span>
-        </Link>
-        <button onClick={logout}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-gray-500 hover:text-red-400 hover:bg-red-500/8 transition-all text-xs font-bold">
-          <LogOut size={14} /> خروج
-        </button>
-      </header>
 
-      <div className="max-w-2xl mx-auto px-4 py-10 flex flex-col gap-5">
+      <div className="max-w-2xl mx-auto px-4 pt-28 pb-10 flex flex-col gap-5">
 
         {/* بطاقة الترحيب */}
         <div className="glass-card rounded-2xl p-6 flex items-center gap-4">
