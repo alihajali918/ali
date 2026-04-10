@@ -1,6 +1,5 @@
 "use client";
 
-import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { motion } from "framer-motion";
 import { QrCode, FileText, Award, Check, ArrowLeft, Zap, Lock } from "lucide-react";
@@ -89,7 +88,6 @@ const card = {
 export default function ProductsPage() {
   return (
     <main className="min-h-screen">
-      <Navbar />
 
       <div className="pt-36 pb-24 px-4 md:px-8 max-w-6xl mx-auto">
 

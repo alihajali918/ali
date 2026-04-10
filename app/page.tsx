@@ -1,4 +1,3 @@
-import Navbar from "./components/Navbar";
 import Hero from "./components/Hero";
 import ServicesSection from "./components/ServicesSection";
 import WorkSection from "./components/WorkSection";
@@ -8,7 +7,6 @@ import Footer from "./components/Footer";
 export default function Home() {
   return (
     <main className="scroll-smooth">
-      <Navbar />
       <Hero />
       <ServicesSection />
       <WorkSection />

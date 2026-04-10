@@ -1,4 +1,3 @@
-import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { ExternalLink } from "lucide-react";
 
@@ -44,7 +43,6 @@ const projects = [
 export default function PortfolioPage() {
   return (
     <main className="min-h-screen">
-      <Navbar />
 
       <div className="pt-40 pb-20 px-4 md:px-8 max-w-7xl mx-auto">
         {/* رأس الصفحة */}

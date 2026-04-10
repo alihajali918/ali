@@ -1,4 +1,3 @@
-import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { Code2, Palette, Fingerprint, BarChart3, Award, ShoppingCart } from "lucide-react";
 
@@ -63,7 +62,6 @@ const services = [
 export default function ServicesPage() {
   return (
     <main className="min-h-screen">
-      <Navbar />
 
       <div className="pt-40 pb-20 px-4 md:px-8 max-w-7xl mx-auto">
         {/* رأس الصفحة */}

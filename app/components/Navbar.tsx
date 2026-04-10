@@ -12,12 +12,14 @@ const links = [
   { href: "/pricing", label: "التسعير" },
 ];
 
-export default function Navbar() {
+interface NavUser { name: string; role: string; }
+
+export default function Navbar({ initialUser }: { initialUser: NavUser | null }) {
   const pathname = usePathname();
   const router   = useRouter();
-  const [scrolled,  setScrolled]  = useState(false);
-  const [menuOpen,  setMenuOpen]  = useState(false);
-  const [user,      setUser]      = useState<{ name: string; role: string } | null>(null);
+  const [scrolled, setScrolled] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [user,     setUser]     = useState<NavUser | null>(initialUser);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -27,22 +29,21 @@ export default function Navbar() {
 
   useEffect(() => { setMenuOpen(false); }, [pathname]);
 
-  const refreshUser = () => {
-    fetch("/api/auth/me")
-      .then(r => r.json())
-      .then(d => setUser(d.user ? { name: d.user.name, role: d.user.role } : null))
-      .catch(() => {});
-  };
-
   useEffect(() => {
-    refreshUser();
-    window.addEventListener("auth-change", refreshUser);
-    return () => window.removeEventListener("auth-change", refreshUser);
+    const refresh = () => {
+      fetch("/api/auth/me")
+        .then(r => r.json())
+        .then(d => setUser(d.user ? { name: d.user.name, role: d.user.role } : null))
+        .catch(() => {});
+    };
+    window.addEventListener("auth-change", refresh);
+    return () => window.removeEventListener("auth-change", refresh);
   }, []);
 
   const logout = async () => {
     await fetch("/api/auth/user-logout", { method: "POST" });
     setUser(null);
+    window.dispatchEvent(new CustomEvent("auth-change"));
     router.push("/");
     router.refresh();
   };
@@ -52,7 +53,6 @@ export default function Navbar() {
       <nav className={`fixed top-0 w-full z-50 px-4 md:px-8 transition-all duration-500 ${scrolled ? "pt-3" : "pt-5"}`}>
         <div className={`max-w-7xl mx-auto rounded-2xl px-4 md:px-6 py-3 flex items-center justify-between transition-all duration-500 ${scrolled ? "nav-pill-scrolled shadow-[0_8px_32px_rgba(0,0,0,0.4)]" : "nav-pill"}`}>
 
-          {/* لوجو */}
           <Link href="/" className="flex items-center gap-2.5 select-none">
             <div className="w-8 h-8 rounded-xl bg-neon-cyan flex items-center justify-center flex-shrink-0">
               <span className="text-dark-bg font-black text-xs tracking-tight">AH</span>
@@ -62,7 +62,6 @@ export default function Navbar() {
             </span>
           </Link>
 
-          {/* روابط — شاشة كبيرة */}
           <div className="hidden md:flex items-center gap-1">
             {links.map(({ href, label }) => {
               const active = pathname === href;
@@ -77,7 +76,6 @@ export default function Navbar() {
             })}
           </div>
 
-          {/* أزرار */}
           <div className="hidden md:flex items-center gap-2">
             {user ? (
               <>
@@ -104,7 +102,6 @@ export default function Navbar() {
             )}
           </div>
 
-          {/* موبايل */}
           <button onClick={() => setMenuOpen(v => !v)}
             className="md:hidden p-2 rounded-xl text-gray-300 hover:text-white hover:bg-white/5 transition-colors"
             aria-label="القائمة">
@@ -113,7 +110,6 @@ export default function Navbar() {
         </div>
       </nav>
 
-      {/* قائمة الموبايل */}
       {menuOpen && (
         <div className="fixed inset-0 z-40 pt-24 px-4 bg-dark-bg/98 backdrop-blur-2xl md:hidden">
           <div className="flex flex-col gap-1.5">
