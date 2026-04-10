@@ -1,16 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "../../../lib/prisma";
+import { db } from "../../../lib/db";
 
 export async function GET() {
-  const contacts = await prisma.contact.findMany({
-    orderBy: { createdAt: "desc" },
-    take: 50,
-  });
-  return NextResponse.json(contacts);
+  const [rows] = await db.query("SELECT * FROM contacts ORDER BY createdAt DESC LIMIT 50") as any[];
+  return NextResponse.json(rows);
 }
 
 export async function PATCH(req: NextRequest) {
   const { id } = await req.json();
-  await prisma.contact.update({ where: { id }, data: { read: true } });
+  await db.query("UPDATE contacts SET `read` = 1 WHERE id = ?", [id]);
   return NextResponse.json({ ok: true });
 }

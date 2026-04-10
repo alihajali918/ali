@@ -1,87 +1,52 @@
-import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "../../../lib/prisma";
+import { NextResponse } from "next/server";
+import { db } from "../../../lib/db";
 
-function daysAgo(n: number) {
-  const d = new Date();
-  d.setDate(d.getDate() - n);
-  d.setHours(0, 0, 0, 0);
-  return d;
-}
-
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
-    const today = daysAgo(0);
-    const week  = daysAgo(7);
-    const month = daysAgo(30);
+    // Batch 1 — visitor counts
+    const [[today], [week], [month], [total]] = await Promise.all([
+      db.query("SELECT COUNT(*) as c FROM visitors WHERE createdAt >= CURDATE()"),
+      db.query("SELECT COUNT(*) as c FROM visitors WHERE createdAt >= DATE_SUB(NOW(), INTERVAL 7 DAY)"),
+      db.query("SELECT COUNT(*) as c FROM visitors WHERE createdAt >= DATE_SUB(NOW(), INTERVAL 30 DAY)"),
+      db.query("SELECT COUNT(*) as c FROM visitors"),
+    ]) as any[];
 
-    // Batch 1 – visitor counts
-    const [visitorsToday, visitorsWeek, visitorsMonth, visitorsTotal] = await Promise.all([
-      prisma.visitor.count({ where: { createdAt: { gte: today } } }),
-      prisma.visitor.count({ where: { createdAt: { gte: week  } } }),
-      prisma.visitor.count({ where: { createdAt: { gte: month } } }),
-      prisma.visitor.count(),
-    ]);
+    // Batch 2 — pages, devices, browsers, recent
+    const [[topPages], [deviceStats], [browserStats], [recentVisitors]] = await Promise.all([
+      db.query("SELECT page, SUM(views) as views FROM page_views WHERE date >= DATE_SUB(NOW(), INTERVAL 30 DAY) GROUP BY page ORDER BY views DESC LIMIT 10"),
+      db.query("SELECT device, COUNT(*) as count FROM visitors WHERE createdAt >= DATE_SUB(NOW(), INTERVAL 30 DAY) GROUP BY device ORDER BY count DESC"),
+      db.query("SELECT browser, COUNT(*) as count FROM visitors WHERE createdAt >= DATE_SUB(NOW(), INTERVAL 30 DAY) GROUP BY browser ORDER BY count DESC LIMIT 5"),
+      db.query("SELECT ip, page, device, browser, os, createdAt FROM visitors ORDER BY createdAt DESC LIMIT 20"),
+    ]) as any[];
 
-    // Batch 2 – page / device / browser breakdown
-    const [topPages, deviceStats, browserStats, recentVisitors] = await Promise.all([
-      prisma.pageView.groupBy({
-        by: ["page"],
-        _sum: { views: true },
-        where: { date: { gte: month } },
-        orderBy: { _sum: { views: "desc" } },
-        take: 10,
-      }),
-      prisma.visitor.groupBy({
-        by: ["device"],
-        _count: { device: true },
-        where: { createdAt: { gte: month } },
-        orderBy: { _count: { device: "desc" } },
-      }),
-      prisma.visitor.groupBy({
-        by: ["browser"],
-        _count: { browser: true },
-        where: { createdAt: { gte: month } },
-        orderBy: { _count: { browser: "desc" } },
-        take: 5,
-      }),
-      prisma.visitor.findMany({
-        take: 20,
-        orderBy: { createdAt: "desc" },
-        select: { ip: true, page: true, device: true, browser: true, os: true, createdAt: true },
-      }),
-    ]);
-
-    // Batch 3 – tool & contact stats
-    const [qrTotal, qrToday, certTotal, certToday, reportTotal, reportToday, contactsUnread, contactsTotal, dailyViews] = await Promise.all([
-      prisma.qrHistory.count(),
-      prisma.qrHistory.count({ where: { createdAt: { gte: today } } }),
-      prisma.certHistory.count(),
-      prisma.certHistory.count({ where: { createdAt: { gte: today } } }),
-      prisma.reportHistory.count(),
-      prisma.reportHistory.count({ where: { createdAt: { gte: today } } }),
-      prisma.contact.count({ where: { read: false } }),
-      prisma.contact.count(),
-      prisma.pageView.groupBy({
-        by: ["date"],
-        _sum: { views: true },
-        where: { date: { gte: month } },
-        orderBy: { date: "asc" },
-      }),
-    ]);
+    // Batch 3 — tools, contacts, daily
+    const [[qrTotal], [qrToday], [certTotal], [certToday], [reportTotal], [reportToday], [contactsUnread], [contactsTotal], [dailyViews]] = await Promise.all([
+      db.query("SELECT COUNT(*) as c FROM qr_history"),
+      db.query("SELECT COUNT(*) as c FROM qr_history WHERE createdAt >= CURDATE()"),
+      db.query("SELECT COUNT(*) as c FROM cert_history"),
+      db.query("SELECT COUNT(*) as c FROM cert_history WHERE createdAt >= CURDATE()"),
+      db.query("SELECT COUNT(*) as c FROM report_history"),
+      db.query("SELECT COUNT(*) as c FROM report_history WHERE createdAt >= CURDATE()"),
+      db.query("SELECT COUNT(*) as c FROM contacts WHERE `read` = 0"),
+      db.query("SELECT COUNT(*) as c FROM contacts"),
+      db.query("SELECT DATE(date) as date, SUM(views) as views FROM page_views WHERE date >= DATE_SUB(NOW(), INTERVAL 30 DAY) GROUP BY DATE(date) ORDER BY date ASC"),
+    ]) as any[];
 
     return NextResponse.json({
-      visitors: { today: visitorsToday, week: visitorsWeek, month: visitorsMonth, total: visitorsTotal },
-      topPages: topPages.map((p) => ({ page: p.page, views: p._sum.views ?? 0 })),
-      devices:  deviceStats.map((d) => ({ device: d.device, count: d._count.device })),
-      browsers: browserStats.map((b) => ({ browser: b.browser, count: b._count.browser })),
+      visitors: {
+        today: today[0].c, week: week[0].c, month: month[0].c, total: total[0].c,
+      },
+      topPages,
+      devices:  deviceStats,
+      browsers: browserStats,
       recentVisitors,
       tools: {
-        qr:     { total: qrTotal,     today: qrToday },
-        cert:   { total: certTotal,   today: certToday },
-        report: { total: reportTotal, today: reportToday },
+        qr:     { total: qrTotal[0].c,     today: qrToday[0].c },
+        cert:   { total: certTotal[0].c,   today: certToday[0].c },
+        report: { total: reportTotal[0].c, today: reportToday[0].c },
       },
-      contacts: { unread: contactsUnread, total: contactsTotal },
-      dailyViews: dailyViews.map((d) => ({ date: d.date, views: d._sum.views ?? 0 })),
+      contacts: { unread: contactsUnread[0].c, total: contactsTotal[0].c },
+      dailyViews,
     });
   } catch (err) {
     console.error(err);

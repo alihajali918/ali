@@ -1,11 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify } from "jose";
 import crypto from "crypto";
-import { prisma } from "../../../lib/prisma";
+import { db } from "../../../lib/db";
 
-const SECRET = new TextEncoder().encode(
-  process.env.NEXTAUTH_SECRET || "ali-secret-2026"
-);
+const SECRET = new TextEncoder().encode(process.env.NEXTAUTH_SECRET || "ali-secret-2026");
 
 export async function POST(req: NextRequest) {
   const token = req.cookies.get("user_token")?.value;
@@ -19,17 +17,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "غير مصرح" }, { status: 401 });
   }
 
-  const user = await prisma.user.findUnique({ where: { id: userId } });
+  const [rows] = await db.query("SELECT email, name, emailVerified FROM users WHERE id = ? LIMIT 1", [userId]) as any[];
+  const user = rows[0];
   if (!user) return NextResponse.json({ error: "المستخدم غير موجود" }, { status: 404 });
   if (user.emailVerified) return NextResponse.json({ error: "البريد مؤكد مسبقاً" }, { status: 400 });
 
   const verifyToken = crypto.randomBytes(32).toString("hex");
   const verifyExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
-
-  await prisma.user.update({
-    where: { id: userId },
-    data: { verifyToken, verifyExpires },
-  });
+  await db.query("UPDATE users SET verifyToken = ?, verifyExpires = ? WHERE id = ?", [verifyToken, verifyExpires, userId]);
 
   try {
     const { sendVerificationEmail } = await import("../../../lib/mailer");
