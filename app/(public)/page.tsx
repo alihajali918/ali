@@ -1,3 +1,5 @@
+export const dynamic = "force-static";
+
 import Hero from "./components/Hero";
 import ServicesSection from "./components/ServicesSection";
 import WorkSection from "./components/WorkSection";

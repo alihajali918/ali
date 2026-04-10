@@ -28,7 +28,9 @@
       "Bash(git add:*)",
       "Bash(git commit -m ':*)",
       "Bash(git push:*)",
-      "Bash(grep -l \"import Navbar\" c:/Users/USER/Desktop/ali/app/**/*.tsx c:/Users/USER/Desktop/ali/app/*.tsx)"
+      "Bash(grep -l \"import Navbar\" c:/Users/USER/Desktop/ali/app/**/*.tsx c:/Users/USER/Desktop/ali/app/*.tsx)",
+      "Bash(ssh -p 65002 -o StrictHostKeyChecking=no -o ConnectTimeout=15 u707000441@147.93.42.216 \"echo connected && free -m && echo '---' && df -h / && echo '---' && node --version && echo '---' && pm2 list 2>/dev/null || echo 'no pm2'\")",
+      "Bash(sshpass -p '@Ster1234512345' ssh -p 65002 -o StrictHostKeyChecking=no -o ConnectTimeout=15 u707000441@147.93.42.216 \"echo connected && free -m && echo '---' && node --version && echo '---' && ps aux | grep -E 'node|passenger' | grep -v grep\")"
     ]
   }
 }

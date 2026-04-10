@@ -12,7 +12,7 @@ export interface SessionUser {
   role: string;
 }
 
-// Reads user from JWT only — zero DB queries
+// Reads user from JWT — zero DB queries, runs at edge speed
 export async function getSessionUser(): Promise<SessionUser | null> {
   try {
     const cookieStore = await cookies();
@@ -21,8 +21,8 @@ export async function getSessionUser(): Promise<SessionUser | null> {
     const { payload } = await jwtVerify(token, SECRET);
     if (!payload.id || !payload.name || !payload.role) return null;
     return {
-      id:    payload.id   as number,
-      name:  payload.name as string,
+      id:    payload.id    as number,
+      name:  payload.name  as string,
       email: payload.email as string,
       role:  payload.role  as string,
     };
