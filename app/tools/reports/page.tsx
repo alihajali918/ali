@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useRef, useCallback } from "react";
-import Navbar from "../../components/Navbar";
 import {
   Plus, Trash2, Printer, ImagePlus, X,
   Building2, FileText, AlignLeft, Table2,
@@ -136,7 +135,6 @@ export default function ReportsPage() {
 
   return (
     <main className="min-h-screen">
-      <Navbar />
 
       <div className="pt-28 pb-20 px-4 max-w-7xl mx-auto">
 

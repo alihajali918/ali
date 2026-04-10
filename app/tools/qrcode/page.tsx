@@ -4,7 +4,6 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import QRCodeLib from "qrcode";
 import * as XLSX from "xlsx";
 import JSZip from "jszip";
-import Navbar from "../../components/Navbar";
 import {
   Link2, Type, Mail, Phone, User, Layers,
   Download, Copy, Check, RefreshCw,
@@ -636,7 +635,6 @@ export default function QRCodePage() {
 
   return (
     <main className="min-h-screen">
-      <Navbar />
 
       <div className="pt-28 pb-20 px-4 max-w-5xl mx-auto">
 

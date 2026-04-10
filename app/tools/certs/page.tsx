@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import Navbar from "../../components/Navbar";
 import {
   Download, ImagePlus, X, Printer,
   RefreshCw, Users, BookOpen,
@@ -570,7 +569,6 @@ img{max-width:100%;box-shadow:0 4px 24px rgba(0,0,0,0.2)}
 
   return (
     <main className="min-h-screen">
-      <Navbar />
 
       <div className="pt-28 pb-20 px-4 max-w-7xl mx-auto">
 
