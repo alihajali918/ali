@@ -37,7 +37,8 @@
       "Bash(sed -i 's|from \"\\\\.\\\\./components/|from \"../../components/|g' \"c:/Users/USER/Desktop/ali/app/\\(public\\)/products/page.tsx\")",
       "Bash(git -C \"c:/Users/USER/Desktop/ali\" add -A)",
       "Bash(git -C c:/Users/USER/Desktop/ali commit -m 'Remove leftover lib/prisma.ts from root:*)",
-      "Bash(git -C \"c:/Users/USER/Desktop/ali\" push origin main)"
+      "Bash(git -C \"c:/Users/USER/Desktop/ali\" push origin main)",
+      "Bash(git -C c:/Users/USER/Desktop/ali commit -m 'Remove scripts folder with leftover Prisma references:*)"
     ]
   }
 }
