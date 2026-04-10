@@ -30,6 +30,14 @@ export default function Navbar({ initialUser }: { initialUser: NavUser | null })
   useEffect(() => { setMenuOpen(false); }, [pathname]);
 
   useEffect(() => {
+    // جيب المستخدم عند التحميل إذا ما وصلنا إياه من السيرفر
+    if (!initialUser) {
+      fetch("/api/auth/me")
+        .then(r => r.json())
+        .then(d => setUser(d.user ? { name: d.user.name, role: d.user.role } : null))
+        .catch(() => {});
+    }
+
     const refresh = () => {
       fetch("/api/auth/me")
         .then(r => r.json())
