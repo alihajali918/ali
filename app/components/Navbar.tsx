@@ -27,11 +27,17 @@ export default function Navbar() {
 
   useEffect(() => { setMenuOpen(false); }, [pathname]);
 
-  useEffect(() => {
+  const refreshUser = () => {
     fetch("/api/auth/me")
       .then(r => r.json())
       .then(d => setUser(d.user ? { name: d.user.name, role: d.user.role } : null))
       .catch(() => {});
+  };
+
+  useEffect(() => {
+    refreshUser();
+    window.addEventListener("auth-change", refreshUser);
+    return () => window.removeEventListener("auth-change", refreshUser);
   }, []);
 
   const logout = async () => {

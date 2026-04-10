@@ -28,6 +28,7 @@ function LoginForm() {
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error || "خطأ"); setLoading(false); return; }
+      window.dispatchEvent(new CustomEvent("auth-change"));
       router.push(data.role === "admin" ? "/admin" : "/dashboard");
     } catch {
       setError("تعذّر الاتصال");
