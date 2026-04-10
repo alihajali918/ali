@@ -38,7 +38,13 @@
       "Bash(git -C \"c:/Users/USER/Desktop/ali\" add -A)",
       "Bash(git -C c:/Users/USER/Desktop/ali commit -m 'Remove leftover lib/prisma.ts from root:*)",
       "Bash(git -C \"c:/Users/USER/Desktop/ali\" push origin main)",
-      "Bash(git -C c:/Users/USER/Desktop/ali commit -m 'Remove scripts folder with leftover Prisma references:*)"
+      "Bash(git -C c:/Users/USER/Desktop/ali commit -m 'Remove scripts folder with leftover Prisma references:*)",
+      "Bash(git -C \"c:/Users/USER/Desktop/ali\" add app/lib/mailer.ts)",
+      "Bash(git -C c:/Users/USER/Desktop/ali commit -m 'Hardcode site URL in emails instead of using NEXTAUTH_URL:*)",
+      "Bash(git -C \"c:/Users/USER/Desktop/ali\" add middleware.ts app/admin/login/page.tsx)",
+      "Bash(git -C c:/Users/USER/Desktop/ali commit -m 'Fix admin access control — verify role in JWT:*)",
+      "Bash(git -C \"c:/Users/USER/Desktop/ali\" add app/admin/page.tsx)",
+      "Bash(git -C c:/Users/USER/Desktop/ali commit -m ':*)"
     ]
   }
 }
