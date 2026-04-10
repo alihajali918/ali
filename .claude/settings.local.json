@@ -34,7 +34,10 @@
       "Bash(git commit -m 'Fix import paths after moving page to \\(public\\) route group:*)",
       "Bash(sed -i '1,3{/^export const dynamic.*$/d; /^\"use client\";$/d; /^$/d}' \"c:/Users/USER/Desktop/ali/app/\\(public\\)/products/page.tsx\")",
       "Bash(sed -i '1s/^/\"use client\";\\\\n\\\\nexport const dynamic = \"force-static\";\\\\n\\\\n/' \"c:/Users/USER/Desktop/ali/app/\\(public\\)/products/page.tsx\")",
-      "Bash(sed -i 's|from \"\\\\.\\\\./components/|from \"../../components/|g' \"c:/Users/USER/Desktop/ali/app/\\(public\\)/products/page.tsx\")"
+      "Bash(sed -i 's|from \"\\\\.\\\\./components/|from \"../../components/|g' \"c:/Users/USER/Desktop/ali/app/\\(public\\)/products/page.tsx\")",
+      "Bash(git -C \"c:/Users/USER/Desktop/ali\" add -A)",
+      "Bash(git -C c:/Users/USER/Desktop/ali commit -m 'Remove leftover lib/prisma.ts from root:*)",
+      "Bash(git -C \"c:/Users/USER/Desktop/ali\" push origin main)"
     ]
   }
 }
