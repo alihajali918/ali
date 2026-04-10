@@ -23,6 +23,7 @@ export default function AdminLogin() {
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error || "خطأ"); setLoading(false); return; }
+      if (data.role !== "admin") { setError("ليس لديك صلاحية الوصول"); setLoading(false); return; }
       router.push("/admin");
     } catch {
       setError("تعذّر الاتصال بالخادم");
