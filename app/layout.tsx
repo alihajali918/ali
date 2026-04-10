@@ -8,6 +8,7 @@ const cairo = Cairo({
   weight: ["400", "600", "700", "900"],
   variable: "--font-cairo",
   display: "swap",
+  preload: true,
 });
 
 export const metadata = {
@@ -17,8 +18,8 @@ export const metadata = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="ar" dir="rtl" className={cairo.variable}>
-      <body>
+    <html lang="ar" dir="rtl" className={cairo.variable} style={{ background: "#0A0A0A" }}>
+      <body style={{ background: "#0A0A0A" }}>
         <Tracker />
         {children}
       </body>
