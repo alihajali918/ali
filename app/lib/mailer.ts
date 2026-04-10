@@ -11,7 +11,7 @@ export const transporter = nodemailer.createTransport({
 });
 
 export async function sendVerificationEmail(to: string, name: string, token: string) {
-  const url = `${process.env.NEXTAUTH_URL}/api/auth/verify-email?token=${token}`;
+  const url = `https://alihajali.com/api/auth/verify-email?token=${token}`;
   await transporter.sendMail({
     from: `"Ali Hajali" <noreply@alihajali.com>`,
     to,
@@ -27,7 +27,7 @@ export async function sendVerificationEmail(to: string, name: string, token: str
 }
 
 export async function sendResetEmail(to: string, name: string, token: string) {
-  const url = `${process.env.NEXTAUTH_URL}/reset-password?token=${token}`;
+  const url = `https://alihajali.com/reset-password?token=${token}`;
   await transporter.sendMail({
     from: `"Ali Hajali" <noreply@alihajali.com>`,
     to,
