@@ -17,14 +17,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "غير مصرح" }, { status: 401 });
   }
 
-  const [rows] = await db.query("SELECT email, name, emailVerified FROM users WHERE id = ? LIMIT 1", [userId]) as any[];
-  const user = rows[0];
+  const user = await db.user.findUnique({ where: { id: userId } });
   if (!user) return NextResponse.json({ error: "المستخدم غير موجود" }, { status: 404 });
   if (user.emailVerified) return NextResponse.json({ error: "البريد مؤكد مسبقاً" }, { status: 400 });
 
   const verifyToken = crypto.randomBytes(32).toString("hex");
   const verifyExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
-  await db.query("UPDATE users SET verifyToken = ?, verifyExpires = ? WHERE id = ?", [verifyToken, verifyExpires, userId]);
+  await db.user.update({ where: { id: userId }, data: { verifyToken, verifyExpires } });
 
   try {
     const { sendVerificationEmail } = await import("../../../lib/mailer");

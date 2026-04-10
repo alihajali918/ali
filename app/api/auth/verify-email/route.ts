@@ -5,17 +5,16 @@ export async function GET(req: NextRequest) {
   const token = req.nextUrl.searchParams.get("token");
   if (!token) return NextResponse.redirect(new URL("/login?error=invalid", req.url));
 
-  const [rows] = await db.query(
-    "SELECT id FROM users WHERE verifyToken = ? AND verifyExpires > NOW() LIMIT 1",
-    [token]
-  ) as any[];
+  const user = await db.user.findFirst({
+    where: { verifyToken: token, verifyExpires: { gt: new Date() } },
+  });
 
-  if (!rows[0]) return NextResponse.redirect(new URL("/login?error=expired", req.url));
+  if (!user) return NextResponse.redirect(new URL("/login?error=expired", req.url));
 
-  await db.query(
-    "UPDATE users SET emailVerified = 1, verifyToken = NULL, verifyExpires = NULL WHERE id = ?",
-    [rows[0].id]
-  );
+  await db.user.update({
+    where: { id: user.id },
+    data: { emailVerified: true, verifyToken: null, verifyExpires: null },
+  });
 
   return NextResponse.redirect(new URL("/login?verified=1", req.url));
 }

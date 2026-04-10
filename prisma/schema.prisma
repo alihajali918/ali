@@ -1,0 +1,99 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id             Int       @id @default(autoincrement())
+  name           String
+  email          String    @unique
+  password       String
+  role           String    @default("user")
+  emailVerified  Boolean   @default(false)
+  verifyToken    String?
+  verifyExpires  DateTime?
+  resetToken     String?
+  resetExpires   DateTime?
+  createdAt      DateTime  @default(now())
+
+  @@map("users")
+}
+
+model Visitor {
+  id         Int      @id @default(autoincrement())
+  sessionId  String
+  ip         String
+  page       String
+  referrer   String?
+  userAgent  String?
+  device     String?
+  browser    String?
+  os         String?
+  createdAt  DateTime @default(now())
+
+  @@map("visitors")
+}
+
+model PageView {
+  id    Int      @id @default(autoincrement())
+  page  String
+  date  DateTime @db.Date
+  views Int      @default(1)
+
+  @@unique([page, date])
+  @@map("page_views")
+}
+
+model Contact {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String
+  message   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@map("contacts")
+}
+
+model QrHistory {
+  id         Int      @id @default(autoincrement())
+  type       String
+  value      String
+  format     String
+  corner     String
+  hasLogo    Boolean  @default(false)
+  bulkCount  Int?
+  ip         String
+  createdAt  DateTime @default(now())
+
+  @@map("qr_history")
+}
+
+model CertHistory {
+  id            Int      @id @default(autoincrement())
+  recipientName String
+  courseName    String
+  centerName    String?
+  template      String
+  ip            String
+  createdAt     DateTime @default(now())
+
+  @@map("cert_history")
+}
+
+model ReportHistory {
+  id          Int      @id @default(autoincrement())
+  reportTitle String
+  reportType  String
+  companyName String?
+  rowCount    Int      @default(0)
+  ip          String
+  createdAt   DateTime @default(now())
+
+  @@map("report_history")
+}

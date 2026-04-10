@@ -12,18 +12,18 @@ export async function POST(req: NextRequest) {
     const sessionId = getSessionId(req);
     const { device, browser, os } = parseUserAgent(userAgent);
 
-    await db.query(
-      "INSERT INTO visitors (sessionId, ip, page, referrer, userAgent, device, browser, os) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-      [sessionId, ip, page, referrer, userAgent, device, browser, os]
-    );
+    await db.visitor.create({
+      data: { sessionId, ip, page, referrer, userAgent, device, browser, os },
+    });
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    await db.query(
-      "INSERT INTO page_views (page, date, views) VALUES (?, ?, 1) ON DUPLICATE KEY UPDATE views = views + 1",
-      [page, today]
-    );
+    await db.pageView.upsert({
+      where: { page_date: { page, date: today } },
+      update: { views: { increment: 1 } },
+      create: { page, date: today, views: 1 },
+    });
 
     const res = NextResponse.json({ ok: true });
     if (!req.cookies.get("sid")) {

@@ -9,11 +9,11 @@ export async function GET(req: NextRequest) {
   if (!token) return NextResponse.json({ user: null });
   try {
     const { payload } = await jwtVerify(token, SECRET);
-    const [rows] = await db.query(
-      "SELECT id, name, email, role, emailVerified, createdAt FROM users WHERE id = ? LIMIT 1",
-      [payload.id]
-    ) as any[];
-    return NextResponse.json({ user: rows[0] || null });
+    const user = await db.user.findUnique({
+      where: { id: payload.id as number },
+      select: { id: true, name: true, email: true, role: true, emailVerified: true, createdAt: true },
+    });
+    return NextResponse.json({ user: user || null });
   } catch {
     return NextResponse.json({ user: null });
   }

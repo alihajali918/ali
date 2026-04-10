@@ -8,8 +8,7 @@ const SECRET = new TextEncoder().encode(process.env.NEXTAUTH_SECRET || "ali-secr
 export async function POST(req: NextRequest) {
   try {
     const { email, password } = await req.json();
-    const [rows] = await db.query("SELECT * FROM users WHERE email = ? LIMIT 1", [email]) as any[];
-    const user = rows[0];
+    const user = await db.user.findUnique({ where: { email } });
     if (!user) return NextResponse.json({ error: "البريد أو كلمة المرور غير صحيحة" }, { status: 401 });
 
     const valid = await bcrypt.compare(password, user.password);

@@ -13,31 +13,33 @@ async function isAdmin(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
   if (!await isAdmin(req)) return NextResponse.json({ error: "غير مصرح" }, { status: 401 });
-  const [rows] = await db.query("SELECT id, name, email, role, emailVerified, createdAt FROM users ORDER BY createdAt DESC") as any[];
-  return NextResponse.json(rows);
+  const users = await db.user.findMany({
+    select: { id: true, name: true, email: true, role: true, emailVerified: true, createdAt: true },
+    orderBy: { createdAt: "desc" },
+  });
+  return NextResponse.json(users);
 }
 
 export async function POST(req: NextRequest) {
   if (!await isAdmin(req)) return NextResponse.json({ error: "غير مصرح" }, { status: 401 });
   const { name, email, password, role } = await req.json();
   if (!name || !email || !password) return NextResponse.json({ error: "بيانات ناقصة" }, { status: 400 });
-  const [existing] = await db.query("SELECT id FROM users WHERE email = ? LIMIT 1", [email]) as any[];
-  if (existing[0]) return NextResponse.json({ error: "البريد مستخدم" }, { status: 409 });
+  const existing = await db.user.findUnique({ where: { email } });
+  if (existing) return NextResponse.json({ error: "البريد مستخدم" }, { status: 409 });
   const hashed = await bcrypt.hash(password, 12);
-  const [result] = await db.query(
-    "INSERT INTO users (name, email, password, role, emailVerified) VALUES (?, ?, ?, ?, 1)",
-    [name, email, hashed, role || "user"]
-  ) as any[];
-  const [rows] = await db.query("SELECT id, name, email, role, emailVerified, createdAt FROM users WHERE id = ?", [result.insertId]) as any[];
-  return NextResponse.json(rows[0]);
+  const user = await db.user.create({
+    data: { name, email, password: hashed, role: role || "user", emailVerified: true },
+    select: { id: true, name: true, email: true, role: true, emailVerified: true, createdAt: true },
+  });
+  return NextResponse.json(user);
 }
 
 export async function DELETE(req: NextRequest) {
   if (!await isAdmin(req)) return NextResponse.json({ error: "غير مصرح" }, { status: 401 });
   const { id } = await req.json();
-  const [rows] = await db.query("SELECT role FROM users WHERE id = ? LIMIT 1", [id]) as any[];
-  if (!rows[0]) return NextResponse.json({ error: "المستخدم غير موجود" }, { status: 404 });
-  if (rows[0].role === "admin") return NextResponse.json({ error: "لا يمكن حذف الأدمن" }, { status: 403 });
-  await db.query("DELETE FROM users WHERE id = ?", [id]);
+  const user = await db.user.findUnique({ where: { id } });
+  if (!user) return NextResponse.json({ error: "المستخدم غير موجود" }, { status: 404 });
+  if (user.role === "admin") return NextResponse.json({ error: "لا يمكن حذف الأدمن" }, { status: 403 });
+  await db.user.delete({ where: { id } });
   return NextResponse.json({ ok: true });
 }

@@ -3,50 +3,49 @@ import { db } from "../../../lib/db";
 
 export async function GET() {
   try {
-    // Batch 1 — visitor counts
-    const [[today], [week], [month], [total]] = await Promise.all([
-      db.query("SELECT COUNT(*) as c FROM visitors WHERE createdAt >= CURDATE()"),
-      db.query("SELECT COUNT(*) as c FROM visitors WHERE createdAt >= DATE_SUB(NOW(), INTERVAL 7 DAY)"),
-      db.query("SELECT COUNT(*) as c FROM visitors WHERE createdAt >= DATE_SUB(NOW(), INTERVAL 30 DAY)"),
-      db.query("SELECT COUNT(*) as c FROM visitors"),
-    ]) as any[];
+    const now = new Date();
+    const today = new Date(now); today.setHours(0, 0, 0, 0);
+    const week  = new Date(now); week.setDate(week.getDate() - 7);
+    const month = new Date(now); month.setDate(month.getDate() - 30);
 
-    // Batch 2 — pages, devices, browsers, recent
-    const [[topPages], [deviceStats], [browserStats], [recentVisitors]] = await Promise.all([
-      db.query("SELECT page, SUM(views) as views FROM page_views WHERE date >= DATE_SUB(NOW(), INTERVAL 30 DAY) GROUP BY page ORDER BY views DESC LIMIT 10"),
-      db.query("SELECT device, COUNT(*) as count FROM visitors WHERE createdAt >= DATE_SUB(NOW(), INTERVAL 30 DAY) GROUP BY device ORDER BY count DESC"),
-      db.query("SELECT browser, COUNT(*) as count FROM visitors WHERE createdAt >= DATE_SUB(NOW(), INTERVAL 30 DAY) GROUP BY browser ORDER BY count DESC LIMIT 5"),
-      db.query("SELECT ip, page, device, browser, os, createdAt FROM visitors ORDER BY createdAt DESC LIMIT 20"),
-    ]) as any[];
-
-    // Batch 3 — tools, contacts, daily
-    const [[qrTotal], [qrToday], [certTotal], [certToday], [reportTotal], [reportToday], [contactsUnread], [contactsTotal], [dailyViews]] = await Promise.all([
-      db.query("SELECT COUNT(*) as c FROM qr_history"),
-      db.query("SELECT COUNT(*) as c FROM qr_history WHERE createdAt >= CURDATE()"),
-      db.query("SELECT COUNT(*) as c FROM cert_history"),
-      db.query("SELECT COUNT(*) as c FROM cert_history WHERE createdAt >= CURDATE()"),
-      db.query("SELECT COUNT(*) as c FROM report_history"),
-      db.query("SELECT COUNT(*) as c FROM report_history WHERE createdAt >= CURDATE()"),
-      db.query("SELECT COUNT(*) as c FROM contacts WHERE `read` = 0"),
-      db.query("SELECT COUNT(*) as c FROM contacts"),
-      db.query("SELECT DATE(date) as date, SUM(views) as views FROM page_views WHERE date >= DATE_SUB(NOW(), INTERVAL 30 DAY) GROUP BY DATE(date) ORDER BY date ASC"),
-    ]) as any[];
+    const [
+      todayCount, weekCount, monthCount, totalCount,
+      topPages, deviceStats, browserStats, recentVisitors,
+      qrTotal, qrToday, certTotal, certToday, reportTotal, reportToday,
+      contactsUnread, contactsTotal, dailyViews,
+    ] = await Promise.all([
+      db.visitor.count({ where: { createdAt: { gte: today } } }),
+      db.visitor.count({ where: { createdAt: { gte: week } } }),
+      db.visitor.count({ where: { createdAt: { gte: month } } }),
+      db.visitor.count(),
+      db.pageView.groupBy({ by: ["page"], where: { date: { gte: month } }, _sum: { views: true }, orderBy: { _sum: { views: "desc" } }, take: 10 }),
+      db.visitor.groupBy({ by: ["device"], where: { createdAt: { gte: month } }, _count: { device: true }, orderBy: { _count: { device: "desc" } } }),
+      db.visitor.groupBy({ by: ["browser"], where: { createdAt: { gte: month } }, _count: { browser: true }, orderBy: { _count: { browser: "desc" } }, take: 5 }),
+      db.visitor.findMany({ select: { ip: true, page: true, device: true, browser: true, os: true, createdAt: true }, orderBy: { createdAt: "desc" }, take: 20 }),
+      db.qrHistory.count(),
+      db.qrHistory.count({ where: { createdAt: { gte: today } } }),
+      db.certHistory.count(),
+      db.certHistory.count({ where: { createdAt: { gte: today } } }),
+      db.reportHistory.count(),
+      db.reportHistory.count({ where: { createdAt: { gte: today } } }),
+      db.contact.count({ where: { read: false } }),
+      db.contact.count(),
+      db.pageView.groupBy({ by: ["date"], where: { date: { gte: month } }, _sum: { views: true }, orderBy: { date: "asc" } }),
+    ]);
 
     return NextResponse.json({
-      visitors: {
-        today: today[0].c, week: week[0].c, month: month[0].c, total: total[0].c,
-      },
-      topPages,
-      devices:  deviceStats,
-      browsers: browserStats,
+      visitors: { today: todayCount, week: weekCount, month: monthCount, total: totalCount },
+      topPages: topPages.map(p => ({ page: p.page, views: p._sum.views })),
+      devices:  deviceStats.map(d => ({ device: d.device, count: d._count.device })),
+      browsers: browserStats.map(b => ({ browser: b.browser, count: b._count.browser })),
       recentVisitors,
       tools: {
-        qr:     { total: qrTotal[0].c,     today: qrToday[0].c },
-        cert:   { total: certTotal[0].c,   today: certToday[0].c },
-        report: { total: reportTotal[0].c, today: reportToday[0].c },
+        qr:     { total: qrTotal,     today: qrToday },
+        cert:   { total: certTotal,   today: certToday },
+        report: { total: reportTotal, today: reportToday },
       },
-      contacts: { unread: contactsUnread[0].c, total: contactsTotal[0].c },
-      dailyViews,
+      contacts: { unread: contactsUnread, total: contactsTotal },
+      dailyViews: dailyViews.map(d => ({ date: d.date, views: d._sum.views })),
     });
   } catch (err) {
     console.error(err);
