@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
   if (mode === "desc") {
     try {
       const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -50,7 +50,11 @@ export async function POST(req: NextRequest) {
           }),
         }
       );
-      if (!res.ok) return NextResponse.json({ error: "gemini error" }, { status: 502 });
+      if (!res.ok) {
+        const errText = await res.text();
+        console.error("Gemini desc error:", res.status, errText);
+        return NextResponse.json({ error: "gemini error", detail: errText }, { status: 502 });
+      }
       const json = await res.json();
       const text = (json.candidates?.[0]?.content?.parts?.[0]?.text ?? "").trim();
       return NextResponse.json({
@@ -77,7 +81,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -88,7 +92,11 @@ export async function POST(req: NextRequest) {
       }
     );
 
-    if (!res.ok) return NextResponse.json({ error: "gemini error" }, { status: 502 });
+    if (!res.ok) {
+      const errText = await res.text();
+      console.error("Gemini fill error:", res.status, errText);
+      return NextResponse.json({ error: "gemini error", detail: errText }, { status: 502 });
+    }
 
     const json = await res.json();
     const raw  = json.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
