@@ -74,8 +74,13 @@ export default function Footer() {
         <div className="flex flex-col md:flex-row items-start justify-between gap-10 pb-10 border-b border-glass-border">
           {/* لوجو + وصف */}
           <div className="max-w-xs">
-            <Link href="/" className="text-xl font-black text-neon-cyan glow-text-cyan uppercase tracking-tight">
-              Ali<span className="text-white">.</span>Hajali
+            <Link href="/" className="flex items-center gap-2.5 w-fit">
+              <div className="w-8 h-8 rounded-xl bg-neon-cyan flex items-center justify-center flex-shrink-0">
+                <span className="text-dark-bg font-black text-xs tracking-tight">AH</span>
+              </div>
+              <span className="font-black text-white text-sm tracking-wide">
+                Ali <span className="text-neon-cyan">Hajali</span>
+              </span>
             </Link>
             <p className="text-gray-600 text-sm mt-4 leading-relaxed">
               مبرمج مواقع احترافي متخصص في Next.js وتصميم واجهات فاخرة مقيم في قطر.
