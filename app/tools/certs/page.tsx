@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Download, ImagePlus, X, Printer, Users, BookOpen, Type, LayoutTemplate, Loader2, Sparkles, Bot } from "lucide-react";
+import { Download, ImagePlus, X, Printer, Users, BookOpen, Type, LayoutTemplate, Loader2, Sparkles, Bot, Palette, ZoomIn, ZoomOut, FileImage, PenLine } from "lucide-react";
 
 // ─── types ───
 type Template    = "classic" | "dark" | "royal" | "minimal" | "bold" | "elegant";
@@ -693,8 +693,27 @@ export default function CertsPage() {
   const [descLoading,   setDescLoading]   = useState(false);
   const [certHours,     setCertHours]     = useState("");
 
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const logoRef   = useRef<HTMLInputElement>(null);
+  const [activeTab,    setActiveTab]    = useState<"ai"|"template"|"design"|"font">("ai");
+  const [signatureUrl, setSignatureUrl] = useState<string|null>(null);
+  const [signatureImg, setSignatureImg] = useState<HTMLImageElement|null>(null);
+  const [bgImageUrl,   setBgImageUrl]   = useState<string|null>(null);
+  const [bgImg,        setBgImg]        = useState<HTMLImageElement|null>(null);
+  const [zoom,         setZoom]         = useState(1);
+
+  const canvasRef    = useRef<HTMLCanvasElement>(null);
+  const logoRef      = useRef<HTMLInputElement>(null);
+  const signatureRef = useRef<HTMLInputElement>(null);
+  const bgRef        = useRef<HTMLInputElement>(null);
+
+  // load signature + bg images
+  useEffect(() => {
+    if (!signatureUrl) { setSignatureImg(null); return; }
+    const img = new Image(); img.onload=()=>setSignatureImg(img); img.src=signatureUrl;
+  }, [signatureUrl]);
+  useEffect(() => {
+    if (!bgImageUrl) { setBgImg(null); return; }
+    const img = new Image(); img.onload=()=>setBgImg(img); img.src=bgImageUrl;
+  }, [bgImageUrl]);
 
   // fetch fonts from our proxy route on mount
   useEffect(() => {
@@ -810,6 +829,24 @@ export default function CertsPage() {
     a.click();
   }, [data.recipientName]);
 
+  const downloadPDF = useCallback(() => {
+    if (!canvasRef.current) return;
+    const url  = canvasRef.current.toDataURL("image/png");
+    const [W,H] = getSize(orient);
+    const isLand = orient === "landscape";
+    const win = window.open("","_blank");
+    if (!win) return;
+    win.document.write(`<!DOCTYPE html><html><head><title>شهادة</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+@page{size:${isLand?`${W}px ${H}px`:`${W}px ${H}px`};margin:0}
+body{width:${W}px;height:${H}px;overflow:hidden}
+img{width:${W}px;height:${H}px;display:block}
+</style></head><body><img src="${url}"/></body></html>`);
+    win.document.close();
+    setTimeout(()=>{ win.focus(); win.print(); },500);
+  }, [orient]);
+
   const printCert = useCallback(() => {
     if (!canvasRef.current) return;
     const url = canvasRef.current.toDataURL("image/png");
@@ -829,25 +866,347 @@ img{max-width:98vw;max-height:96vh;object-fit:contain;box-shadow:0 6px 32px rgba
 
   const inputCls = "w-full bg-glass border border-glass-border rounded-xl px-3 py-2.5 text-sm text-white placeholder-gray-700 outline-none focus:border-neon-cyan/40 transition-colors";
 
-  return (
-    <main className="min-h-screen">
-      <div className="pt-28 pb-20 px-4 max-w-[1400px] mx-auto">
+  const TABS = [
+    { id:"ai",       icon:<Bot size={18}/>,           label:"البيانات"  },
+    { id:"template", icon:<LayoutTemplate size={18}/>, label:"القالب"   },
+    { id:"design",   icon:<Palette size={18}/>,        label:"التصميم"  },
+    { id:"font",     icon:<Type size={18}/>,            label:"الخط"     },
+  ] as const;
 
-        {/* header */}
-        <div className="mb-6 text-center">
-          <span className="section-badge mb-3 inline-flex">صانع الشهادات</span>
-          <h1 className="text-3xl md:text-4xl font-black mb-1">
-            شهادات <span className="text-gradient">احترافية</span>
-          </h1>
-          <p className="text-gray-500 text-sm">6 قوالب · خطوط Google · أفقي وعمودي</p>
+  const uploadHelper = (setter: (u:string)=>void) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0]; if (!f) return;
+    const r = new FileReader(); r.onload = ev => setter(ev.target!.result as string); r.readAsDataURL(f);
+  };
+
+  return (
+    <main className="h-screen flex flex-col overflow-hidden" style={{paddingTop:"4rem"}}>
+
+      {/* ── top bar ── */}
+      <div className="shrink-0 px-6 py-3 flex items-center justify-between border-b border-glass-border bg-dark-surface/80 backdrop-blur-xl">
+        <div>
+          <h1 className="text-lg font-black">صانع <span className="text-gradient">الشهادات</span></h1>
+          <p className="text-[11px] text-gray-600">6 قوالب · خطوط Google · AI</p>
+        </div>
+        <div className="flex items-center gap-2">
+          {fontLoading && <span className="text-[11px] text-neon-cyan animate-pulse">جارٍ تحميل الخط...</span>}
+          {/* zoom */}
+          <button onClick={()=>setZoom(z=>Math.max(0.4,+(z-0.1).toFixed(1)))} className="p-1.5 rounded-lg glass-card hover:border-white/20 text-gray-400"><ZoomOut size={14}/></button>
+          <span className="text-xs text-gray-500 w-9 text-center">{Math.round(zoom*100)}%</span>
+          <button onClick={()=>setZoom(z=>Math.min(2,+(z+0.1).toFixed(1)))} className="p-1.5 rounded-lg glass-card hover:border-white/20 text-gray-400"><ZoomIn size={14}/></button>
+          <div className="w-px h-5 bg-glass-border mx-1"/>
+          <button onClick={downloadPNG} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-neon-cyan text-dark-bg font-black text-xs hover:scale-105 transition-transform">
+            <Download size={13}/> PNG
+          </button>
+          <button onClick={downloadPDF} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl glass-card text-white font-bold text-xs hover:border-white/20 transition-all">
+            <FileImage size={13}/> PDF
+          </button>
+          <button onClick={printCert} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl glass-card text-gray-400 text-xs hover:border-white/20 transition-all">
+            <Printer size={13}/>
+          </button>
+        </div>
+      </div>
+
+      {/* ── main area ── */}
+      <div className="flex-1 flex overflow-hidden">
+
+        {/* tab icons */}
+        <div className="shrink-0 w-14 flex flex-col items-center gap-1 py-3 border-l border-glass-border bg-dark-surface/60">
+          {TABS.map(t=>(
+            <button key={t.id} onClick={()=>setActiveTab(t.id)}
+              title={t.label}
+              className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${activeTab===t.id?"bg-neon-cyan/10 text-neon-cyan border border-neon-cyan/30":"text-gray-600 hover:text-gray-300 hover:bg-white/4"}`}>
+              {t.icon}
+            </button>
+          ))}
         </div>
 
-        <div className="grid xl:grid-cols-[380px_1fr] gap-6 items-start">
+        {/* tab panel */}
+        <div className="shrink-0 w-80 border-l border-glass-border bg-dark-surface/40 flex flex-col overflow-hidden">
+          <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-3"
+            style={{scrollbarWidth:"thin",scrollbarColor:"rgba(0,245,212,0.15) transparent"}}>
 
-          {/* ── SIDEBAR ── */}
+            {/* ── TAB: AI + DATA ── */}
+            {activeTab==="ai" && <>
+
+              {/* AI agent */}
+              <div className="rounded-2xl p-3 border border-neon-purple/20" style={{background:"rgba(123,97,255,0.04)"}}>
+                <p className="text-[11px] font-bold text-gray-400 mb-2 flex items-center gap-1.5"><Bot size={12} className="text-neon-purple"/> مساعد الذكاء الاصطناعي</p>
+                <textarea value={aiText} onChange={e=>setAiText(e.target.value)}
+                  placeholder="مثال: شهادة لمحمد أحمد في دورة البرمجة من مركز الإبداع اليوم"
+                  rows={3}
+                  className="w-full bg-dark-bg border border-glass-border rounded-xl px-3 py-2 text-xs text-white placeholder-gray-700 outline-none focus:border-neon-purple/40 transition-colors resize-none mb-2"/>
+                <button onClick={fillFromAI} disabled={aiLoading||!aiText.trim()||aiRemaining===0}
+                  className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-black transition-all disabled:opacity-40"
+                  style={{background:"linear-gradient(135deg,rgba(123,97,255,0.2),rgba(123,97,255,0.1))",border:"1px solid rgba(123,97,255,0.3)",color:"#7B61FF"}}>
+                  {aiLoading?<><Loader2 size={12} className="animate-spin"/>جارٍ التحليل...</>:<><Sparkles size={12}/>تعبئة تلقائية</>}
+                </button>
+                {aiError && <p className="text-[10px] text-red-400 text-center mt-1.5">{aiError}</p>}
+                {aiRemaining!==null&&!aiError&&(
+                  <p className="text-[10px] text-gray-600 text-center mt-1">
+                    باقي <span className={`font-bold ${aiRemaining<=3?"text-yellow-500":"text-gray-500"}`}>{aiRemaining}</span>/10 اليوم
+                  </p>
+                )}
+              </div>
+
+              {/* trainee */}
+              <div className="glass-card rounded-2xl p-3">
+                <p className="text-[11px] font-bold text-gray-400 mb-2 flex items-center gap-1.5"><Users size={12}/> المتدرب</p>
+                <div className="flex flex-col gap-2">
+                  {([{k:"recipientName",ph:"محمد أحمد العلي"},{k:"courseName",ph:"دورة البرمجة المتقدمة"}] as {k:keyof CertData,ph:string}[]).map(({k,ph})=>(
+                    <input key={k} value={data[k]} onChange={upd(k)} placeholder={ph}
+                      className="w-full bg-dark-bg border border-glass-border rounded-xl px-3 py-2 text-xs text-white placeholder-gray-700 outline-none focus:border-neon-cyan/40 transition-colors"/>
+                  ))}
+                  <input type="date" value={data.certDate} onChange={upd("certDate")} dir="ltr"
+                    className="w-full bg-dark-bg border border-glass-border rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-neon-cyan/40 transition-colors"/>
+
+                  {/* description */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-[10px] text-gray-600">الوصف</span>
+                      <div className="flex gap-1">
+                        {["بدون","عندي"].map((l,i)=>(
+                          <button key={l} onClick={()=>{setHasDesc(i===1);if(i===0)setData(d=>({...d,description:""}));}}
+                            className={`px-2 py-0.5 rounded-lg text-[9px] font-bold border transition-all ${hasDesc===(i===1)?"border-neon-cyan/40 bg-neon-cyan/8 text-neon-cyan":"border-glass-border text-gray-600"}`}>{l}</button>
+                        ))}
+                      </div>
+                    </div>
+                    {hasDesc&&(
+                      <div className="flex flex-col gap-1.5">
+                        <textarea value={data.description} onChange={upd("description")} placeholder="لإتمامه بنجاح..." rows={2}
+                          className="w-full bg-dark-bg border border-glass-border rounded-xl px-3 py-2 text-xs text-white placeholder-gray-700 outline-none focus:border-neon-cyan/40 resize-none transition-colors"/>
+                        <div className="flex gap-1.5">
+                          <input value={certHours} onChange={e=>setCertHours(e.target.value)} placeholder="ساعات (اختياري)"
+                            className="flex-1 bg-dark-bg border border-glass-border rounded-xl px-2 py-1.5 text-xs text-white placeholder-gray-700 outline-none focus:border-neon-purple/40 transition-colors"/>
+                          <button onClick={generateDesc} disabled={descLoading||!data.courseName.trim()}
+                            className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[10px] font-black border transition-all disabled:opacity-40 shrink-0"
+                            style={{background:"rgba(123,97,255,0.1)",border:"1px solid rgba(123,97,255,0.3)",color:"#7B61FF"}}>
+                            {descLoading?<Loader2 size={11} className="animate-spin"/>:<Sparkles size={11}/>} AI
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* center */}
+              <div className="glass-card rounded-2xl p-3">
+                <p className="text-[11px] font-bold text-gray-400 mb-2 flex items-center gap-1.5"><BookOpen size={12}/> المركز</p>
+                <div className="flex flex-col gap-2">
+                  <input value={data.centerName} onChange={upd("centerName")} placeholder="مركز الإبداع للتدريب"
+                    className="w-full bg-dark-bg border border-glass-border rounded-xl px-3 py-2 text-xs text-white placeholder-gray-700 outline-none focus:border-neon-cyan/40 transition-colors"/>
+                  <input value={data.directorName} onChange={upd("directorName")} placeholder="م. خالد الدوسري"
+                    className="w-full bg-dark-bg border border-glass-border rounded-xl px-3 py-2 text-xs text-white placeholder-gray-700 outline-none focus:border-neon-cyan/40 transition-colors"/>
+                </div>
+              </div>
+            </>}
+
+            {/* ── TAB: TEMPLATE ── */}
+            {activeTab==="template" && <>
+              <div className="glass-card rounded-2xl p-3">
+                <p className="text-[11px] font-bold text-gray-400 mb-2 flex items-center gap-1.5"><LayoutTemplate size={12}/> القالب</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {TEMPLATES.map(t=>(
+                    <button key={t.id} onClick={()=>setTemplate(t.id)}
+                      className={`p-2.5 rounded-xl text-right transition-all border ${template===t.id?"border-neon-cyan/40 bg-neon-cyan/8":"border-glass-border hover:border-white/15"}`}>
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <div className="w-4 h-4 rounded shrink-0"
+                          style={{background:t.dark?"#0A0A0A":"#fff",border:`1.5px solid ${template===t.id?"#00F5D4":"rgba(255,255,255,0.15)"}`}}/>
+                        <p className={`text-[11px] font-black leading-tight ${template===t.id?"text-neon-cyan":"text-white"}`}>{t.label}</p>
+                      </div>
+                      <p className="text-[9px] text-gray-600">{t.desc}</p>
+                      <span className="inline-block mt-1 text-[8px] px-1.5 py-0.5 rounded-full"
+                        style={{background:t.preferred==="portrait"?"rgba(123,97,255,0.15)":"rgba(0,245,212,0.1)",color:t.preferred==="portrait"?"#7B61FF":"#00F5D4"}}>
+                        {t.preferred==="portrait"?"عمودي":"أفقي"}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="glass-card rounded-2xl p-3">
+                <p className="text-[11px] font-bold text-gray-400 mb-2">الاتجاه</p>
+                <div className="flex gap-2">
+                  {(["landscape","portrait"] as Orientation[]).map(o=>(
+                    <button key={o} onClick={()=>setOrient(o)}
+                      className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-[11px] font-bold border transition-all ${orient===o?"border-neon-cyan/40 bg-neon-cyan/8 text-neon-cyan":"border-glass-border text-gray-500"}`}>
+                      <div className={`border-2 rounded-sm ${orient===o?"border-neon-cyan":"border-gray-600"}`}
+                        style={o==="landscape"?{width:18,height:13}:{width:13,height:18}}/>
+                      {o==="landscape"?"أفقي":"عمودي"}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </>}
+
+            {/* ── TAB: DESIGN ── */}
+            {activeTab==="design" && <>
+              {/* accent */}
+              <div className="glass-card rounded-2xl p-3">
+                <p className="text-[11px] font-bold text-gray-400 mb-2">لون التمييز</p>
+                <div className="flex items-center gap-2 mb-2">
+                  <label className="relative w-9 h-9 rounded-xl overflow-hidden border border-glass-border cursor-pointer shrink-0">
+                    <input type="color" value={accent} onChange={e=>setAccent(e.target.value)} className="absolute inset-0 opacity-0 cursor-pointer"/>
+                    <div className="w-full h-full" style={{background:accent}}/>
+                  </label>
+                  <input type="text" value={accent} onChange={e=>setAccent(e.target.value)} maxLength={7} dir="ltr"
+                    className="flex-1 bg-dark-bg border border-glass-border rounded-xl px-2 py-1.5 text-xs font-mono text-gray-300 outline-none focus:border-neon-cyan/40"/>
+                </div>
+                <div className="flex gap-1.5 flex-wrap">
+                  {ACCENT_PRESETS.map(c=>(
+                    <button key={c} onClick={()=>setAccent(c)}
+                      className="w-6 h-6 rounded-lg border-2 transition-all hover:scale-110"
+                      style={{background:c,borderColor:accent===c?"white":"transparent"}}/>
+                  ))}
+                </div>
+              </div>
+
+              {/* logo */}
+              <div className="glass-card rounded-2xl p-3">
+                <p className="text-[11px] font-bold text-gray-400 mb-2 flex items-center gap-1.5"><ImagePlus size={12}/> شعار المركز</p>
+                {!logoUrl?(
+                  <button onClick={()=>logoRef.current?.click()}
+                    className="w-full flex items-center justify-center gap-2 py-3 border-2 border-dashed border-glass-border rounded-xl text-gray-500 hover:text-neon-cyan hover:border-neon-cyan/30 transition-all text-xs font-bold">
+                    <ImagePlus size={13}/> رفع الشعار
+                  </button>
+                ):(
+                  <div className="flex items-center gap-2 p-2 bg-dark-bg rounded-xl border border-glass-border">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={logoUrl} alt="logo" className="w-9 h-9 object-contain rounded-lg bg-white p-0.5"/>
+                    <span className="flex-1 text-[11px] text-gray-500">تم رفع الشعار</span>
+                    <button onClick={()=>setLogoUrl(null)} className="text-gray-600 hover:text-red-400"><X size={13}/></button>
+                  </div>
+                )}
+                <input ref={logoRef} type="file" accept="image/*" className="hidden" onChange={uploadHelper(setLogoUrl)}/>
+              </div>
+
+              {/* signature */}
+              <div className="glass-card rounded-2xl p-3">
+                <p className="text-[11px] font-bold text-gray-400 mb-2 flex items-center gap-1.5"><PenLine size={12}/> صورة التوقيع (اختياري)</p>
+                {!signatureUrl?(
+                  <button onClick={()=>signatureRef.current?.click()}
+                    className="w-full flex items-center justify-center gap-2 py-3 border-2 border-dashed border-glass-border rounded-xl text-gray-500 hover:text-neon-cyan hover:border-neon-cyan/30 transition-all text-xs font-bold">
+                    <PenLine size={13}/> رفع التوقيع
+                  </button>
+                ):(
+                  <div className="flex items-center gap-2 p-2 bg-dark-bg rounded-xl border border-glass-border">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={signatureUrl} alt="sig" className="w-14 h-9 object-contain rounded bg-white/5"/>
+                    <span className="flex-1 text-[11px] text-gray-500">تم رفع التوقيع</span>
+                    <button onClick={()=>setSignatureUrl(null)} className="text-gray-600 hover:text-red-400"><X size={13}/></button>
+                  </div>
+                )}
+                <input ref={signatureRef} type="file" accept="image/*" className="hidden" onChange={uploadHelper(setSignatureUrl)}/>
+              </div>
+
+              {/* bg image */}
+              <div className="glass-card rounded-2xl p-3">
+                <p className="text-[11px] font-bold text-gray-400 mb-2 flex items-center gap-1.5"><FileImage size={12}/> خلفية مخصصة (اختياري)</p>
+                {!bgImageUrl?(
+                  <button onClick={()=>bgRef.current?.click()}
+                    className="w-full flex items-center justify-center gap-2 py-3 border-2 border-dashed border-glass-border rounded-xl text-gray-500 hover:text-neon-cyan hover:border-neon-cyan/30 transition-all text-xs font-bold">
+                    <FileImage size={13}/> رفع خلفية
+                  </button>
+                ):(
+                  <div className="flex items-center gap-2 p-2 bg-dark-bg rounded-xl border border-glass-border">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={bgImageUrl} alt="bg" className="w-14 h-9 object-cover rounded"/>
+                    <span className="flex-1 text-[11px] text-gray-500">تم رفع الخلفية</span>
+                    <button onClick={()=>setBgImageUrl(null)} className="text-gray-600 hover:text-red-400"><X size={13}/></button>
+                  </div>
+                )}
+                <input ref={bgRef} type="file" accept="image/*" className="hidden" onChange={uploadHelper(setBgImageUrl)}/>
+              </div>
+            </>}
+
+            {/* ── TAB: FONT ── */}
+            {activeTab==="font" && <>
+              <div className="glass-card rounded-2xl p-3">
+                <p className="text-[11px] font-bold text-gray-400 mb-2 flex items-center gap-1.5"><Type size={12}/> الخط</p>
+                <div className="relative mb-2">
+                  <input value={fontSearch} onChange={e=>setFontSearch(e.target.value)}
+                    placeholder="ابحث... Cairo, Amiri"
+                    dir="auto"
+                    className="w-full bg-dark-bg border border-glass-border rounded-xl px-3 py-2 text-xs text-white placeholder-gray-700 outline-none focus:border-neon-cyan/40 transition-colors pr-7"/>
+                  {fontSearch&&(
+                    <button onClick={()=>setFontSearch("")} className="absolute top-1/2 -translate-y-1/2 right-2 text-gray-600 hover:text-gray-300"><X size={11}/></button>
+                  )}
+                </div>
+                <div className="mb-2 px-2 py-1.5 rounded-xl border border-neon-cyan/20 bg-neon-cyan/4 flex items-center justify-between">
+                  <span className="text-[10px] text-gray-600">الخط الحالي</span>
+                  <span className="text-[11px] font-black text-neon-cyan">{fontFamily}</span>
+                </div>
+                {fontsLoading?(
+                  <div className="flex items-center justify-center gap-2 py-5 text-gray-600 text-xs">
+                    <Loader2 size={13} className="animate-spin"/> جارٍ التحميل...
+                  </div>
+                ):(
+                  <div className="flex flex-col gap-0.5 max-h-64 overflow-y-auto"
+                    style={{scrollbarWidth:"thin",scrollbarColor:"rgba(0,245,212,0.2) transparent"}}>
+                    {(()=>{
+                      const q=fontSearch.toLowerCase();
+                      const filtered=gFonts.filter(f=>f.family.toLowerCase().includes(q));
+                      const arabic=filtered.filter(f=>f.subsets.some(s=>ARABIC_SUBSETS.includes(s)));
+                      const rest=filtered.filter(f=>!f.subsets.some(s=>ARABIC_SUBSETS.includes(s)));
+                      const sorted=[...arabic,...rest];
+                      if(!sorted.length) return <p className="text-[10px] text-gray-700 text-center py-4">لا نتائج</p>;
+                      return sorted.map(f=>{
+                        const isSel=fontFamily===f.family;
+                        const isPrev=previewFonts.has(f.family);
+                        const isAr=f.subsets.some(s=>ARABIC_SUBSETS.includes(s));
+                        return (
+                          <button key={f.family}
+                            onClick={()=>setFontFamily(f.family)}
+                            onMouseEnter={()=>{ if(!isPrev) loadGoogleFont(f.family,fontCss(f)).then(()=>setPreviewFonts(p=>new Set([...p,f.family]))); }}
+                            className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg border transition-all ${isSel?"border-neon-cyan/40 bg-neon-cyan/8":"border-transparent hover:border-glass-border hover:bg-white/3"}`}>
+                            <div className="flex items-center gap-1 min-w-0">
+                              {isAr&&<span className="text-[8px] text-neon-cyan/60 shrink-0">ع</span>}
+                              <span className={`text-[11px] font-bold truncate ${isSel?"text-neon-cyan":"text-gray-400"}`}>{f.family}</span>
+                            </div>
+                            <span className="text-xs text-gray-400 shrink-0" style={{fontFamily:isPrev?`"${f.family}"`:undefined}}>
+                              {isAr?"أبجد":"Abc"}
+                            </span>
+                          </button>
+                        );
+                      });
+                    })()}
+                  </div>
+                )}
+                <div className="mt-2 pt-2 border-t border-glass-border">
+                  <p className="text-[10px] text-gray-600 mb-1.5">حجم الخط</p>
+                  <div className="flex gap-1.5">
+                    {FONT_SIZES.map((s,i)=>(
+                      <button key={i} onClick={()=>setFontSizeIdx(i)}
+                        className={`flex-1 py-1.5 rounded-lg text-[11px] font-bold border transition-all ${fontSizeIdx===i?"border-neon-cyan/40 bg-neon-cyan/8 text-neon-cyan":"border-glass-border text-gray-500"}`}>
+                        {s.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </>}
+
+          </div>
+        </div>
+
+        {/* ── CANVAS PREVIEW ── */}
+        <div className="flex-1 flex items-center justify-center bg-[#0d0d0d] overflow-auto p-6">
+          <div style={{transform:`scale(${zoom})`,transformOrigin:"center center",transition:"transform 0.2s"}}>
+            <canvas ref={canvasRef}
+              className="rounded-xl shadow-2xl block"
+              style={{imageRendering:"crisp-edges"}}/>
+          </div>
+        </div>
+
+      </div>
+
+      {/* hidden file inputs */}
+      <input ref={logoRef}      type="file" accept="image/*" className="hidden" onChange={uploadHelper(setLogoUrl)}/>
+      <input ref={signatureRef} type="file" accept="image/*" className="hidden" onChange={uploadHelper(setSignatureUrl)}/>
+      <input ref={bgRef}        type="file" accept="image/*" className="hidden" onChange={uploadHelper(setBgImageUrl)}/>
+
+        <div className="hidden">
+          {/* old sidebar removed */}
           <div className="flex flex-col gap-4">
-
-            {/* templates */}
             <div className="glass-card rounded-2xl p-4">
               <p className="text-xs font-bold text-gray-400 mb-3 flex items-center gap-1.5">
                 <LayoutTemplate size={13}/> القالب
@@ -1143,38 +1502,8 @@ img{max-width:98vw;max-height:96vh;object-fit:contain;box-shadow:0 6px 32px rgba
               </div>
             </div>
 
-            {/* actions */}
-            <div className="flex flex-col gap-2">
-              <button onClick={downloadPNG}
-                className="flex items-center justify-center gap-2 py-3 bg-neon-cyan text-dark-bg font-black text-sm rounded-2xl hover:scale-105 active:scale-95 transition-transform">
-                <Download size={16}/> تحميل PNG
-              </button>
-              <button onClick={printCert}
-                className="flex items-center justify-center gap-2 py-3 glass-card text-white font-bold text-sm rounded-2xl hover:border-white/20 transition-all">
-                <Printer size={16}/> طباعة
-              </button>
-            </div>
-          </div>
-
-          {/* ── PREVIEW ── */}
-          <div className="sticky top-24">
-            <div className="glass-card rounded-2xl p-4 overflow-hidden">
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-xs font-bold text-gray-400">معاينة مباشرة</p>
-                {fontLoading && (
-                  <span className="text-[11px] text-neon-cyan animate-pulse">جارٍ تحميل الخط...</span>
-                )}
-              </div>
-              <div className="w-full overflow-auto flex items-center justify-center bg-[#111] rounded-xl p-3"
-                style={{ minHeight: orient==="portrait"?"600px":"400px" }}>
-                <canvas ref={canvasRef}
-                  className="max-w-full rounded-lg shadow-2xl"
-                  style={{ imageRendering:"crisp-edges", maxHeight: orient==="portrait"?"800px":"500px" }}/>
-              </div>
-            </div>
           </div>
         </div>
-      </div>
     </main>
   );
 }
