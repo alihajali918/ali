@@ -33,13 +33,14 @@ interface DrawOpts {
 }
 
 // ─── Google Fonts ───
+// fontName = exact CSS font-family name used in ctx.font
 const GOOGLE_FONTS = [
-  { id: "Cairo",            label: "Cairo",            css: "Cairo:wght@400;600;700;900" },
-  { id: "Amiri",            label: "Amiri",            css: "Amiri:wght@400;700" },
-  { id: "Tajawal",          label: "Tajawal",          css: "Tajawal:wght@400;500;700;900" },
-  { id: "Noto+Kufi+Arabic", label: "Noto Kufi",        css: "Noto+Kufi+Arabic:wght@400;700;900" },
-  { id: "Lateef",           label: "Lateef",           css: "Lateef:wght@400;700" },
-  { id: "IBM+Plex+Sans+Arabic", label: "IBM Plex Arabic", css: "IBM+Plex+Sans+Arabic:wght@400;600;700" },
+  { id: "Cairo",                label: "Cairo",             fontName: "Cairo",               css: "Cairo:wght@400;600;700;900" },
+  { id: "Amiri",                label: "Amiri",             fontName: "Amiri",               css: "Amiri:wght@400;700" },
+  { id: "Tajawal",              label: "Tajawal",           fontName: "Tajawal",             css: "Tajawal:wght@400;500;700;900" },
+  { id: "Noto+Kufi+Arabic",     label: "Noto Kufi Arabic",  fontName: "Noto Kufi Arabic",    css: "Noto+Kufi+Arabic:wght@400;700;900" },
+  { id: "Lateef",               label: "Lateef",            fontName: "Lateef",              css: "Lateef:wght@400;700" },
+  { id: "IBM+Plex+Sans+Arabic", label: "IBM Plex Arabic",   fontName: "IBM Plex Sans Arabic",css: "IBM+Plex+Sans+Arabic:wght@400;600;700" },
 ];
 
 // ─── canvas sizes ───
@@ -629,18 +630,35 @@ const FONT_SIZES = [
   { label:"كبير",  title:58, name:72, body:20 },
 ];
 
-// ─── load google font ───
-function loadGoogleFont(family: string, css: string): Promise<void> {
-  return new Promise((resolve) => {
-    const id = `gf-${family}`;
-    if (document.getElementById(id)) { resolve(); return; }
+// ─── load google font via FontFace API (works reliably in Canvas) ───
+const loadedFonts = new Set<string>();
+
+async function loadGoogleFont(fontName: string, css: string): Promise<void> {
+  if (loadedFonts.has(fontName)) return;
+
+  // 1. inject stylesheet so browser knows the URLs
+  const id = `gf-${fontName.replace(/\s/g,"-")}`;
+  if (!document.getElementById(id)) {
     const link = document.createElement("link");
-    link.id = id;
-    link.rel = "stylesheet";
+    link.id   = id;
+    link.rel  = "stylesheet";
     link.href = `https://fonts.googleapis.com/css2?family=${css}&display=swap`;
-    link.onload = () => setTimeout(resolve, 600);
     document.head.appendChild(link);
-  });
+    // wait for stylesheet to parse
+    await new Promise<void>(r => { link.onload = () => r(); setTimeout(r, 800); });
+  }
+
+  // 2. explicitly ask browser to load the font variants Canvas needs
+  const weights = ["400", "700", "900"];
+  await Promise.allSettled(
+    weights.map(w =>
+      document.fonts.load(`${w} 16px "${fontName}"`).catch(() => {})
+    )
+  );
+
+  // 3. small buffer so glyphs are ready
+  await new Promise<void>(r => setTimeout(r, 100));
+  loadedFonts.add(fontName);
 }
 
 // ─── Page ───
@@ -681,19 +699,20 @@ export default function CertsPage() {
   // load font then draw
   useEffect(() => {
     if (!canvasRef.current) return;
-    const fo = GOOGLE_FONTS.find(f=>f.id===fontFamily||f.label===fontFamily);
-    const fs = FONT_SIZES[fontSizeIdx];
-    const opts: DrawOpts = { data, template, orient, accent, logoImg, fonts:{ family: fo?.label||fontFamily, titleSize:fs.title, nameSize:fs.name, bodySize:fs.body } };
+    const fo  = GOOGLE_FONTS.find(f => f.id === fontFamily);
+    const fs  = FONT_SIZES[fontSizeIdx];
+    const fn  = fo ? fo.fontName : fontFamily;   // exact CSS family name for ctx.font
+    const opts: DrawOpts = {
+      data, template, orient, accent, logoImg,
+      fonts: { family: fn, titleSize: fs.title, nameSize: fs.name, bodySize: fs.body },
+    };
 
     setFontLoading(true);
-    const familyToLoad = fo ? fo.id : fontFamily;
-    const cssToLoad    = fo ? fo.css : `${familyToLoad}:wght@400;700;900`;
-    loadGoogleFont(familyToLoad, cssToLoad).then(() => {
+    const css = fo ? fo.css : `${fontFamily}:wght@400;700;900`;
+    loadGoogleFont(fn, css).then(() => {
       if (canvasRef.current) {
-        document.fonts.ready.then(() => {
-          drawCertificate(canvasRef.current!, opts);
-          setFontLoading(false);
-        });
+        drawCertificate(canvasRef.current, opts);
+        setFontLoading(false);
       }
     });
   }, [data, template, orient, accent, logoImg, fontFamily, fontSizeIdx]);
