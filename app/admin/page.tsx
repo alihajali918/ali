@@ -6,8 +6,9 @@ import {
   Users, Eye, QrCode, Award, FileText, Mail,
   TrendingUp, Monitor, Smartphone, Tablet, Chrome,
   LogOut, RefreshCw, Loader2, Trash2, UserPlus, ShieldCheck, X,
-  LayoutDashboard, MessageSquare, DatabaseZap,
+  LayoutDashboard, MessageSquare, DatabaseZap, Download,
 } from "lucide-react";
+import * as XLSX from "xlsx";
 
 // ─── Types ───
 interface Stats {
@@ -358,7 +359,8 @@ export default function AdminPage() {
   const [loading,       setLoading]       = useState(true);
   const [error,         setError]         = useState("");
   const [active,        setActive]        = useState("overview");
-  const [clearingStats, setClearingStats] = useState(false);
+  const [clearingStats,   setClearingStats]   = useState(false);
+  const [exportingStats,  setExportingStats]  = useState(false);
 
   const fetchStats = async () => {
     setLoading(true); setError("");
@@ -379,6 +381,65 @@ export default function AdminPage() {
   const logout = async () => {
     await fetch("/api/auth/logout", { method: "POST" });
     router.push("/admin/login");
+  };
+
+  const exportStats = async () => {
+    setExportingStats(true);
+    try {
+      const res = await fetch("/api/admin/export");
+      if (!res.ok) return;
+      const { visitors, pageViews, qrHistory, certHistory, reportHistory } = await res.json();
+
+      const wb = XLSX.utils.book_new();
+
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(visitors.map((v: any) => ({
+        "الجلسة": v.sessionId,
+        "IP": v.ip,
+        "الصفحة": v.page,
+        "المصدر": v.referrer || "",
+        "الجهاز": v.device || "",
+        "المتصفح": v.browser || "",
+        "النظام": v.os || "",
+        "التاريخ": new Date(v.createdAt).toLocaleString("ar-QA"),
+      }))), "الزيارات");
+
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(pageViews.map((p: any) => ({
+        "الصفحة": p.page,
+        "التاريخ": new Date(p.date).toLocaleDateString("ar-QA"),
+        "المشاهدات": p.views,
+      }))), "مشاهدات الصفحات");
+
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(qrHistory.map((q: any) => ({
+        "النوع": q.type,
+        "القيمة": q.value,
+        "الصيغة": q.format,
+        "IP": q.ip,
+        "التاريخ": new Date(q.createdAt).toLocaleString("ar-QA"),
+      }))), "QR Code");
+
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(certHistory.map((c: any) => ({
+        "اسم المستلم": c.recipientName,
+        "اسم الدورة": c.courseName,
+        "المركز": c.centerName || "",
+        "القالب": c.template,
+        "IP": c.ip,
+        "التاريخ": new Date(c.createdAt).toLocaleString("ar-QA"),
+      }))), "الشهادات");
+
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(reportHistory.map((r: any) => ({
+        "عنوان التقرير": r.reportTitle,
+        "نوع التقرير": r.reportType,
+        "الشركة": r.companyName || "",
+        "عدد الصفوف": r.rowCount,
+        "IP": r.ip,
+        "التاريخ": new Date(r.createdAt).toLocaleString("ar-QA"),
+      }))), "التقارير");
+
+      const date = new Date().toISOString().split("T")[0];
+      XLSX.writeFile(wb, `stats-${date}.xlsx`);
+    } finally {
+      setExportingStats(false);
+    }
   };
 
   const clearStats = async () => {
@@ -453,6 +514,11 @@ export default function AdminPage() {
           <button onClick={fetchStats}
             className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-gray-600 hover:text-neon-cyan hover:bg-neon-cyan/8 transition-all text-xs font-bold">
             <RefreshCw size={14} /> تحديث
+          </button>
+          <button onClick={exportStats} disabled={exportingStats}
+            className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-gray-600 hover:text-green-400 hover:bg-green-500/8 transition-all text-xs font-bold disabled:opacity-50">
+            {exportingStats ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
+            تصدير Excel
           </button>
           <button onClick={clearStats} disabled={clearingStats}
             className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-gray-600 hover:text-orange-400 hover:bg-orange-500/8 transition-all text-xs font-bold disabled:opacity-50">
