@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { Analytics } from "@vercel/analytics/next";
 import Tracker from "./components/Tracker";
 import "./globals.css";
 
@@ -15,6 +16,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <link rel="preload" href="/IBMPlexSansArabic-Bold.ttf" as="font" type="font/ttf" crossOrigin="anonymous" />
       </head>
       <body>
+        <Analytics />
         <Tracker />
         {children}
       </body>
