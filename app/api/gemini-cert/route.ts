@@ -13,26 +13,22 @@ function getIp(req: NextRequest) {
   );
 }
 
-// GET /api/gemini-cert — quick diagnostic
+// GET /api/gemini-cert — list available models
 export async function GET() {
   const key = process.env.GEMINI_API_KEY;
   if (!key) return NextResponse.json({ ok: false, reason: "GEMINI_API_KEY not set" });
 
   try {
     const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${key}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: "قل مرحبا فقط" }] }],
-          generationConfig: { maxOutputTokens: 10 },
-        }),
-        signal: AbortSignal.timeout(15000),
-      }
+      `https://generativelanguage.googleapis.com/v1/models?key=${key}`,
+      { signal: AbortSignal.timeout(10000) }
     );
-    const text = await res.text();
-    return NextResponse.json({ ok: res.ok, status: res.status, body: text.slice(0, 500) });
+    const json = await res.json();
+    // return only names that support generateContent
+    const models = (json.models ?? [])
+      .filter((m: any) => m.supportedGenerationMethods?.includes("generateContent"))
+      .map((m: any) => m.name);
+    return NextResponse.json({ ok: true, models });
   } catch (e: any) {
     return NextResponse.json({ ok: false, error: e?.message });
   }
