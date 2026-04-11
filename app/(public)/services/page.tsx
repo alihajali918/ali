@@ -1,5 +1,12 @@
 import Footer from "../../components/Footer";
-import { Code2, Palette, Fingerprint, BarChart3, Award, ShoppingCart } from "lucide-react";
+import {
+  Code2,
+  Palette,
+  Fingerprint,
+  BarChart3,
+  Award,
+  ShoppingCart,
+} from "lucide-react";
 
 const services = [
   {
@@ -15,7 +22,12 @@ const services = [
     icon: <Palette size={32} />,
     title: "تصميم UI/UX",
     desc: "تصميم واجهات مستخدم فاخرة تعكس هوية علامتك التجارية وتُحوّل الزوار إلى عملاء. تجربة مستخدم مدروسة على كل الأجهزة.",
-    features: ["Figma Design", "Design System", "Responsive UI", "Micro-interactions"],
+    features: [
+      "Figma Design",
+      "Design System",
+      "Responsive UI",
+      "Micro-interactions",
+    ],
     price: "يبدأ من 1,500 ريال",
     color: "purple",
     icon_color: "#7B61FF",
@@ -33,7 +45,12 @@ const services = [
     icon: <BarChart3 size={32} />,
     title: "لوحات التحكم",
     desc: "تطوير لوحات تحكم احترافية وأنظمة إدارة مخصصة مع تحليلات متقدمة وتقارير تفاعلية في الوقت الفعلي.",
-    features: ["Real-time Data", "Custom Reports", "Role Management", "Charts & Graphs"],
+    features: [
+      "Real-time Data",
+      "Custom Reports",
+      "Role Management",
+      "Charts & Graphs",
+    ],
     price: "يبدأ من 4,000 ريال",
     color: "purple",
     icon_color: "#7B61FF",
@@ -42,7 +59,12 @@ const services = [
     icon: <ShoppingCart size={32} />,
     title: "متاجر إلكترونية",
     desc: "بناء متاجر إلكترونية متكاملة مع بوابات دفع خليجية، إدارة المخزون، وتجربة شراء سلسة وآمنة.",
-    features: ["Payment Gateway", "Inventory Mgmt", "Order Tracking", "Arabic Support"],
+    features: [
+      "Payment Gateway",
+      "Inventory Mgmt",
+      "Order Tracking",
+      "Arabic Support",
+    ],
     price: "يبدأ من 3,500 ريال",
     color: "cyan",
     icon_color: "#00F5D4",
@@ -51,7 +73,12 @@ const services = [
     icon: <Award size={32} />,
     title: "صانع الشهادات",
     desc: "منصة SaaS لمراكز التدريب لإنشاء شهادات احترافية مخصصة بالذكاء الاصطناعي مع إمكانية تخصيص كامل للألوان والعناصر.",
-    features: ["AI Generation", "Custom Branding", "PDF Export", "Bulk Issuance"],
+    features: [
+      "توليد جماعي من Excel",
+      "تخصيص كامل للهوية",
+      "تصدير PDF/PNG",
+      "روابط تحقق ذكية",
+    ],
     price: "اشتراك شهري: 200 ريال",
     color: "purple",
     icon_color: "#7B61FF",
@@ -62,7 +89,6 @@ const services = [
 export default function ServicesPage() {
   return (
     <main className="min-h-screen">
-
       <div className="pt-40 pb-20 px-4 md:px-8 max-w-7xl mx-auto">
         {/* رأس الصفحة */}
         <div className="text-center mb-20">
@@ -71,7 +97,8 @@ export default function ServicesPage() {
             خدمات <span className="text-gradient">احترافية</span>
           </h1>
           <p className="text-gray-500 text-lg max-w-2xl mx-auto">
-            من الفكرة حتى الإطلاق — نقدم حلولاً برمجية وتصميمية متكاملة تناسب احتياجاتك وميزانيتك
+            من الفكرة حتى الإطلاق — نقدم حلولاً برمجية وتصميمية متكاملة تناسب
+            احتياجاتك وميزانيتك
           </p>
         </div>
 
@@ -102,12 +129,17 @@ export default function ServicesPage() {
 
               {/* عنوان */}
               <h2 className="text-xl font-black mb-3 text-white">{s.title}</h2>
-              <p className="text-gray-500 text-sm leading-relaxed mb-6 flex-1">{s.desc}</p>
+              <p className="text-gray-500 text-sm leading-relaxed mb-6 flex-1">
+                {s.desc}
+              </p>
 
               {/* مميزات */}
               <ul className="flex flex-col gap-2 mb-8">
                 {s.features.map((f) => (
-                  <li key={f} className="flex items-center gap-2 text-xs text-gray-400">
+                  <li
+                    key={f}
+                    className="flex items-center gap-2 text-xs text-gray-400"
+                  >
                     <span
                       className="w-1.5 h-1.5 rounded-full flex-shrink-0"
                       style={{ background: s.icon_color }}
@@ -122,7 +154,10 @@ export default function ServicesPage() {
                 className="pt-6 border-t flex items-center justify-between"
                 style={{ borderColor: `${s.icon_color}15` }}
               >
-                <span className="text-sm font-bold" style={{ color: s.icon_color }}>
+                <span
+                  className="text-sm font-bold"
+                  style={{ color: s.icon_color }}
+                >
                   {s.price}
                 </span>
                 <a

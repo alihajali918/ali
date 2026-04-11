@@ -2,10 +2,17 @@
 
 export const dynamic = "force-static";
 
-
 import Footer from "../../components/Footer";
 import { motion } from "framer-motion";
-import { QrCode, FileText, Award, Check, ArrowLeft, Zap, Lock } from "lucide-react";
+import {
+  QrCode,
+  FileText,
+  Award,
+  Check,
+  ArrowLeft,
+  Zap,
+  Lock,
+} from "lucide-react";
 
 const products = [
   {
@@ -64,7 +71,7 @@ const products = [
     features: [
       "3 قوالب: كلاسيكي، داكن، مؤسسي",
       "تخصيص الألوان والشعار",
-      "اسم المتدرب والدورة والتاريخ",
+      "توليد جماعي (حتى 500 شهادة بضغطة زر)",
       "تحميل PNG بدقة 1200×848",
       "طباعة مباشرة",
     ],
@@ -85,15 +92,17 @@ const container = {
 
 const card = {
   hidden: { opacity: 0, y: 28 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.55, ease: [0.25, 0.46, 0.45, 0.94] } },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.55, ease: [0.25, 0.46, 0.45, 0.94] },
+  },
 };
 
 export default function ProductsPage() {
   return (
     <main className="min-h-screen">
-
       <div className="pt-36 pb-24 px-4 md:px-8 max-w-6xl mx-auto">
-
         {/* رأس الصفحة */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -101,12 +110,15 @@ export default function ProductsPage() {
           transition={{ duration: 0.55 }}
           className="text-center mb-16"
         >
-          <span className="section-badge mb-5 inline-flex">منتجاتي الرقمية</span>
+          <span className="section-badge mb-5 inline-flex">
+            منتجاتي الرقمية
+          </span>
           <h1 className="text-4xl md:text-6xl font-black leading-tight mb-4">
             أدوات جاهزة، <span className="text-gradient">تحل مشاكل حقيقية</span>
           </h1>
           <p className="text-gray-500 text-base max-w-lg mx-auto">
-            اشترِ مرة أو اشترك شهرياً — كل أداة مستقلة وجاهزة للاستخدام فور الدفع.
+            اشترِ مرة أو اشترك شهرياً — كل أداة مستقلة وجاهزة للاستخدام فور
+            الدفع.
           </p>
         </motion.div>
 
@@ -126,7 +138,9 @@ export default function ProductsPage() {
               {/* خط علوي ملوّن */}
               <div
                 className="absolute top-0 left-0 right-0 h-[2px]"
-                style={{ background: `linear-gradient(90deg, transparent, ${p.color}60, transparent)` }}
+                style={{
+                  background: `linear-gradient(90deg, transparent, ${p.color}60, transparent)`,
+                }}
               />
 
               {/* "قريباً" overlay */}
@@ -156,13 +170,22 @@ export default function ProductsPage() {
 
                 {/* اسم المنتج */}
                 <h2 className="text-xl font-black text-white mb-2">{p.name}</h2>
-                <p className="text-gray-500 text-sm leading-relaxed mb-6">{p.tagline}</p>
+                <p className="text-gray-500 text-sm leading-relaxed mb-6">
+                  {p.tagline}
+                </p>
 
                 {/* مميزات */}
                 <ul className="flex flex-col gap-2.5 flex-1 mb-7">
                   {p.features.map((f) => (
-                    <li key={f} className="flex items-start gap-2.5 text-sm text-gray-400">
-                      <Check size={14} className="mt-0.5 flex-shrink-0" style={{ color: p.color }} />
+                    <li
+                      key={f}
+                      className="flex items-start gap-2.5 text-sm text-gray-400"
+                    >
+                      <Check
+                        size={14}
+                        className="mt-0.5 flex-shrink-0"
+                        style={{ color: p.color }}
+                      />
                       {f}
                     </li>
                   ))}
@@ -172,7 +195,9 @@ export default function ProductsPage() {
                 <div className="border-t border-glass-border pt-5 flex items-center justify-between gap-3">
                   <div>
                     <p className="text-xs text-gray-600 mb-0.5">السعر</p>
-                    <p className="text-lg font-black text-white">{p.priceLabel}</p>
+                    <p className="text-lg font-black text-white">
+                      {p.priceLabel}
+                    </p>
                   </div>
                   <a
                     href={p.href}
@@ -202,7 +227,6 @@ export default function ProductsPage() {
           <Zap size={14} className="text-neon-cyan" />
           وصول فوري بعد الدفع · دعم عبر الواتساب · ضمان استرداد 7 أيام
         </motion.div>
-
       </div>
 
       <Footer />
