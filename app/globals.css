@@ -1,27 +1,5 @@
 @import "tailwindcss";
 
-@font-face {
-  font-family: 'IBMPlexArabic';
-  src: url('/IBMPlexSansArabic-Regular.ttf') format('truetype');
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'IBMPlexArabic';
-  src: url('/IBMPlexSansArabic-SemiBold.ttf') format('truetype');
-  font-weight: 600;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'IBMPlexArabic';
-  src: url('/IBMPlexSansArabic-Bold.ttf') format('truetype');
-  font-weight: 700 900;
-  font-style: normal;
-  font-display: swap;
-}
-
 @theme {
   --color-dark-bg: #0A0A0A;
   --color-dark-surface: #111111;
@@ -30,7 +8,7 @@
   --color-neon-purple: #7B61FF;
   --color-glass: rgba(255, 255, 255, 0.04);
   --color-glass-border: rgba(255, 255, 255, 0.08);
-  --font-sans: 'IBMPlexArabic', sans-serif;
+  --font-sans: var(--font-ibm), sans-serif;
 }
 
 @layer base {
@@ -41,7 +19,7 @@
   body {
     background-color: #0A0A0A;
     color: white;
-    font-family: 'IBMPlexArabic', sans-serif;
+    font-family: var(--font-ibm), sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     overflow-x: hidden;
