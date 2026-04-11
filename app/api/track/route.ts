@@ -12,12 +12,18 @@ export async function POST(req: NextRequest) {
     const sessionId = getSessionId(req);
     const { device, browser, os } = parseUserAgent(userAgent);
 
-    await db.visitor.create({
-      data: { sessionId, ip, page, referrer, userAgent, device, browser, os },
-    });
-
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+
+    const alreadyVisited = await db.visitor.findFirst({
+      where: { sessionId, createdAt: { gte: today } },
+    });
+
+    if (!alreadyVisited) {
+      await db.visitor.create({
+        data: { sessionId, ip, page, referrer, userAgent, device, browser, os },
+      });
+    }
 
     await db.pageView.upsert({
       where: { page_date: { page, date: today } },
