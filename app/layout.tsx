@@ -13,13 +13,8 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <head>
         <link rel="preload" href="/IBMPlexSansArabic-Regular.ttf" as="font" type="font/ttf" crossOrigin="anonymous" />
         <link rel="preload" href="/IBMPlexSansArabic-Bold.ttf" as="font" type="font/ttf" crossOrigin="anonymous" />
-        <style dangerouslySetInnerHTML={{ __html: `
-          *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-          html,body{background:#0A0A0A;color:#fff;font-family:'IBM Plex Sans Arabic',sans-serif;min-height:100vh}
-          body{overflow-x:hidden}
-        `}} />
       </head>
-      <body style={{ background: "#0A0A0A" }}>
+      <body>
         <Tracker />
         {children}
       </body>
