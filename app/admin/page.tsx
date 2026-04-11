@@ -6,7 +6,7 @@ import {
   Users, Eye, QrCode, Award, FileText, Mail,
   TrendingUp, Monitor, Smartphone, Tablet, Chrome,
   LogOut, RefreshCw, Loader2, Trash2, UserPlus, ShieldCheck, X,
-  LayoutDashboard, MessageSquare,
+  LayoutDashboard, MessageSquare, DatabaseZap,
 } from "lucide-react";
 
 // ─── Types ───
@@ -354,10 +354,11 @@ const NAV = [
 // ─── Main ───
 export default function AdminPage() {
   const router  = useRouter();
-  const [stats,   setStats]   = useState<Stats | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error,   setError]   = useState("");
-  const [active,  setActive]  = useState("overview");
+  const [stats,         setStats]         = useState<Stats | null>(null);
+  const [loading,       setLoading]       = useState(true);
+  const [error,         setError]         = useState("");
+  const [active,        setActive]        = useState("overview");
+  const [clearingStats, setClearingStats] = useState(false);
 
   const fetchStats = async () => {
     setLoading(true); setError("");
@@ -378,6 +379,17 @@ export default function AdminPage() {
   const logout = async () => {
     await fetch("/api/auth/logout", { method: "POST" });
     router.push("/admin/login");
+  };
+
+  const clearStats = async () => {
+    if (!confirm("هل أنت متأكد من مسح جميع الإحصاءات؟\n(الزيارات، مشاهدات الصفحات، سجل الأدوات)\n\nلا يمكن التراجع عن هذا الإجراء.")) return;
+    setClearingStats(true);
+    try {
+      const res = await fetch("/api/admin/clear-stats", { method: "DELETE" });
+      if (res.ok) { await fetchStats(); }
+    } finally {
+      setClearingStats(false);
+    }
   };
 
   if (loading) return (
@@ -441,6 +453,11 @@ export default function AdminPage() {
           <button onClick={fetchStats}
             className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-gray-600 hover:text-neon-cyan hover:bg-neon-cyan/8 transition-all text-xs font-bold">
             <RefreshCw size={14} /> تحديث
+          </button>
+          <button onClick={clearStats} disabled={clearingStats}
+            className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-gray-600 hover:text-orange-400 hover:bg-orange-500/8 transition-all text-xs font-bold disabled:opacity-50">
+            {clearingStats ? <Loader2 size={14} className="animate-spin" /> : <DatabaseZap size={14} />}
+            مسح الإحصاءات
           </button>
           <button onClick={logout}
             className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-gray-600 hover:text-red-400 hover:bg-red-500/8 transition-all text-xs font-bold">
