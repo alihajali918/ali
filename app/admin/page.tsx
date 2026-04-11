@@ -380,6 +380,7 @@ export default function AdminPage() {
 
   const logout = async () => {
     await fetch("/api/auth/logout", { method: "POST" });
+    window.dispatchEvent(new CustomEvent("auth-change"));
     router.push("/admin/login");
   };
 
