@@ -14,9 +14,8 @@ function ScrollBar() {
   const scaleX = useSpring(scrollYProgress, { stiffness: 200, damping: 30 });
   return (
     <motion.div
-      style={{ scaleX, transformOrigin: "left" }}
+      style={{ scaleX, transformOrigin: "left", background: "linear-gradient(90deg,#00F5D4,#7B61FF)" }}
       className="fixed top-0 left-0 right-0 h-[2px] z-[999] pointer-events-none"
-      style2={{ background: "linear-gradient(90deg,#00F5D4,#7B61FF)" }}
     />
   );
 }
