@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Download, ImagePlus, X, Printer, Users, BookOpen, Type, LayoutTemplate } from "lucide-react";
+import { Download, ImagePlus, X, Printer, Users, BookOpen, Type, LayoutTemplate, Loader2, Sparkles, Bot } from "lucide-react";
 
 // ─── types ───
 type Template    = "classic" | "dark" | "royal" | "minimal" | "bold" | "elegant";
@@ -32,16 +32,21 @@ interface DrawOpts {
   fonts:    FontOpts;
 }
 
-// ─── Google Fonts ───
-// fontName = exact CSS font-family name used in ctx.font
-const GOOGLE_FONTS = [
-  { id: "Cairo",                label: "Cairo",             fontName: "Cairo",               css: "Cairo:wght@400;600;700;900" },
-  { id: "Amiri",                label: "Amiri",             fontName: "Amiri",               css: "Amiri:wght@400;700" },
-  { id: "Tajawal",              label: "Tajawal",           fontName: "Tajawal",             css: "Tajawal:wght@400;500;700;900" },
-  { id: "Noto+Kufi+Arabic",     label: "Noto Kufi Arabic",  fontName: "Noto Kufi Arabic",    css: "Noto+Kufi+Arabic:wght@400;700;900" },
-  { id: "Lateef",               label: "Lateef",            fontName: "Lateef",              css: "Lateef:wght@400;700" },
-  { id: "IBM+Plex+Sans+Arabic", label: "IBM Plex Arabic",   fontName: "IBM Plex Sans Arabic",css: "IBM+Plex+Sans+Arabic:wght@400;600;700" },
-];
+// ─── Font type from API ───
+interface GFont { family: string; variants: string[]; subsets: string[]; }
+
+// helper: build CSS query string for a font
+function fontCss(f: GFont) {
+  const weights = f.variants
+    .filter(v => /^\d+$/.test(v))
+    .map(Number)
+    .filter(w => [400,500,600,700,800,900].includes(w));
+  const wghts = (weights.length ? weights : [400, 700]).join(";");
+  return `${f.family.replace(/ /g, "+")}:wght@${wghts}`;
+}
+
+// Arabic subsets list
+const ARABIC_SUBSETS = ["arabic", "persian", "urdu"];
 
 // ─── canvas sizes ───
 function getSize(orient: Orientation): [number, number] {
@@ -673,12 +678,35 @@ export default function CertsPage() {
   const [accent,      setAccent]      = useState("#C9A84C");
   const [logoUrl,     setLogoUrl]     = useState<string|null>(null);
   const [logoImg,     setLogoImg]     = useState<HTMLImageElement|null>(null);
-  const [fontFamily,  setFontFamily]  = useState("Cairo");
-  const [fontSizeIdx, setFontSizeIdx] = useState(1);
-  const [fontLoading, setFontLoading] = useState(false);
+  const [fontFamily,   setFontFamily]   = useState("Cairo");
+  const [fontSizeIdx,  setFontSizeIdx]  = useState(1);
+  const [fontLoading,  setFontLoading]  = useState(false);
+  const [fontSearch,   setFontSearch]   = useState("");
+  const [previewFonts, setPreviewFonts] = useState<Set<string>>(new Set());
+  const [gFonts,       setGFonts]       = useState<GFont[]>([]);
+  const [fontsLoading, setFontsLoading] = useState(false);
+  const [aiText,        setAiText]        = useState("");
+  const [aiLoading,     setAiLoading]     = useState(false);
+  const [aiRemaining,   setAiRemaining]   = useState<number|null>(null);
+  const [aiError,       setAiError]       = useState("");
+  const [hasDesc,       setHasDesc]       = useState(false);
+  const [descLoading,   setDescLoading]   = useState(false);
+  const [certHours,     setCertHours]     = useState("");
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const logoRef   = useRef<HTMLInputElement>(null);
+
+  // fetch fonts from our proxy route on mount
+  useEffect(() => {
+    setFontsLoading(true);
+    fetch("/api/fonts")
+      .then(r => r.json())
+      .then(d => {
+        if (d.fonts) setGFonts(d.fonts);
+      })
+      .catch(() => {})
+      .finally(() => setFontsLoading(false));
+  }, []);
 
   // load logo
   useEffect(() => {
@@ -696,26 +724,83 @@ export default function CertsPage() {
     else setAccent("#3B82F6");
   }, [template]);
 
+  // Gemini AI auto-fill
+  const fillFromAI = useCallback(async () => {
+    if (!aiText.trim()) return;
+    setAiLoading(true);
+    setAiError("");
+    try {
+      const res  = await fetch("/api/gemini-cert", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: aiText }),
+      });
+      const json = await res.json();
+      if (res.status === 429) {
+        setAiError(json.message || "وصلت الحد اليومي.");
+      } else if (json.data) {
+        setData(d => ({ ...d, ...json.data }));
+        if (json.remaining !== undefined) setAiRemaining(json.remaining);
+      }
+    } catch {
+      setAiError("حدث خطأ، حاول مجدداً.");
+    }
+    setAiLoading(false);
+  }, [aiText]);
+
+  // AI-generate description from course info
+  const generateDesc = useCallback(async () => {
+    if (!data.courseName.trim()) return;
+    setDescLoading(true);
+    setAiError("");
+    try {
+      const body = {
+        prompt: `اقترح فقرة وصفية قصيرة (جملة واحدة فقط، لا تزيد عن 15 كلمة) تُكتب في شهادة تقدير.
+المعلومات:
+- اسم الدورة: ${data.courseName}
+- اسم المتدرب: ${data.recipientName || "المتدرب"}
+- عدد الساعات: ${certHours || "غير محدد"}
+- اسم المركز: ${data.centerName || "المركز"}
+أعد الجملة فقط بدون أي تفسير أو علامات اقتباس.`,
+        mode: "desc",
+      };
+      const res  = await fetch("/api/gemini-cert", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const json = await res.json();
+      if (res.status === 429) {
+        setAiError(json.message || "وصلت الحد اليومي.");
+      } else if (json.data?.description) {
+        setData(d => ({ ...d, description: json.data.description }));
+        if (json.remaining !== undefined) setAiRemaining(json.remaining);
+      }
+    } catch {
+      setAiError("حدث خطأ، حاول مجدداً.");
+    }
+    setDescLoading(false);
+  }, [data.courseName, data.recipientName, data.centerName, certHours]);
+
   // load font then draw
   useEffect(() => {
     if (!canvasRef.current) return;
-    const fo  = GOOGLE_FONTS.find(f => f.id === fontFamily);
-    const fs  = FONT_SIZES[fontSizeIdx];
-    const fn  = fo ? fo.fontName : fontFamily;   // exact CSS family name for ctx.font
+    const gfont = gFonts.find(f => f.family === fontFamily);
+    const fs    = FONT_SIZES[fontSizeIdx];
     const opts: DrawOpts = {
       data, template, orient, accent, logoImg,
-      fonts: { family: fn, titleSize: fs.title, nameSize: fs.name, bodySize: fs.body },
+      fonts: { family: fontFamily, titleSize: fs.title, nameSize: fs.name, bodySize: fs.body },
     };
 
     setFontLoading(true);
-    const css = fo ? fo.css : `${fontFamily}:wght@400;700;900`;
-    loadGoogleFont(fn, css).then(() => {
+    const css = gfont ? fontCss(gfont) : `${fontFamily.replace(/ /g,"+")}:wght@400;700;900`;
+    loadGoogleFont(fontFamily, css).then(() => {
       if (canvasRef.current) {
         drawCertificate(canvasRef.current, opts);
         setFontLoading(false);
       }
     });
-  }, [data, template, orient, accent, logoImg, fontFamily, fontSizeIdx]);
+  }, [data, template, orient, accent, logoImg, fontFamily, fontSizeIdx, gFonts]);
 
   const downloadPNG = useCallback(() => {
     if (!canvasRef.current) return;
@@ -805,32 +890,135 @@ img{max-width:98vw;max-height:96vh;object-fit:contain;box-shadow:0 6px 32px rgba
               </div>
             </div>
 
-            {/* font */}
+            {/* font picker */}
             <div className="glass-card rounded-2xl p-4">
               <p className="text-xs font-bold text-gray-400 mb-3 flex items-center gap-1.5">
                 <Type size={13}/> الخط
               </p>
-              <div className="grid grid-cols-2 gap-2 mb-3">
-                {GOOGLE_FONTS.map(f=>(
-                  <button key={f.id} onClick={()=>setFontFamily(f.id)}
-                    className={`py-2 px-3 rounded-xl text-xs font-bold border transition-all text-right ${
-                      fontFamily===f.id ? "border-neon-cyan/40 bg-neon-cyan/8 text-neon-cyan" : "border-glass-border text-gray-400 hover:border-white/15"
-                    }`}>
-                    {f.label}
+
+              {/* search */}
+              <div className="relative mb-3">
+                <input
+                  value={fontSearch}
+                  onChange={e => setFontSearch(e.target.value)}
+                  placeholder="ابحث عن خط... Cairo, Amiri"
+                  dir="auto"
+                  className="w-full bg-dark-bg border border-glass-border rounded-xl px-3 py-2 text-xs text-white placeholder-gray-700 outline-none focus:border-neon-cyan/40 transition-colors pr-8"
+                />
+                {fontSearch && (
+                  <button onClick={() => setFontSearch("")}
+                    className="absolute top-1/2 -translate-y-1/2 right-2.5 text-gray-600 hover:text-gray-300">
+                    <X size={12}/>
                   </button>
-                ))}
+                )}
               </div>
-              <p className="text-[11px] text-gray-500 mb-2">حجم الخط</p>
-              <div className="flex gap-2">
-                {FONT_SIZES.map((s,i)=>(
-                  <button key={i} onClick={()=>setFontSizeIdx(i)}
-                    className={`flex-1 py-1.5 rounded-lg text-xs font-bold border transition-all ${
-                      fontSizeIdx===i ? "border-neon-cyan/40 bg-neon-cyan/8 text-neon-cyan" : "border-glass-border text-gray-500"
-                    }`}>
-                    {s.label}
-                  </button>
-                ))}
+
+              {/* selected font display */}
+              <div className="mb-3 px-3 py-2 rounded-xl border border-neon-cyan/20 bg-neon-cyan/4 flex items-center justify-between">
+                <span className="text-[11px] text-gray-500">الخط الحالي</span>
+                <span className="text-xs font-black text-neon-cyan">{fontFamily}</span>
               </div>
+
+              {/* font list */}
+              {fontsLoading ? (
+                <div className="flex items-center justify-center gap-2 py-6 text-gray-600 text-xs">
+                  <Loader2 size={14} className="animate-spin"/> جارٍ تحميل الخطوط...
+                </div>
+              ) : (
+                <div className="flex flex-col gap-1 max-h-52 overflow-y-auto overflow-x-hidden pl-1"
+                  style={{ scrollbarWidth: "thin", scrollbarColor: "rgba(0,245,212,0.2) transparent" }}>
+                  {(() => {
+                    const q = fontSearch.toLowerCase();
+                    const filtered = gFonts.filter(f => f.family.toLowerCase().includes(q));
+                    // Arabic-subset fonts first
+                    const arabic = filtered.filter(f => f.subsets.some(s => ARABIC_SUBSETS.includes(s)));
+                    const rest   = filtered.filter(f => !f.subsets.some(s => ARABIC_SUBSETS.includes(s)));
+                    const sorted = [...arabic, ...rest];
+                    if (!sorted.length) return <p className="text-[11px] text-gray-700 text-center py-4">لا توجد نتائج</p>;
+                    return sorted.map(f => {
+                      const isSelected  = fontFamily === f.family;
+                      const isPreviewed = previewFonts.has(f.family);
+                      const isArabic    = f.subsets.some(s => ARABIC_SUBSETS.includes(s));
+                      return (
+                        <button key={f.family}
+                          onClick={() => setFontFamily(f.family)}
+                          onMouseEnter={() => {
+                            if (!isPreviewed) {
+                              loadGoogleFont(f.family, fontCss(f)).then(() =>
+                                setPreviewFonts(p => new Set([...p, f.family]))
+                              );
+                            }
+                          }}
+                          className={`flex items-center justify-between gap-2 px-3 py-2 rounded-xl text-right border transition-all ${
+                            isSelected ? "border-neon-cyan/40 bg-neon-cyan/8" : "border-transparent hover:border-glass-border hover:bg-white/3"
+                          }`}
+                        >
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            {isArabic && <span className="text-[9px] text-neon-cyan/60 shrink-0">ع</span>}
+                            <span className={`text-xs font-bold truncate ${isSelected ? "text-neon-cyan" : "text-gray-400"}`}>
+                              {f.family}
+                            </span>
+                          </div>
+                          <span className="text-sm text-gray-300 shrink-0"
+                            style={{ fontFamily: isPreviewed ? `"${f.family}"` : "inherit" }}>
+                            {isArabic ? "أبجد ١٢٣" : "Abc 123"}
+                          </span>
+                        </button>
+                      );
+                    });
+                  })()}
+                </div>
+              )}
+
+              {/* font size */}
+              <div className="mt-3 pt-3 border-t border-glass-border">
+                <p className="text-[11px] text-gray-500 mb-2">حجم الخط</p>
+                <div className="flex gap-2">
+                  {FONT_SIZES.map((s,i)=>(
+                    <button key={i} onClick={()=>setFontSizeIdx(i)}
+                      className={`flex-1 py-1.5 rounded-lg text-xs font-bold border transition-all ${
+                        fontSizeIdx===i ? "border-neon-cyan/40 bg-neon-cyan/8 text-neon-cyan" : "border-glass-border text-gray-500"
+                      }`}>
+                      {s.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* AI agent */}
+            <div className="glass-card rounded-2xl p-4 border border-neon-purple/20">
+              <p className="text-xs font-bold text-gray-400 mb-3 flex items-center gap-1.5">
+                <Bot size={13} className="text-neon-purple"/> مساعد الذكاء الاصطناعي
+              </p>
+              <p className="text-[10px] text-gray-600 mb-2.5">
+                اكتب وصفاً بالعربي وسيملأ الحقول تلقائياً
+              </p>
+              <textarea
+                value={aiText}
+                onChange={e => setAiText(e.target.value)}
+                placeholder="مثال: شهادة لمحمد علي في دورة تطوير الويب من مركز الإبداع بتاريخ اليوم"
+                rows={3}
+                className="w-full bg-dark-bg border border-glass-border rounded-xl px-3 py-2 text-xs text-white placeholder-gray-700 outline-none focus:border-neon-purple/40 transition-colors resize-none mb-2.5"
+              />
+              <button
+                onClick={fillFromAI}
+                disabled={aiLoading || !aiText.trim() || aiRemaining === 0}
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-black transition-all disabled:opacity-40"
+                style={{ background: "linear-gradient(135deg, rgba(123,97,255,0.2), rgba(123,97,255,0.1))", border: "1px solid rgba(123,97,255,0.3)", color: "#7B61FF" }}
+              >
+                {aiLoading ? <><Loader2 size={13} className="animate-spin"/> جارٍ التحليل...</> : <><Sparkles size={13}/> تعبئة تلقائية</>}
+              </button>
+
+              {/* remaining / error */}
+              {aiError && (
+                <p className="text-[11px] text-red-400 text-center mt-1.5">{aiError}</p>
+              )}
+              {aiRemaining !== null && !aiError && (
+                <p className="text-[11px] text-gray-600 text-center mt-1.5">
+                  باقي <span className={`font-bold ${aiRemaining <= 3 ? "text-yellow-500" : "text-gray-500"}`}>{aiRemaining}</span> من 10 طلبات اليوم
+                </p>
+              )}
             </div>
 
             {/* trainee data */}
@@ -849,11 +1037,50 @@ img{max-width:98vw;max-height:96vh;object-fit:contain;box-shadow:0 6px 32px rgba
                       placeholder={ph} className={inputCls}/>
                   </div>
                 ))}
+                {/* description toggle */}
                 <div>
-                  <label className="text-[11px] text-gray-500 mb-1 block">وصف مخصص (اختياري)</label>
-                  <textarea value={data.description} onChange={upd("description")}
-                    placeholder="لإتمامه بنجاح..." rows={2}
-                    className="w-full bg-glass border border-glass-border rounded-xl px-3 py-2 text-sm text-white placeholder-gray-700 outline-none focus:border-neon-cyan/40 transition-colors resize-none"/>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="text-[11px] text-gray-500">فقرة وصفية</label>
+                    <div className="flex gap-1.5">
+                      <button onClick={() => { setHasDesc(false); setData(d=>({...d,description:""})); }}
+                        className={`px-2.5 py-1 rounded-lg text-[10px] font-bold border transition-all ${!hasDesc ? "border-neon-cyan/40 bg-neon-cyan/8 text-neon-cyan" : "border-glass-border text-gray-600"}`}>
+                        بدون
+                      </button>
+                      <button onClick={() => setHasDesc(true)}
+                        className={`px-2.5 py-1 rounded-lg text-[10px] font-bold border transition-all ${hasDesc ? "border-neon-cyan/40 bg-neon-cyan/8 text-neon-cyan" : "border-glass-border text-gray-600"}`}>
+                        عندي
+                      </button>
+                    </div>
+                  </div>
+
+                  {hasDesc && (
+                    <div className="flex flex-col gap-2">
+                      <textarea value={data.description} onChange={upd("description")}
+                        placeholder="لإتمامه بنجاح متطلبات الدورة التدريبية..."
+                        rows={2}
+                        className="w-full bg-glass border border-glass-border rounded-xl px-3 py-2 text-sm text-white placeholder-gray-700 outline-none focus:border-neon-cyan/40 transition-colors resize-none"/>
+
+                      {/* AI suggest */}
+                      <div className="flex gap-2">
+                        <input
+                          value={certHours}
+                          onChange={e => setCertHours(e.target.value)}
+                          placeholder="عدد الساعات (اختياري)"
+                          className="flex-1 bg-dark-bg border border-glass-border rounded-xl px-3 py-2 text-xs text-white placeholder-gray-700 outline-none focus:border-neon-purple/40 transition-colors"
+                        />
+                        <button
+                          onClick={generateDesc}
+                          disabled={descLoading || !data.courseName.trim()}
+                          title="اقتراح بالذكاء الاصطناعي"
+                          className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-[10px] font-black border transition-all disabled:opacity-40 shrink-0"
+                          style={{ background:"rgba(123,97,255,0.1)", border:"1px solid rgba(123,97,255,0.3)", color:"#7B61FF" }}
+                        >
+                          {descLoading ? <Loader2 size={12} className="animate-spin"/> : <Sparkles size={12}/>}
+                          اقتراح AI
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
                 <div>
                   <label className="text-[11px] text-gray-500 mb-1 block">التاريخ</label>
