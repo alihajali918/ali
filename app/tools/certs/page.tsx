@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Download, ImagePlus, X, Printer, Users, BookOpen, Type, LayoutLandscape, LayoutTemplate } from "lucide-react";
+import { Download, ImagePlus, X, Printer, Users, BookOpen, Type, LayoutTemplate } from "lucide-react";
 
 // ─── types ───
 type Template    = "classic" | "dark" | "royal" | "minimal" | "bold" | "elegant";
