@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 const rlMap = new Map<string, number>();
 const DAILY_LIMIT = 10;
 const GEMINI_URL = (key: string) =>
-  `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`;
+  `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${key}`;
 
 function getIp(req: NextRequest) {
   return (
