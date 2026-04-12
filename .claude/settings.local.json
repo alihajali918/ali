@@ -47,7 +47,11 @@
       "Bash(git -C c:/Users/USER/Desktop/ali commit -m ':*)",
       "Bash(npm uninstall:*)",
       "WebFetch(domain:fonts.google.com)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(ls c:/Users/USER/Desktop/ali/.env*)",
+      "Bash(vercel --version)",
+      "Bash(cat .vercel/project.json)",
+      "Bash(vercel link:*)"
     ]
   }
 }
