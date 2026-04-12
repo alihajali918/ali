@@ -2,34 +2,36 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, type ElementType } from "react";
 import {
   Menu, X, LogOut, LayoutDashboard,
   QrCode, ImageDown, FileImage, FilePlus2,
   Award, FileText, ChevronDown, Wrench, Package, Lock,
 } from "lucide-react";
 
+type ToolNavItem = { href: string; label: string; icon: ElementType; desc: string };
+type ProductNavItem = { id: string; label: string; icon: ElementType; desc: string };
+type NavItem = ToolNavItem | ProductNavItem;
+
 /* ─── dropdown data ─────────────────────────────────── */
-const TOOLS = [
+const TOOLS: ToolNavItem[] = [
   { href: "/tools/qrcode",    label: "مولّد QR Code",  icon: QrCode,     desc: "روابط ونصوص وبزنس كارد" },
   { href: "/tools/compress",  label: "ضاغط الملفات",    icon: ImageDown,  desc: "صور وPDF · JPEG · WebP · PNG" },
   { href: "/tools/img2pdf",   label: "صور إلى PDF",    icon: FileImage,  desc: "مقاسات مخصصة · تحميل مباشر" },
   { href: "/tools/pdf-merge", label: "دمج PDF",         icon: FilePlus2,  desc: "حتى 50 صفحة · PDF + صور" },
 ];
 
-const PRODUCTS = [
-  { href: "#", label: "صانع الشهادات", icon: Award,    desc: "6 قوالب · ذكاء اصطناعي · PDF", locked: true },
-  { href: "#", label: "صانع التقارير", icon: FileText, desc: "تقارير Excel/PDF احترافية",      locked: true },
+const PRODUCTS: ProductNavItem[] = [
+  { id: "certs", label: "صانع الشهادات", icon: Award, desc: "6 قوالب · ذكاء اصطناعي · PDF" },
+  { id: "reports", label: "صانع التقارير", icon: FileText, desc: "تقارير Excel/PDF احترافية" },
 ];
-
-type NavItem = { href: string; label: string; icon: React.ElementType; desc: string; locked?: boolean };
 
 /* ─── reusable dropdown ─────────────────────────────── */
 function NavDropdown({
   label, icon: Icon, items, active,
 }: {
   label: string;
-  icon: React.ElementType;
+  icon: ElementType;
   items: NavItem[];
   active: boolean;
 }) {
@@ -61,23 +63,19 @@ function NavDropdown({
         <div className="absolute top-full mt-2 right-0 w-64 rounded-2xl border border-white/8 bg-[#111]/95 backdrop-blur-xl shadow-2xl overflow-hidden z-50 py-1.5">
           {items.map(item => {
             const ItemIcon = item.icon;
-            const locked   = "locked" in item && item.locked;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={() => setOpen(false)}
-                className={`flex items-center gap-3 px-4 py-3 transition-all group ${
-                  locked ? "opacity-60 cursor-default" : "hover:bg-white/4"
-                }`}
-              >
+            const isProduct = "id" in item;
+            const rowClass =
+              "flex items-center gap-3 px-4 py-3 transition-all group w-full text-right " +
+              (isProduct ? "opacity-70 cursor-default" : "hover:bg-white/4");
+            const inner = (
+              <>
                 <div className="w-8 h-8 rounded-xl bg-white/5 flex items-center justify-center shrink-0 group-hover:bg-neon-cyan/8 transition-colors">
-                  <ItemIcon size={15} className={locked ? "text-gray-500" : "text-neon-cyan"}/>
+                  <ItemIcon size={15} className={isProduct ? "text-gray-500" : "text-neon-cyan"}/>
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-bold text-white truncate">{item.label}</span>
-                    {locked && (
+                    {isProduct && (
                       <span className="flex items-center gap-1 text-[9px] font-black px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 shrink-0">
                         <Lock size={8}/> قريباً
                       </span>
@@ -85,6 +83,29 @@ function NavDropdown({
                   </div>
                   <p className="text-[11px] text-gray-600 truncate">{item.desc}</p>
                 </div>
+              </>
+            );
+            if (isProduct) {
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  title="هذه الميزة قيد التطوير"
+                  onClick={() => setOpen(false)}
+                  className={rowClass}
+                >
+                  {inner}
+                </button>
+              );
+            }
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={() => setOpen(false)}
+                className={rowClass}
+              >
+                {inner}
               </Link>
             );
           })}
@@ -111,6 +132,10 @@ export default function Navbar({ initialUser }: { initialUser: NavUser | null })
   const [user,      setUser]      = useState<NavUser | null>(initialUser);
 
   useEffect(() => {
+    setUser(initialUser);
+  }, [initialUser]);
+
+  useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
@@ -119,12 +144,25 @@ export default function Navbar({ initialUser }: { initialUser: NavUser | null })
   useEffect(() => { setMenuOpen(false); }, [pathname]);
 
   useEffect(() => {
-    if (!initialUser) {
-      fetch("/api/auth/me")
-        .then(r => r.json())
-        .then(d => setUser(d.user ? { name: d.user.name, role: d.user.role } : null))
-        .catch(() => {});
-    }
+    if (!menuOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMenuOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [menuOpen]);
+
+  useEffect(() => {
+    if (initialUser) return;
+    fetch("/api/auth/me")
+      .then(r => r.json())
+      .then(d => setUser(d.user ? { name: d.user.name, role: d.user.role } : null))
+      .catch(() => {});
     const refresh = () => {
       fetch("/api/auth/me")
         .then(r => r.json())
@@ -133,7 +171,7 @@ export default function Navbar({ initialUser }: { initialUser: NavUser | null })
     };
     window.addEventListener("auth-change", refresh);
     return () => window.removeEventListener("auth-change", refresh);
-  }, []);
+  }, [initialUser]);
 
   const logout = async () => {
     await fetch("/api/auth/user-logout", { method: "POST" });
@@ -229,10 +267,17 @@ export default function Navbar({ initialUser }: { initialUser: NavUser | null })
         </div>
       </nav>
 
-      {/* mobile menu */}
+      {/* mobile menu: tap dimmed area to close */}
       {menuOpen && (
-        <div className="fixed inset-0 z-40 pt-24 px-4 bg-dark-bg/98 backdrop-blur-2xl md:hidden overflow-y-auto">
-          <div className="flex flex-col gap-1.5 pb-8">
+        <div className="fixed inset-0 z-40 md:hidden" role="dialog" aria-modal="true" aria-label="قائمة التنقل">
+          <button
+            type="button"
+            className="absolute inset-0 bg-black/55 backdrop-blur-sm"
+            aria-label="إغلاق القائمة"
+            onClick={() => setMenuOpen(false)}
+          />
+          <div className="relative z-10 pt-24 px-4 max-h-full overflow-y-auto pointer-events-none">
+            <div className="pointer-events-auto flex flex-col gap-1.5 pb-8">
 
             {/* الأدوات section */}
             <p className="px-4 pt-2 pb-1 text-[10px] font-black text-gray-600 uppercase tracking-widest flex items-center gap-1.5">
@@ -256,14 +301,18 @@ export default function Navbar({ initialUser }: { initialUser: NavUser | null })
             {PRODUCTS.map(item => {
               const Icon = item.icon;
               return (
-                <div key={item.href}
-                  className="flex items-center gap-3 px-4 py-3 rounded-2xl text-gray-500 opacity-60">
+                <button
+                  key={item.id}
+                  type="button"
+                  title="قيد التطوير"
+                  className="flex items-center gap-3 px-4 py-3 rounded-2xl text-gray-500 opacity-60 w-full text-right cursor-default"
+                >
                   <Icon size={16} className="text-amber-400 shrink-0"/>
                   <span className="text-sm font-bold">{item.label}</span>
                   <span className="mr-auto text-[9px] font-black px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center gap-1">
                     <Lock size={8}/> قريباً
                   </span>
-                </div>
+                </button>
               );
             })}
 
@@ -305,6 +354,7 @@ export default function Navbar({ initialUser }: { initialUser: NavUser | null })
                   </Link>
                 </>
               )}
+            </div>
             </div>
           </div>
         </div>
