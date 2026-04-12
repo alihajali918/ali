@@ -1,4 +1,6 @@
+import type { Metadata } from "next";
 import Footer from "../../components/Footer";
+import { getSiteUrl } from "../../lib/site-url";
 import {
   Code2,
   Palette,
@@ -7,6 +9,12 @@ import {
   Award,
   ShoppingCart,
 } from "lucide-react";
+
+export const metadata: Metadata = {
+  title: "الخدمات",
+  description: "برمجة Next.js، تصميم UI/UX، هوية بصرية، لوحات تحكم، ومتاجر إلكترونية — من الفكرة حتى الإطلاق.",
+  alternates: { canonical: `${getSiteUrl()}/services` },
+};
 
 const services = [
   {

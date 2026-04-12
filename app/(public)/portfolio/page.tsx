@@ -1,8 +1,16 @@
 export const dynamic = "force-static";
 
+import type { Metadata } from "next";
 import Footer from "../../components/Footer";
+import { getSiteUrl } from "../../lib/site-url";
 import Link from "next/link";
 import { QrCode, Award, FileText, ArrowLeft, Zap } from "lucide-react";
+
+export const metadata: Metadata = {
+  title: "الأعمال والأدوات",
+  description: "معرض أعمال وأدوات ويب: QR، شهادات، تقارير، وضغط ملفات — جاهزة للاستخدام.",
+  alternates: { canonical: `${getSiteUrl()}/portfolio` },
+};
 
 const tools = [
   {

@@ -3,7 +3,10 @@ import { db } from "../../lib/db";
 
 export async function POST(req: NextRequest) {
   try {
-    const { name, email, message } = await req.json();
+    const { name, email, message, company } = await req.json();
+    if (company && String(company).trim()) {
+      return NextResponse.json({ ok: true });
+    }
     if (!name || !email || !message)
       return NextResponse.json({ error: "جميع الحقول مطلوبة" }, { status: 400 });
     await db.contact.create({

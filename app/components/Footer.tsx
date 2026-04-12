@@ -13,10 +13,10 @@ const navLinks = [
 ];
 
 const social = [
-  { icon: <Github size={18} />, href: "#", label: "GitHub" },
-  { icon: <Twitter size={18} />, href: "#", label: "Twitter" },
-  { icon: <Linkedin size={18} />, href: "#", label: "LinkedIn" },
-  { icon: <Mail size={18} />, href: "mailto:ali@example.com", label: "Email" },
+  { icon: <Github size={18} />, href: null as string | null, label: "GitHub" },
+  { icon: <Twitter size={18} />, href: null, label: "Twitter" },
+  { icon: <Linkedin size={18} />, href: null, label: "LinkedIn" },
+  { icon: <Mail size={18} />, href: "/contact", label: "نموذج التواصل" },
 ];
 
 export default function Footer() {
@@ -108,16 +108,27 @@ export default function Footer() {
           <div>
             <p className="text-xs font-black tracking-widest text-gray-600 uppercase mb-4">تواصل</p>
             <div className="flex gap-3">
-              {social.map(({ icon, href, label }) => (
-                <a
-                  key={label}
-                  href={href}
-                  aria-label={label}
-                  className="w-10 h-10 flex items-center justify-center glass-card rounded-xl text-gray-500 hover:text-neon-cyan hover:border-neon-cyan/20 transition-all duration-300"
-                >
-                  {icon}
-                </a>
-              ))}
+              {social.map(({ icon, href, label }) =>
+                href ? (
+                  <Link
+                    key={label}
+                    href={href}
+                    aria-label={label}
+                    className="w-10 h-10 flex items-center justify-center glass-card rounded-xl text-gray-500 hover:text-neon-cyan hover:border-neon-cyan/20 transition-all duration-300"
+                  >
+                    {icon}
+                  </Link>
+                ) : (
+                  <span
+                    key={label}
+                    title="قريباً"
+                    aria-label={`${label} — قريباً`}
+                    className="w-10 h-10 flex items-center justify-center glass-card rounded-xl text-gray-600 opacity-50 cursor-not-allowed"
+                  >
+                    {icon}
+                  </span>
+                )
+              )}
             </div>
           </div>
         </div>

@@ -1,7 +1,15 @@
 export const dynamic = "force-static";
 
+import type { Metadata } from "next";
 import Footer from "../../components/Footer";
+import { getSiteUrl } from "../../lib/site-url";
 import { Check, Zap } from "lucide-react";
+
+export const metadata: Metadata = {
+  title: "التسعير",
+  description: "باقات مواقع ويب واضحة: أساسي، متقدم، ومؤسسي — مع مدة تسليم ودعم محدد.",
+  alternates: { canonical: `${getSiteUrl()}/pricing` },
+};
 
 const plans = [
   {
