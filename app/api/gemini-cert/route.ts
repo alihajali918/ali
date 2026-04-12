@@ -5,7 +5,7 @@ export const maxDuration = 30;
 
 const rlMap = new Map<string, number>();
 const DAILY_LIMIT = 10;
-const MODEL = "gemini-1.5-flash";
+const MODEL = "gemini-3-flash";
 
 function getIp(req: NextRequest) {
   return (
@@ -21,8 +21,25 @@ function getAI() {
   return new GoogleGenAI({ apiKey: key });
 }
 
-// GET — diagnostic
+// GET — diagnostic: list available models + test generation
 export async function GET() {
+  const key = process.env.GEMINI_API_KEY;
+  if (!key) return NextResponse.json({ ok: false, reason: "no key" });
+
+  // list models
+  let models: string[] = [];
+  try {
+    const r = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models?key=${key}`,
+      { signal: AbortSignal.timeout(8000) }
+    );
+    const j = await r.json();
+    models = (j.models ?? [])
+      .filter((m: any) => (m.supportedGenerationMethods ?? []).includes("generateContent"))
+      .map((m: any) => m.name);
+  } catch {}
+
+  // test current model
   try {
     const ai  = getAI();
     const res = await ai.models.generateContent({
@@ -30,9 +47,9 @@ export async function GET() {
       contents: "قل مرحبا",
       config: { maxOutputTokens: 10 },
     });
-    return NextResponse.json({ ok: true, text: res.text });
+    return NextResponse.json({ ok: true, model: MODEL, text: res.text, availableModels: models });
   } catch (e: any) {
-    return NextResponse.json({ ok: false, error: e?.message });
+    return NextResponse.json({ ok: false, model: MODEL, error: e?.message, availableModels: models });
   }
 }
 
