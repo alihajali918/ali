@@ -12,7 +12,7 @@ import {
 /* ─── dropdown data ─────────────────────────────────── */
 const TOOLS = [
   { href: "/tools/qrcode",    label: "مولّد QR Code",  icon: QrCode,     desc: "روابط ونصوص وبزنس كارد" },
-  { href: "/tools/compress",  label: "ضاغط الصور",     icon: ImageDown,  desc: "JPEG · WebP · PNG" },
+  { href: "/tools/compress",  label: "ضاغط الملفات",    icon: ImageDown,  desc: "صور وPDF · JPEG · WebP · PNG" },
   { href: "/tools/img2pdf",   label: "صور إلى PDF",    icon: FileImage,  desc: "مقاسات مخصصة · تحميل مباشر" },
   { href: "/tools/pdf-merge", label: "دمج PDF",         icon: FilePlus2,  desc: "حتى 50 صفحة · PDF + صور" },
 ];
