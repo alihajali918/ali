@@ -138,6 +138,134 @@ function SpotlightCard({ icon: Icon, label, sub, color, href, delay }: typeof to
   );
 }
 
+/* ─── 3D floating element ─── */
+function Hero3D() {
+  const ref   = useRef<HTMLDivElement>(null);
+  const mx    = useMotionValue(0);
+  const my    = useMotionValue(0);
+  const rx    = useSpring(useTransform(my, [-0.5, 0.5], [18, -18]), { stiffness: 180, damping: 25 });
+  const ry    = useSpring(useTransform(mx, [-0.5, 0.5], [-18, 18]), { stiffness: 180, damping: 25 });
+
+  const onMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const r = ref.current?.getBoundingClientRect();
+    if (!r) return;
+    mx.set((e.clientX - r.left) / r.width  - 0.5);
+    my.set((e.clientY - r.top)  / r.height - 0.5);
+  };
+  const onLeave = () => { mx.set(0); my.set(0); };
+
+  return (
+    <motion.div
+      ref={ref}
+      onMouseMove={onMove}
+      onMouseLeave={onLeave}
+      initial={{ opacity: 0, y: 40 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.4, duration: 0.9, ease: [0.25, 0.46, 0.45, 0.94] }}
+      className="relative w-full flex items-center justify-center"
+      style={{ perspective: "900px", minHeight: "420px" }}
+    >
+      {/* outer glow */}
+      <div className="absolute inset-0 pointer-events-none" aria-hidden>
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-72 h-72 rounded-full blur-[100px] opacity-30"
+          style={{ background: "radial-gradient(circle, #00F5D4 0%, #7B61FF 60%, transparent 100%)" }}/>
+      </div>
+
+      <motion.div
+        style={{ rotateX: rx, rotateY: ry, transformStyle: "preserve-3d" }}
+        animate={{ y: [0, -12, 0] }}
+        transition={{ repeat: Infinity, duration: 5, ease: "easeInOut" }}
+        className="relative w-72 h-[420px] md:w-80 md:h-[460px]"
+      >
+        {/* shadow layer */}
+        <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 w-48 h-8 rounded-full blur-2xl opacity-40"
+          style={{ background: "linear-gradient(90deg,#00F5D4,#7B61FF)", transform: "translateZ(-40px)" }}/>
+
+        {/* main card */}
+        <div className="absolute inset-0 rounded-3xl border"
+          style={{
+            background: "linear-gradient(145deg, #161616, #0d0d0d)",
+            border: "1px solid rgba(255,255,255,0.08)",
+            boxShadow: "0 40px 100px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04) inset",
+            transform: "translateZ(0px)",
+          }}>
+          {/* top gradient strip */}
+          <div className="absolute top-0 left-0 right-0 h-[2px] rounded-t-3xl"
+            style={{ background: "linear-gradient(90deg, #00F5D4, #7B61FF)" }}/>
+
+          {/* inner content */}
+          <div className="p-6 flex flex-col h-full" style={{ transform: "translateZ(20px)" }}>
+            {/* header */}
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center"
+                style={{ background: "rgba(0,245,212,0.12)", border: "1px solid rgba(0,245,212,0.2)" }}>
+                <QrCode size={18} className="text-neon-cyan"/>
+              </div>
+              <div>
+                <div className="h-2 w-24 rounded-full bg-white/10 mb-1.5"/>
+                <div className="h-1.5 w-16 rounded-full bg-white/5"/>
+              </div>
+              <motion.div className="mr-auto w-2 h-2 rounded-full bg-neon-cyan"
+                animate={{ scale:[1,1.5,1], opacity:[1,0.4,1] }}
+                transition={{ repeat:Infinity, duration:2 }}/>
+            </div>
+
+            {/* fake cert area */}
+            <div className="flex-1 rounded-2xl flex flex-col items-center justify-center gap-3 mb-4"
+              style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)" }}>
+              <motion.div
+                className="w-16 h-16 rounded-2xl flex items-center justify-center"
+                style={{ background: "rgba(123,97,255,0.12)", border: "1px solid rgba(123,97,255,0.2)" }}
+                animate={{ rotate: [0, 8, 0, -8, 0] }}
+                transition={{ repeat: Infinity, duration: 6, ease: "easeInOut" }}>
+                <Award size={28} style={{ color: "#7B61FF" }}/>
+              </motion.div>
+              <div className="flex flex-col items-center gap-2 w-full px-4">
+                <div className="h-2 w-3/4 rounded-full bg-white/10"/>
+                <div className="h-1.5 w-1/2 rounded-full bg-neon-cyan/20"/>
+                <div className="h-1.5 w-2/3 rounded-full bg-white/5 mt-1"/>
+                <div className="h-1.5 w-1/2 rounded-full bg-white/5"/>
+              </div>
+            </div>
+
+            {/* bottom tools row */}
+            <div className="flex gap-2">
+              {[{I:QrCode,c:"#00F5D4"},{I:Award,c:"#7B61FF"},{I:FileText,c:"#F59E0B"}].map(({I,c},i)=>(
+                <motion.div key={i}
+                  className="flex-1 h-12 rounded-xl flex items-center justify-center"
+                  style={{ background:`${c}10`, border:`1px solid ${c}20` }}
+                  whileHover={{ scale:1.08 }}
+                  animate={{ opacity:[0.7,1,0.7] }}
+                  transition={{ repeat:Infinity, duration:2+i*0.5, delay:i*0.3 }}>
+                  <I size={16} style={{ color:c }}/>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* floating badge — top left */}
+        <motion.div
+          className="absolute -top-4 -right-6 px-3 py-1.5 rounded-xl text-[11px] font-black"
+          style={{ background:"rgba(0,245,212,0.12)", border:"1px solid rgba(0,245,212,0.3)", color:"#00F5D4", transform:"translateZ(50px)" }}
+          animate={{ y:[0,-6,0] }}
+          transition={{ repeat:Infinity, duration:3, ease:"easeInOut", delay:0.5 }}>
+          ✦ مجاني 100%
+        </motion.div>
+
+        {/* floating badge — bottom left */}
+        <motion.div
+          className="absolute -bottom-4 -left-6 px-3 py-1.5 rounded-xl text-[11px] font-black"
+          style={{ background:"rgba(123,97,255,0.12)", border:"1px solid rgba(123,97,255,0.3)", color:"#7B61FF", transform:"translateZ(50px)" }}
+          animate={{ y:[0,6,0] }}
+          transition={{ repeat:Infinity, duration:3.5, ease:"easeInOut" }}>
+          ⚡ بدون تسجيل
+        </motion.div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
 export default function Hero() {
   const heroRef = useRef<HTMLElement>(null);
   const { scrollY } = useScroll();
@@ -268,36 +396,9 @@ export default function Hero() {
             </motion.div>
           </div>
 
-          {/* ── CARDS ── */}
-          <div className="flex flex-col gap-4 order-first lg:order-last">
-            {tools.map((t) => <SpotlightCard key={t.label} {...t} />)}
-
-            {/* instant badge */}
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 1.0, duration: 0.6 }}
-              className="relative rounded-2xl p-4 flex items-center gap-3 overflow-hidden"
-              style={{ background: "rgba(0,245,212,0.04)", border: "1px solid rgba(0,245,212,0.12)" }}
-            >
-              <motion.div
-                className="absolute inset-0 rounded-2xl pointer-events-none"
-                style={{ border: "1px solid rgba(0,245,212,0.2)" }}
-                animate={{ opacity: [0.3, 1, 0.3] }}
-                transition={{ repeat: Infinity, duration: 2.5 }}
-              />
-              <motion.div
-                className="w-8 h-8 rounded-xl bg-neon-cyan/12 flex items-center justify-center shrink-0"
-                animate={{ rotate: [0, 10, 0, -10, 0] }}
-                transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
-              >
-                <Zap size={15} className="text-neon-cyan" />
-              </motion.div>
-              <div>
-                <p className="text-xs font-black text-neon-cyan">بدون تسجيل · بدون انتظار</p>
-                <p className="text-[11px] text-gray-600">افتح الأداة واستخدمها فوراً</p>
-              </div>
-            </motion.div>
+          {/* ── 3D ── */}
+          <div className="order-first lg:order-last flex items-center justify-center">
+            <Hero3D />
           </div>
 
         </div>

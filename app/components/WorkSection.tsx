@@ -2,7 +2,7 @@
 
 import { motion, useScroll, useTransform, useInView } from "framer-motion";
 import Link from "next/link";
-import { QrCode, Award, FileText, ArrowLeft, Zap } from "lucide-react";
+import { QrCode, Award, FileText, ArrowLeft, Zap, Lock } from "lucide-react";
 import { useRef } from "react";
 
 const tools = [
@@ -15,26 +15,29 @@ const tools = [
     tags: ["مجاني 100%", "بدون تسجيل", "تحميل فوري"],
     href: "/tools/qrcode",
     num: "01",
+    locked: false,
   },
   {
     icon: Award,
     title: "صانع الشهادات",
     category: "أداة احترافية",
     description: "شهادات إتمام دورات بتصاميم فاخرة مناسبة لمراكز التدريب والمؤسسات التعليمية.",
-    accent: "#7B61FF",
+    accent: "#F59E0B",
     tags: ["قوالب متعددة", "شعار مخصص", "PDF/PNG"],
-    href: "/tools/certs",
+    href: "#",
     num: "02",
+    locked: true,
   },
   {
     icon: FileText,
     title: "مولّد التقارير",
     category: "أداة بيانات",
     description: "حوّل بياناتك إلى تقارير Excel منظمة وجاهزة في ثوانٍ. بدون أي خبرة تقنية.",
-    accent: "#F59E0B",
+    accent: "#7B61FF",
     tags: ["Excel تلقائي", "بيانات منظمة", "سريع جداً"],
-    href: "/tools/reports",
+    href: "#",
     num: "03",
+    locked: true,
   },
 ];
 
@@ -73,6 +76,19 @@ function ToolCard({ t, i }: { t: typeof tools[0]; i: number }) {
         style={{ background: `linear-gradient(90deg, transparent, ${t.accent}70, transparent)`, transformOrigin: "left" }}
         transition={{ duration: 0.5 }}
       />
+
+      {/* locked overlay */}
+      {t.locked && (
+        <div className="absolute inset-0 z-20 rounded-3xl flex flex-col items-center justify-center gap-3"
+          style={{ backdropFilter:"blur(14px)", WebkitBackdropFilter:"blur(14px)", background:"rgba(10,10,10,0.55)" }}>
+          <div className="w-14 h-14 rounded-2xl flex items-center justify-center"
+            style={{ background:"rgba(245,158,11,0.12)", border:"1px solid rgba(245,158,11,0.25)", boxShadow:"0 0 30px rgba(245,158,11,0.15)" }}>
+            <Lock size={24} style={{ color:"#F59E0B" }}/>
+          </div>
+          <span className="text-white font-black text-base">قريباً</span>
+          <span className="text-[11px] text-gray-500 tracking-widest">جارٍ التطوير</span>
+        </div>
+      )}
 
       <Link href={t.href} className="relative z-10 p-8 flex flex-col h-full" style={{ minHeight: "340px" }}>
         <div className="flex items-start justify-between mb-auto">

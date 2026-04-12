@@ -144,16 +144,22 @@ export default function ProductsPage() {
                 }}
               />
 
-              {/* قريباً banner */}
+              {/* قريباً overlay */}
               {!p.available && (
-                <div className="flex items-center justify-center gap-2 py-2.5 border-b border-glass-border"
-                  style={{ background: "rgba(255,255,255,0.03)" }}>
-                  <Lock size={13} className="text-gray-500"/>
-                  <span className="text-xs font-black text-gray-400 tracking-widest">قريباً · جارٍ التطوير</span>
+                <div className="absolute inset-0 z-10 rounded-3xl flex flex-col items-center justify-center gap-4"
+                  style={{ backdropFilter:"blur(14px)", WebkitBackdropFilter:"blur(14px)", background:"rgba(10,10,10,0.55)" }}>
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="w-14 h-14 rounded-2xl flex items-center justify-center"
+                      style={{ background:"rgba(245,158,11,0.12)", border:"1px solid rgba(245,158,11,0.25)", boxShadow:"0 0 30px rgba(245,158,11,0.15)" }}>
+                      <Lock size={24} style={{ color:"#F59E0B" }}/>
+                    </div>
+                    <span className="text-white font-black text-base tracking-wide">قريباً</span>
+                    <span className="text-[11px] text-gray-500 tracking-widest">جارٍ التطوير</span>
+                  </div>
                 </div>
               )}
 
-              <div className={`p-7 flex flex-col flex-1 ${!p.available ? "opacity-35 pointer-events-none select-none" : ""}`}>
+              <div className="p-7 flex flex-col flex-1">
                 {/* أيقونة + شارة النوع */}
                 <div className="flex items-start justify-between mb-5">
                   <div
