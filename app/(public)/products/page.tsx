@@ -144,17 +144,16 @@ export default function ProductsPage() {
                 }}
               />
 
-              {/* "قريباً" overlay */}
+              {/* قريباً banner */}
               {!p.available && (
-                <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 rounded-3xl"
-                  style={{ background: "rgba(10,10,10,0.85)", backdropFilter: "blur(6px)" }}>
-                  <Lock size={28} className="text-gray-400" />
-                  <span className="text-white font-black text-lg">قريباً</span>
-                  <span className="text-gray-500 text-xs">جارٍ التطوير</span>
+                <div className="flex items-center justify-center gap-2 py-2.5 border-b border-glass-border"
+                  style={{ background: "rgba(255,255,255,0.03)" }}>
+                  <Lock size={13} className="text-gray-500"/>
+                  <span className="text-xs font-black text-gray-400 tracking-widest">قريباً · جارٍ التطوير</span>
                 </div>
               )}
 
-              <div className="p-7 flex flex-col flex-1">
+              <div className={`p-7 flex flex-col flex-1 ${!p.available ? "opacity-35 pointer-events-none select-none" : ""}`}>
                 {/* أيقونة + شارة النوع */}
                 <div className="flex items-start justify-between mb-5">
                   <div
