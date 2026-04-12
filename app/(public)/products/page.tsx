@@ -146,8 +146,9 @@ export default function ProductsPage() {
 
               {/* "قريباً" overlay */}
               {!p.available && (
-                <div className="absolute inset-0 bg-dark-bg/60 backdrop-blur-[2px] z-20 flex flex-col items-center justify-center gap-3 rounded-3xl">
-                  <Lock size={28} className="text-gray-500" />
+                <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 rounded-3xl"
+                  style={{ background: "rgba(10,10,10,0.85)", backdropFilter: "blur(6px)" }}>
+                  <Lock size={28} className="text-gray-400" />
                   <span className="text-white font-black text-lg">قريباً</span>
                   <span className="text-gray-500 text-xs">جارٍ التطوير</span>
                 </div>
