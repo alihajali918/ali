@@ -5,7 +5,10 @@ export const maxDuration = 30;
 
 const rlMap = new Map<string, number>();
 const DAILY_LIMIT = 10;
-const MODEL = "gemini-3-flash";
+/** مفتاح AI Studio (مجاني بحدود) — راجع https://ai.google.dev/gemini-api/docs/models */
+const MODEL =
+  process.env.GEMINI_MODEL?.trim() ||
+  "gemini-2.5-flash";
 
 function getIp(req: NextRequest) {
   return (
