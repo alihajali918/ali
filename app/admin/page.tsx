@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   Users, Eye, QrCode, Award, FileText, Mail,
   TrendingUp, Monitor, Smartphone, Tablet, Chrome,
   LogOut, RefreshCw, Loader2, Trash2, UserPlus, ShieldCheck, X,
-  LayoutDashboard, MessageSquare, DatabaseZap, Download,
+  LayoutDashboard, MessageSquare, DatabaseZap, Download, Menu, ExternalLink,
 } from "lucide-react";
 import * as XLSX from "xlsx";
 
@@ -250,7 +251,7 @@ function UsersSection() {
         ) : (
           <table className="w-full text-xs">
             <thead><tr className="border-b border-glass-border">
-              {["الاسم","البريد","الدور","البريد مؤكد","تاريخ التسجيل",""].map(h => (
+              {["الاسم","البريد","الدور","البريد مؤكد","تاريخ التسجيل","إجراءات"].map(h => (
                 <th key={h} className="px-4 py-2.5 text-right text-gray-600 font-bold">{h}</th>
               ))}
             </tr></thead>
@@ -270,8 +271,12 @@ function UsersSection() {
                   <td className="px-4 py-2.5 text-gray-600" dir="ltr">{new Date(u.createdAt).toLocaleDateString("ar-QA")}</td>
                   <td className="px-4 py-2.5">
                     {u.role !== "admin" && (
-                      <button onClick={() => deleteUser(u.id, u.name)}
-                        className="p-1.5 rounded-lg text-gray-700 hover:text-red-400 hover:bg-red-500/10 transition-all">
+                      <button
+                        type="button"
+                        onClick={() => deleteUser(u.id, u.name)}
+                        className="p-1.5 rounded-lg text-gray-700 hover:text-red-400 hover:bg-red-500/10 transition-all"
+                        aria-label={`حذف المستخدم ${u.name}`}
+                      >
                         <Trash2 size={13} />
                       </button>
                     )}
@@ -361,8 +366,9 @@ export default function AdminPage() {
   const [active,        setActive]        = useState("overview");
   const [clearingStats,   setClearingStats]   = useState(false);
   const [exportingStats,  setExportingStats]  = useState(false);
+  const [mobileSidebar, setMobileSidebar]   = useState(false);
 
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     setLoading(true); setError("");
     try {
       const res = await fetch("/api/admin/stats");
@@ -374,9 +380,9 @@ export default function AdminPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [router]);
 
-  useEffect(() => { fetchStats(); }, []);
+  useEffect(() => { fetchStats(); }, [fetchStats]);
 
   const logout = async () => {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -470,38 +476,101 @@ export default function AdminPage() {
   const s = stats!;
   const activeNav = NAV.find(n => n.id === active)!;
 
+  const selectNav = (id: string) => {
+    setActive(id);
+    setMobileSidebar(false);
+  };
+
   return (
-    <div className="min-h-screen bg-dark-bg flex" dir="rtl">
+    <div className="min-h-screen bg-dark-bg flex flex-col md:flex-row" dir="rtl">
+
+      {/* شريط علوي — جوال */}
+      <header className="md:hidden sticky top-0 z-30 flex items-center justify-between gap-3 px-4 py-3 border-b border-glass-border bg-dark-bg/95 backdrop-blur-xl">
+        <button
+          type="button"
+          onClick={() => setMobileSidebar(true)}
+          className="p-2 rounded-xl text-gray-300 hover:bg-white/5"
+          aria-expanded={mobileSidebar}
+          aria-controls="admin-sidebar"
+          aria-label="فتح القائمة"
+        >
+          <Menu size={20} />
+        </button>
+        <p className="text-sm font-black text-white truncate flex-1 text-center">{activeNav.label}</p>
+        <Link
+          href="/"
+          className="p-2 rounded-xl text-gray-400 hover:text-neon-cyan hover:bg-white/5 shrink-0"
+          aria-label="الموقع العام"
+        >
+          <ExternalLink size={18} />
+        </Link>
+      </header>
+
+      {mobileSidebar && (
+        <button
+          type="button"
+          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden"
+          aria-label="إغلاق القائمة"
+          onClick={() => setMobileSidebar(false)}
+        />
+      )}
 
       {/* Sidebar */}
-      <aside className="w-56 shrink-0 border-l border-glass-border flex flex-col sticky top-0 h-screen">
+      <aside
+        id="admin-sidebar"
+        className={`max-md:fixed max-md:z-50 max-md:inset-y-0 max-md:right-0 max-md:w-[min(17rem,88vw)] w-56 shrink-0 border-l border-glass-border flex flex-col bg-dark-bg transition-transform duration-200 ease-out md:sticky md:top-0 md:h-screen md:translate-x-0 ${
+          mobileSidebar ? "translate-x-0" : "translate-x-full md:translate-x-0"
+        }`}
+      >
         {/* Logo */}
         <div className="px-5 py-5 border-b border-glass-border">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-neon-cyan flex items-center justify-center shrink-0">
-              <span className="text-dark-bg font-black text-xs">AH</span>
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-8 h-8 rounded-xl bg-neon-cyan flex items-center justify-center shrink-0">
+                <span className="text-dark-bg font-black text-xs">AH</span>
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-black text-white truncate">لوحة التحكم</p>
+                <p className="text-[10px] text-gray-600">Admin</p>
+              </div>
             </div>
-            <div>
-              <p className="text-sm font-black text-white">لوحة التحكم</p>
-              <p className="text-[10px] text-gray-600">Admin</p>
-            </div>
+            <button
+              type="button"
+              className="md:hidden p-2 rounded-xl text-gray-500 hover:text-white hover:bg-white/5"
+              onClick={() => setMobileSidebar(false)}
+              aria-label="إغلاق القائمة"
+            >
+              <X size={18} />
+            </button>
           </div>
+          <Link
+            href="/"
+            className="mt-3 flex items-center justify-center gap-1.5 w-full py-2 rounded-xl text-[11px] font-bold text-gray-500 border border-glass-border hover:text-neon-cyan hover:border-neon-cyan/25 transition-colors"
+          >
+            <ExternalLink size={12} />
+            عرض الموقع العام
+          </Link>
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 px-3 py-4 flex flex-col gap-1">
+        <nav className="flex-1 px-3 py-4 flex flex-col gap-1 overflow-y-auto">
           {NAV.map(item => {
             const Icon = item.icon;
             const isActive = active === item.id;
             return (
-              <button key={item.id} onClick={() => setActive(item.id)}
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => selectNav(item.id)}
+                aria-current={isActive ? "page" : undefined}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all text-right ${
                   isActive ? "bg-neon-cyan/10 text-neon-cyan" : "text-gray-500 hover:text-white hover:bg-white/5"
-                }`}>
-                <Icon size={16} />
+                }`}
+              >
+                <Icon size={16} aria-hidden />
                 {item.label}
                 {item.id === "contacts" && s.contacts.unread > 0 && (
-                  <span className="mr-auto w-5 h-5 rounded-full bg-neon-cyan text-dark-bg text-[10px] font-black flex items-center justify-center">
+                  <span className="mr-auto min-w-[1.25rem] h-5 px-1 rounded-full bg-neon-cyan text-dark-bg text-[10px] font-black flex items-center justify-center">
                     {s.contacts.unread}
                   </span>
                 )}
@@ -511,22 +580,25 @@ export default function AdminPage() {
         </nav>
 
         {/* Footer */}
-        <div className="px-3 py-4 border-t border-glass-border flex flex-col gap-2">
-          <button onClick={fetchStats}
-            className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-gray-600 hover:text-neon-cyan hover:bg-neon-cyan/8 transition-all text-xs font-bold">
-            <RefreshCw size={14} /> تحديث
+        <div className="px-3 py-4 border-t border-glass-border flex flex-col gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={() => { fetchStats(); setMobileSidebar(false); }}
+            className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-gray-600 hover:text-neon-cyan hover:bg-neon-cyan/8 transition-all text-xs font-bold"
+          >
+            <RefreshCw size={14} /> تحديث البيانات
           </button>
-          <button onClick={exportStats} disabled={exportingStats}
+          <button type="button" onClick={exportStats} disabled={exportingStats}
             className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-gray-600 hover:text-green-400 hover:bg-green-500/8 transition-all text-xs font-bold disabled:opacity-50">
             {exportingStats ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
             تصدير Excel
           </button>
-          <button onClick={clearStats} disabled={clearingStats}
+          <button type="button" onClick={clearStats} disabled={clearingStats}
             className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-gray-600 hover:text-orange-400 hover:bg-orange-500/8 transition-all text-xs font-bold disabled:opacity-50">
             {clearingStats ? <Loader2 size={14} className="animate-spin" /> : <DatabaseZap size={14} />}
             مسح الإحصاءات
           </button>
-          <button onClick={logout}
+          <button type="button" onClick={logout}
             className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-gray-600 hover:text-red-400 hover:bg-red-500/8 transition-all text-xs font-bold">
             <LogOut size={14} /> خروج
           </button>
@@ -534,9 +606,9 @@ export default function AdminPage() {
       </aside>
 
       {/* Content */}
-      <main className="flex-1 overflow-auto">
-        <div className="px-6 py-8 max-w-5xl">
-          <div className="mb-6">
+      <main className="flex-1 overflow-auto min-h-0 min-w-0 w-full">
+        <div className="px-4 sm:px-6 py-6 sm:py-8 max-w-5xl mx-auto">
+          <div className="mb-6 hidden md:block">
             <p className="text-xl font-black text-white">{activeNav.label}</p>
           </div>
 
