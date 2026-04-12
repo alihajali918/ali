@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 
-// In-memory rate limit store (resets on cold start — good enough for edge cases)
-// key: "ip:date" → count
 const rlMap = new Map<string, number>();
 const DAILY_LIMIT = 10;
+const GEMINI_URL = (key: string) =>
+  `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`;
 
 function getIp(req: NextRequest) {
   return (
@@ -13,46 +13,44 @@ function getIp(req: NextRequest) {
   );
 }
 
-// GET /api/gemini-cert — test actual generation
+async function callGemini(key: string, contents: object, config: object) {
+  const res = await fetch(GEMINI_URL(key), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ contents, generationConfig: config }),
+    signal: AbortSignal.timeout(9000),
+  });
+  const text = await res.text();
+  if (!res.ok) throw Object.assign(new Error("gemini_error"), { status: res.status, body: text });
+  return JSON.parse(text);
+}
+
+// GET — diagnostic
 export async function GET() {
   const key = process.env.GEMINI_API_KEY;
   if (!key) return NextResponse.json({ ok: false, reason: "GEMINI_API_KEY not set" });
-
-  // try v1beta first, then v1
-  for (const ver of ["v1beta", "v1"]) {
-    try {
-      const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: "قل مرحبا" }] }],
-            generationConfig: { maxOutputTokens: 10 },
-          }),
-          signal: AbortSignal.timeout(15000),
-        }
-      );
-      const text = await res.text();
-      if (res.ok) return NextResponse.json({ ok: true, ver, body: text.slice(0, 200) });
-      return NextResponse.json({ ok: false, ver, status: res.status, body: text.slice(0, 300) });
-    } catch (e: any) {
-      return NextResponse.json({ ok: false, ver, error: e?.message });
-    }
+  try {
+    const json = await callGemini(
+      key,
+      [{ parts: [{ text: "قل مرحبا" }] }],
+      { maxOutputTokens: 10 }
+    );
+    const text = json.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+    return NextResponse.json({ ok: true, text });
+  } catch (e: any) {
+    return NextResponse.json({ ok: false, status: e.status, body: e.body ?? e.message });
   }
-  return NextResponse.json({ ok: false, reason: "all failed" });
 }
 
 export async function POST(req: NextRequest) {
   const key = process.env.GEMINI_API_KEY;
   if (!key) return NextResponse.json({ error: "missing key" }, { status: 500 });
 
-  // ─── rate limit ───
+  // rate limit
   const ip    = getIp(req);
   const today = new Date().toISOString().split("T")[0];
   const rlKey = `${ip}:${today}`;
   const count = rlMap.get(rlKey) ?? 0;
-
   if (count >= DAILY_LIMIT) {
     return NextResponse.json(
       { error: "limit", message: `وصلت الحد اليومي (${DAILY_LIMIT} طلبات). حاول غداً.` },
@@ -61,43 +59,23 @@ export async function POST(req: NextRequest) {
   }
   rlMap.set(rlKey, count + 1);
 
-  // ─── parse body ───
   const body = await req.json();
-  const { prompt, mode } = body; // mode: "fill" (default) | "desc"
+  const { prompt, mode } = body;
   if (!prompt?.trim()) return NextResponse.json({ error: "empty prompt" }, { status: 400 });
 
-  // ─── mode: desc — generate a short description sentence ───
-  if (mode === "desc") {
-    try {
-      const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent?key=${key}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: { temperature: 0.7, maxOutputTokens: 80 },
-          }),
-        }
+  try {
+    if (mode === "desc") {
+      const json = await callGemini(
+        key,
+        [{ parts: [{ text: prompt }] }],
+        { temperature: 0.7, maxOutputTokens: 80 }
       );
-      if (!res.ok) {
-        const errText = await res.text();
-        console.error("Gemini desc error:", res.status, errText);
-        return NextResponse.json({ error: "gemini error", detail: errText }, { status: 502 });
-      }
-      const json = await res.json();
       const text = (json.candidates?.[0]?.content?.parts?.[0]?.text ?? "").trim();
-      return NextResponse.json({
-        data: { description: text },
-        remaining: DAILY_LIMIT - (count + 1),
-      });
-    } catch {
-      return NextResponse.json({ error: "parse error" }, { status: 500 });
+      return NextResponse.json({ data: { description: text }, remaining: DAILY_LIMIT - (count + 1) });
     }
-  }
 
-  // ─── mode: fill (default) — extract all fields as JSON ───
-  const systemPrompt = `أنت مساعد ذكي متخصص في استخراج بيانات الشهادات من النص العربي.
+    // mode: fill
+    const systemPrompt = `أنت مساعد ذكي متخصص في استخراج بيانات الشهادات من النص العربي.
 استخرج البيانات التالية من نص المستخدم وأعدها كـ JSON صارم بدون أي نص إضافي:
 {
   "recipientName": "اسم المتدرب أو المستلم",
@@ -109,34 +87,24 @@ export async function POST(req: NextRequest) {
 }
 إذا لم يُذكر حقل معين، اتركه فارغاً "". لا تضف أي نص خارج الـ JSON.`;
 
-  try {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent?key=${key}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: `${systemPrompt}\n\nنص المستخدم: ${prompt}` }] }],
-          generationConfig: { temperature: 0.1, maxOutputTokens: 512 },
-        }),
-      }
+    const json = await callGemini(
+      key,
+      [{ parts: [{ text: `${systemPrompt}\n\nنص المستخدم: ${prompt}` }] }],
+      { temperature: 0.1, maxOutputTokens: 512 }
     );
 
-    if (!res.ok) {
-      const errText = await res.text();
-      console.error("Gemini fill error:", res.status, errText);
-      return NextResponse.json({ error: "gemini error", detail: errText }, { status: 502 });
-    }
-
-    const json = await res.json();
-    const raw  = json.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
-
+    const raw   = json.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
     const match = raw.match(/\{[\s\S]*\}/);
-    if (!match) return NextResponse.json({ error: "no json" }, { status: 422 });
+    if (!match) return NextResponse.json({ error: "no json in response" }, { status: 422 });
 
     const data = JSON.parse(match[0]);
     return NextResponse.json({ data, remaining: DAILY_LIMIT - (count + 1) });
-  } catch {
-    return NextResponse.json({ error: "parse error" }, { status: 500 });
+
+  } catch (e: any) {
+    if (e.name === "TimeoutError") {
+      return NextResponse.json({ error: "timeout", message: "Gemini لم يستجب، حاول مرة أخرى" }, { status: 504 });
+    }
+    console.error("Gemini error:", e.status, e.body ?? e.message);
+    return NextResponse.json({ error: "gemini error", detail: e.body ?? e.message }, { status: 502 });
   }
 }
