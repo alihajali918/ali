@@ -5,7 +5,7 @@ export const maxDuration = 30;
 
 const rlMap = new Map<string, number>();
 const DAILY_LIMIT = 10;
-const MODEL = "gemini-2.0-flash";
+const MODEL = "gemini-1.5-flash";
 
 function getIp(req: NextRequest) {
   return (
