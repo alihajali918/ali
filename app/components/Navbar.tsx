@@ -6,7 +6,7 @@ import { useState, useEffect, useRef, type ElementType } from "react";
 import {
   Menu, X, LogOut, LayoutDashboard,
   QrCode, ImageDown, FileImage, FilePlus2,
-  Award, FileText, ChevronDown, Wrench, Package, Lock,
+  Award, FileText, ChevronDown, Wrench, Building2, Lock,
 } from "lucide-react";
 
 type ToolNavItem = { href: string; label: string; icon: ElementType; desc: string };
@@ -209,10 +209,10 @@ export default function Navbar({ initialUser }: { initialUser: NavUser | null })
               active={isToolPath}
             />
 
-            {/* المنتجات dropdown */}
+            {/* للمؤسسات dropdown */}
             <NavDropdown
-              label="المنتجات"
-              icon={Package}
+              label="للمؤسسات"
+              icon={Building2}
               items={PRODUCTS}
               active={isProductPath}
             />
@@ -294,9 +294,9 @@ export default function Navbar({ initialUser }: { initialUser: NavUser | null })
               );
             })}
 
-            {/* المنتجات section */}
+            {/* للمؤسسات section */}
             <p className="px-4 pt-4 pb-1 text-[10px] font-black text-gray-600 uppercase tracking-widest flex items-center gap-1.5">
-              <Package size={10}/> المنتجات
+              <Building2 size={10}/> للمؤسسات
             </p>
             {PRODUCTS.map(item => {
               const Icon = item.icon;

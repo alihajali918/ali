@@ -244,22 +244,22 @@ function Hero3D() {
           </div>
         </div>
 
-        {/* floating badge — top left */}
+        {/* floating badge — top */}
         <motion.div
           className="absolute -top-4 -right-6 px-3 py-1.5 rounded-xl text-[11px] font-black"
           style={{ background:"rgba(0,245,212,0.12)", border:"1px solid rgba(0,245,212,0.3)", color:"#00F5D4", transform:"translateZ(50px)" }}
           animate={{ y:[0,-6,0] }}
           transition={{ repeat:Infinity, duration:3, ease:"easeInOut", delay:0.5 }}>
-          ✦ مجاني 100%
+          ✦ للأعمال والموظفين
         </motion.div>
 
-        {/* floating badge — bottom left */}
+        {/* floating badge — bottom */}
         <motion.div
           className="absolute -bottom-4 -left-6 px-3 py-1.5 rounded-xl text-[11px] font-black"
           style={{ background:"rgba(123,97,255,0.12)", border:"1px solid rgba(123,97,255,0.3)", color:"#7B61FF", transform:"translateZ(50px)" }}
           animate={{ y:[0,6,0] }}
           transition={{ repeat:Infinity, duration:3.5, ease:"easeInOut" }}>
-          ⚡ بدون تسجيل
+          🏢 للمؤسسات والشركات
         </motion.div>
       </motion.div>
     </motion.div>
@@ -324,20 +324,20 @@ export default function Hero() {
                 <motion.span animate={{ rotate: [0, 15, 0, -10, 0] }} transition={{ repeat: Infinity, duration: 3, delay: 2 }}>
                   <Zap size={11} />
                 </motion.span>
-                أدوات مصنوعة في قطر 🇶🇦
+                أدوات تقنية مبتكرة 🇶🇦
               </span>
             </motion.div>
 
             {/* headline — word reveal */}
             <h1 className="text-5xl sm:text-6xl md:text-7xl font-black leading-[1.05] tracking-tight mb-6">
-              <WordReveal text="أدوات ذكية" delay={0.1} />
+              <WordReveal text="سرّع عملك" delay={0.1} />
               <br />
               <span className="text-gradient">
-                <WordReveal text="لتسهيل حياتك" delay={0.3} />
+                <WordReveal text="وطوّر مؤسستك" delay={0.3} />
               </span>
               <br />
               <span className="text-white/55">
-                <WordReveal text="وتطوير عملك" delay={0.5} />
+                <WordReveal text="بأدوات تقنية مبتكرة" delay={0.5} />
               </span>
             </h1>
 
@@ -348,9 +348,10 @@ export default function Hero() {
               transition={{ delay: 0.8, duration: 0.6 }}
               className="text-gray-400 text-base md:text-lg max-w-md mb-10 leading-relaxed"
             >
-              مش بس مواقع — أبني{" "}
-              <span className="text-white font-semibold">أدوات تشتغل لك</span>.
-              توفر وقتك، تسرّع عملك، وتحل مشاكل حقيقية.
+              أدوات مجانية تساعد{" "}
+              <span className="text-white font-semibold">أصحاب الأعمال والموظفين</span>{" "}
+              على إنجاز أكثر في وقت أقل — وحلول احترافية مخصصة{" "}
+              <span className="text-white font-semibold">للمؤسسات والشركات</span>.
             </motion.p>
 
             {/* CTAs */}
@@ -361,10 +362,10 @@ export default function Hero() {
               className="flex flex-col sm:flex-row gap-3"
             >
               {/* magnetic primary */}
-              <MagneticLink href="/products"
+              <MagneticLink href="/tools/qrcode"
                 className="btn-shimmer group relative flex items-center gap-2 px-8 py-4 bg-neon-cyan text-dark-bg font-black text-sm rounded-2xl glow-cyan cursor-pointer overflow-hidden">
                 <span className="relative z-10 flex items-center gap-2">
-                  استعرض الأدوات
+                  جرّب الأدوات مجاناً
                   <motion.span
                     animate={{ x: [0, -4, 0] }}
                     transition={{ repeat: Infinity, duration: 1.8, ease: "easeInOut", delay: 1.5 }}
@@ -374,9 +375,9 @@ export default function Hero() {
                 </span>
               </MagneticLink>
 
-              <Link href="/tools/qrcode"
+              <Link href="/products"
                 className="flex items-center gap-2 px-8 py-4 glass-card text-white font-bold text-sm rounded-2xl hover:border-white/15 transition-all duration-300">
-                جرّب QR مجاناً
+                الحلول المؤسسية
               </Link>
             </motion.div>
 
