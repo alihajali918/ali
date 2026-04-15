@@ -5,7 +5,7 @@ import {
   useMotionValue, AnimatePresence,
 } from "framer-motion";
 import Link from "next/link";
-import { ArrowLeft, QrCode, Award, FileText, Zap } from "lucide-react";
+import { ArrowLeft, QrCode, ImageDown, FileImage, FilePlus2, Zap } from "lucide-react";
 import { useRef, useState, useEffect } from "react";
 
 /* ─── scroll progress bar ─── */
@@ -74,9 +74,9 @@ function WordReveal({ text, className, delay = 0 }: { text: string; className?: 
 
 /* ─── spotlight card ─── */
 const tools = [
-  { icon: QrCode,   label: "QR Code",   sub: "جاهز في ثانية",   color: "#00F5D4", href: "/tools/qrcode", delay: 0    },
-  { icon: Award,    label: "الشهادات",  sub: "احترافية وسريعة", color: "#7B61FF", href: "/tools/certs",  delay: 0.12 },
-  { icon: FileText, label: "التقارير",  sub: "Excel تلقائي",    color: "#F59E0B", href: "/tools/reports",delay: 0.24 },
+  { icon: QrCode,    label: "QR Code",       sub: "رابط · نص · بزنس كارد", color: "#00F5D4", href: "/tools/qrcode",   delay: 0    },
+  { icon: ImageDown, label: "ضاغط الملفات",  sub: "صور وPDF في ثوانٍ",    color: "#7B61FF", href: "/tools/compress", delay: 0.12 },
+  { icon: FileImage, label: "صور إلى PDF",   sub: "تحميل مباشر بدون نافذة", color: "#F59E0B", href: "/tools/img2pdf",  delay: 0.24 },
 ];
 
 function SpotlightCard({ icon: Icon, label, sub, color, href, delay }: typeof tools[0]) {
@@ -230,7 +230,7 @@ function Hero3D() {
 
             {/* bottom tools row */}
             <div className="flex gap-2">
-              {[{I:QrCode,c:"#00F5D4"},{I:Award,c:"#7B61FF"},{I:FileText,c:"#F59E0B"}].map(({I,c},i)=>(
+              {[{I:QrCode,c:"#00F5D4"},{I:ImageDown,c:"#7B61FF"},{I:FilePlus2,c:"#F59E0B"}].map(({I,c},i)=>(
                 <motion.div key={i}
                   className="flex-1 h-12 rounded-xl flex items-center justify-center"
                   style={{ background:`${c}10`, border:`1px solid ${c}20` }}
