@@ -6,7 +6,7 @@ import Footer from "../../components/Footer";
 import { motion } from "framer-motion";
 import {
   QrCode, FileText, Award, Check, ArrowLeft,
-  Zap, Lock, ImageDown, FileImage, FilePlus2,
+  Zap, Lock, ImageDown, FileImage, FilePlus2, Scissors,
   Building2, Wrench,
 } from "lucide-react";
 
@@ -39,6 +39,13 @@ const tools = [
     tagline: "ادمج ملفات PDF وصور في ملف واحد — حتى 50 صفحة",
     color: "#F59E0B", href: "/tools/pdf-merge",
     features: ["دمج PDF + صور في ملف واحد", "ترتيب الصفحات بالسحب والإفلات", "معاينة الصفحات قبل الدمج", "تحميل مباشر حتى 50 صفحة"],
+  },
+  {
+    id: "remove-bg", icon: <Scissors size={26} />,
+    name: "إزالة الخلفية",
+    tagline: "احذف خلفية أي صورة في ثوانٍ — بضغطة واحدة",
+    color: "#7B61FF", href: "/tools/remove-bg",
+    features: ["نتيجة PNG شفاف جاهزة للتصميم", "يعمل في المتصفح بدون خادم", "مناسب للمنتجات والشعارات", "لا تُرسل صورتك لأي مكان"],
   },
 ];
 

@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@google/genai": "^1.49.0",
+    "@imgly/background-removal": "^1.7.0",
     "@prisma/client": "^5.22.0",
     "@tailwindcss/postcss": "^4.0.0",
     "@types/nodemailer": "^8.0.0",
