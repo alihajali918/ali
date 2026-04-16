@@ -6,7 +6,7 @@ import Footer from "../../components/Footer";
 import { motion } from "framer-motion";
 import {
   QrCode, FileText, Award, Check, ArrowLeft,
-  Zap, Lock, ImageDown, FileImage, FilePlus2, Maximize2,
+  Zap, Lock, ImageDown, FileImage, FilePlus2,
   Building2, Wrench,
 } from "lucide-react";
 
@@ -39,13 +39,6 @@ const tools = [
     tagline: "ادمج ملفات PDF وصور في ملف واحد — حتى 50 صفحة",
     color: "#F59E0B", href: "/tools/pdf-merge",
     features: ["دمج PDF + صور في ملف واحد", "ترتيب الصفحات بالسحب والإفلات", "معاينة الصفحات قبل الدمج", "تحميل مباشر حتى 50 صفحة"],
-  },
-  {
-    id: "upscale", icon: <Maximize2 size={26} />,
-    name: "رفع دقة الصور",
-    tagline: "حسّن جودة صورك بنموذج ESRGAN AI — يعمل مباشرة في متصفحك",
-    color: "#7B61FF", href: "/tools/upscale",
-    features: ["2× · 3× · 4× · 8× مضاعفة", "جودة Lanczos عالية الدقة", "معالجة فورية في المتصفح", "صورتك لا تُرسل لأي خادم"],
   },
 ];
 

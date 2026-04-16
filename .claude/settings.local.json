@@ -51,7 +51,14 @@
       "Bash(ls c:/Users/USER/Desktop/ali/.env*)",
       "Bash(vercel --version)",
       "Bash(cat .vercel/project.json)",
-      "Bash(vercel link:*)"
+      "Bash(vercel link:*)",
+      "Bash(git commit -m 'Rewrite services page with marketing-focused copy and positioning:*)",
+      "Bash(git commit -m 'Update Hero tools and ServicesSection to match new dual-audience positioning:*)",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(json.dumps\\(d.get\\('exports',{}\\), indent=2\\)\\)\")",
+      "Bash(git commit -m 'Add AI image upscaler tool with ESRGAN \\(2x/3x/4x/8x\\):*)",
+      "Bash(git commit -m 'Replace UpscalerJS with pica \\(Lanczos3\\) — lighter upscale tool:*)",
+      "Bash(git commit -m 'Switch upscaler back to UpscalerJS with lazy dynamic imports:*)",
+      "Bash(git commit -m 'Remove upscale tool — not delivering real quality improvement:*)"
     ]
   }
 }
