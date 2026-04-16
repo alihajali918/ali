@@ -6,22 +6,17 @@ import {
   ImageIcon, Maximize2, Loader2,
 } from "lucide-react";
 
-type Scale = 2 | 3 | 4 | 8;
-
-const SCALE_LABELS: Record<Scale, string> = {
-  2: "2×",
-  3: "3×",
-  4: "4×",
-  8: "8×",
-};
+type Scale = 2 | 4;
 
 export default function UpscalePage() {
   const [original, setOriginal] = useState<{
     url: string; name: string; w: number; h: number;
   } | null>(null);
-  const [upscaled, setUpscaled] = useState<string | null>(null);
-  const [loading,  setLoading]  = useState(false);
-  const [scale,    setScale]    = useState<Scale>(2);
+  const [upscaled,    setUpscaled]    = useState<string | null>(null);
+  const [loading,     setLoading]     = useState(false);
+  const [scale,       setScale]       = useState<Scale>(2);
+  const [progress,    setProgress]    = useState(0);
+  const [statusMsg,   setStatusMsg]   = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
 
   /* ── load file ── */
@@ -32,6 +27,8 @@ export default function UpscalePage() {
     img.onload = () => {
       setOriginal({ url, name: file.name, w: img.naturalWidth, h: img.naturalHeight });
       setUpscaled(null);
+      setProgress(0);
+      setStatusMsg("");
     };
     img.src = url;
   }, []);
@@ -46,30 +43,41 @@ export default function UpscalePage() {
   const doUpscale = async () => {
     if (!original || loading) return;
     setLoading(true);
+    setProgress(0);
+    setStatusMsg("تحميل المعالج... (مرة واحدة فقط)");
 
     try {
-      const { default: Pica } = await import("pica");
-      const pica = Pica();
+      // كل هذا يُحمَّل فقط لما يضغط المستخدم — لا تأثير على سرعة الصفحة
+      const [{ default: Upscaler }, model] = await Promise.all([
+        import("upscaler"),
+        scale === 2
+          ? import("@upscalerjs/esrgan-slim/2x")
+          : import("@upscalerjs/esrgan-slim/4x"),
+      ]);
 
-      const srcImg = new Image();
-      srcImg.src = original.url;
-      await srcImg.decode();
+      setStatusMsg("جارٍ معالجة الصورة...");
 
-      const srcCanvas = document.createElement("canvas");
-      srcCanvas.width  = srcImg.naturalWidth;
-      srcCanvas.height = srcImg.naturalHeight;
-      srcCanvas.getContext("2d")!.drawImage(srcImg, 0, 0);
+      const upscaler = new Upscaler({ model: (model as any).default ?? model });
 
-      const dstCanvas = document.createElement("canvas");
-      dstCanvas.width  = original.w * scale;
-      dstCanvas.height = original.h * scale;
+      const img = new Image();
+      img.src = original.url;
+      await img.decode();
 
-      await pica.resize(srcCanvas, dstCanvas, { quality: 3 }); // Lanczos3
+      const result: string = await (upscaler as any).upscale(img, {
+        patchSize: 64,
+        padding: 2,
+        progress: (p: number) => {
+          const pct = Math.round(p * 100);
+          setProgress(pct);
+          setStatusMsg(`${pct}%`);
+        },
+      });
 
-      const blob = await pica.toBlob(dstCanvas, "image/png");
-      setUpscaled(URL.createObjectURL(blob));
+      setUpscaled(result);
+      setStatusMsg("اكتمل!");
     } catch (err) {
       console.error(err);
+      setStatusMsg("حدث خطأ، حاول مجدداً");
     } finally {
       setLoading(false);
     }
@@ -80,8 +88,7 @@ export default function UpscalePage() {
     if (!upscaled) return;
     const a = document.createElement("a");
     a.href = upscaled;
-    const base = original?.name.replace(/\.[^.]+$/, "") ?? "image";
-    a.download = `${base}_${scale}x.png`;
+    a.download = `${original?.name.replace(/\.[^.]+$/, "") ?? "image"}_${scale}x.png`;
     a.click();
   };
 
@@ -97,7 +104,7 @@ export default function UpscalePage() {
           كبّر صورتك <span className="text-gradient">بجودة عالية</span>
         </h1>
         <p className="text-gray-500 text-base max-w-lg mx-auto">
-          رفع الدقة يعمل مباشرة في متصفحك — صورتك لا تُرسل لأي خادم
+          يعمل مباشرة في متصفحك — صورتك لا تُرسل لأي خادم
         </p>
       </div>
 
@@ -129,16 +136,14 @@ export default function UpscalePage() {
           <div className="glass-card rounded-2xl p-4 flex flex-wrap items-center gap-4">
             <div className="flex items-center gap-2">
               <span className="text-sm text-gray-400 font-bold ml-1">المضاعفة:</span>
-              {([2, 3, 4, 8] as Scale[]).map(s => (
+              {([2, 4] as Scale[]).map(s => (
                 <button key={s}
-                  onClick={() => { setScale(s); setUpscaled(null); }}
+                  onClick={() => { setScale(s); setUpscaled(null); setProgress(0); }}
                   className={`px-4 py-1.5 rounded-xl text-sm font-black transition-all ${
-                    scale === s
-                      ? "bg-neon-cyan text-dark-bg"
-                      : "text-gray-400 hover:text-white bg-white/5"
+                    scale === s ? "bg-neon-cyan text-dark-bg" : "text-gray-400 hover:text-white bg-white/5"
                   }`}
                 >
-                  {SCALE_LABELS[s]}
+                  {s}×
                 </button>
               ))}
             </div>
@@ -160,9 +165,7 @@ export default function UpscalePage() {
             <div className="glass-card rounded-2xl overflow-hidden">
               <div className="px-4 py-2.5 border-b border-white/5 flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-gray-500"/>
-                <span className="text-xs font-bold text-gray-400">
-                  الأصلية — {original.w}×{original.h}
-                </span>
+                <span className="text-xs font-bold text-gray-400">الأصلية — {original.w}×{original.h}</span>
               </div>
               <div className="p-2 h-64 flex items-center justify-center">
                 <img src={original.url} alt="original"
@@ -174,9 +177,7 @@ export default function UpscalePage() {
               <div className="px-4 py-2.5 border-b border-white/5 flex items-center gap-2">
                 <span className={`w-2 h-2 rounded-full ${upscaled ? "bg-neon-cyan" : "bg-gray-700"}`}/>
                 <span className="text-xs font-bold text-gray-400">
-                  {upscaled
-                    ? `محسّنة — ${original.w * scale}×${original.h * scale}`
-                    : "في انتظار المعالجة..."}
+                  {upscaled ? `محسّنة — ${original.w * scale}×${original.h * scale}` : "في انتظار المعالجة..."}
                 </span>
               </div>
               <div className="p-2 h-64 flex items-center justify-center">
@@ -193,6 +194,16 @@ export default function UpscalePage() {
             </div>
           </div>
 
+          {/* ── progress bar ── */}
+          {loading && (
+            <div className="w-full h-1.5 rounded-full bg-white/5 overflow-hidden">
+              <div
+                className="h-full rounded-full bg-neon-cyan transition-all duration-300"
+                style={{ width: `${Math.max(progress, 3)}%` }}
+              />
+            </div>
+          )}
+
           {/* ── action ── */}
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             {!upscaled ? (
@@ -202,7 +213,11 @@ export default function UpscalePage() {
                 className="flex items-center justify-center gap-2 px-8 py-4 bg-neon-cyan text-dark-bg font-black text-sm rounded-2xl glow-cyan hover:scale-105 active:scale-95 transition-transform disabled:opacity-60 disabled:scale-100 disabled:cursor-wait"
               >
                 {loading ? (
-                  <><Loader2 size={16} className="animate-spin"/> جارٍ المعالجة...</>
+                  <>
+                    <Loader2 size={16} className="animate-spin"/>
+                    {statusMsg || "جارٍ المعالجة..."}
+                    {progress > 0 && ` (${progress}%)`}
+                  </>
                 ) : (
                   <><Zap size={16}/> رفع الدقة {scale}× <ArrowLeft size={14}/></>
                 )}
@@ -216,7 +231,7 @@ export default function UpscalePage() {
                   <Download size={16}/> تحميل الصورة المحسّنة
                 </button>
                 <button
-                  onClick={() => { setUpscaled(null); }}
+                  onClick={() => { setUpscaled(null); setProgress(0); }}
                   className="flex items-center justify-center gap-2 px-8 py-4 glass-card text-white font-bold text-sm rounded-2xl hover:border-white/15 transition-all"
                 >
                   تجربة درجة أخرى
