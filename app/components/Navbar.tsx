@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect, useRef, type ElementType } from "react";
 import {
   Menu, X, LogOut, LayoutDashboard,
-  QrCode, ImageDown, FileImage, FilePlus2,
+  QrCode, ImageDown, FileImage, FilePlus2, Maximize2,
   Award, FileText, ChevronDown, Wrench, Building2, Lock,
 } from "lucide-react";
 
@@ -16,9 +16,10 @@ type NavItem = ToolNavItem | ProductNavItem;
 /* ─── dropdown data ─────────────────────────────────── */
 const TOOLS: ToolNavItem[] = [
   { href: "/tools/qrcode",    label: "مولّد QR Code",  icon: QrCode,     desc: "روابط ونصوص وبزنس كارد" },
-  { href: "/tools/compress",  label: "ضاغط الملفات",    icon: ImageDown,  desc: "صور وPDF · JPEG · WebP · PNG" },
+  { href: "/tools/compress",  label: "ضاغط الملفات",   icon: ImageDown,  desc: "صور وPDF · JPEG · WebP · PNG" },
   { href: "/tools/img2pdf",   label: "صور إلى PDF",    icon: FileImage,  desc: "مقاسات مخصصة · تحميل مباشر" },
   { href: "/tools/pdf-merge", label: "دمج PDF",         icon: FilePlus2,  desc: "حتى 50 صفحة · PDF + صور" },
+  { href: "/tools/upscale",   label: "رفع دقة الصور",  icon: Maximize2,  desc: "ESRGAN AI · 2× 4× 8×" },
 ];
 
 const PRODUCTS: ProductNavItem[] = [

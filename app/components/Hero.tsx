@@ -5,7 +5,7 @@ import {
   useMotionValue, AnimatePresence,
 } from "framer-motion";
 import Link from "next/link";
-import { ArrowLeft, QrCode, ImageDown, FileImage, FilePlus2, Zap } from "lucide-react";
+import { ArrowLeft, QrCode, ImageDown, FileImage, FilePlus2, Award, Zap } from "lucide-react";
 import { useRef, useState, useEffect } from "react";
 
 /* ─── scroll progress bar ─── */
