@@ -108,22 +108,32 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ org:
   }
 
   const { searchParams } = new URL(req.url);
-  const from   = searchParams.get("from");
-  const to     = searchParams.get("to");
-  const empId  = searchParams.get("employeeId");
+  const date  = searchParams.get("date");
+  const from  = searchParams.get("from");
+  const to    = searchParams.get("to");
+  const empId = searchParams.get("employeeId");
+
+  let dateFilter = {};
+  if (date) {
+    const d = new Date(date);
+    d.setHours(0, 0, 0, 0);
+    dateFilter = { date: d };
+  } else if (from && to) {
+    dateFilter = { date: { gte: new Date(from), lte: new Date(to) } };
+  }
 
   const records = await prisma.attRecord.findMany({
     where: {
-      org:        { slug: org },
+      org: { slug: org },
       ...(empId && { employeeId: Number(empId) }),
-      ...(from && to && { date: { gte: new Date(from), lte: new Date(to) } }),
+      ...dateFilter,
     },
     include: { employee: { select: { name: true, email: true } } },
     orderBy: { date: "desc" },
     take: 200,
   });
 
-  return NextResponse.json(records);
+  return NextResponse.json({ records });
 }
 
 // PATCH — admin manual edit
