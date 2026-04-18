@@ -20,7 +20,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ org
   const host          = req.headers.get("host") ?? "localhost";
   const rpID          = getRpId(host);
   const expectedOrigin = `https://${host}`;
-  const challenge     = (employee as never as { notes: string }).notes;
+  const challenge     = (employee as never as { challenge: string }).challenge;
 
   try {
     const verification = await verifyRegistrationResponse({

@@ -154,6 +154,7 @@ model AttEmployee {
   credentialPublicKey Bytes?          // public key stored as bytes
   credentialCounter   Int             @default(0)
   deviceBound         Boolean         @default(false)
+  challenge           String?         // temporary WebAuthn challenge
   createdAt           DateTime        @default(now())
 
   attendance          AttRecord[]

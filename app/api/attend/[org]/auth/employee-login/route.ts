@@ -18,7 +18,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ org
   if (!valid) return NextResponse.json({ error: "البريد أو كلمة المرور غير صحيحة" }, { status: 401 });
 
   const token = await signAttToken(
-    { orgSlug: org, orgId: organization.id, empId: employee.id, role: "EMPLOYEE" },
+    { orgSlug: org, orgId: organization.id, employeeId: employee.id, role: "EMPLOYEE" },
     "12h"
   );
 

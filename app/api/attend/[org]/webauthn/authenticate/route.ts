@@ -26,7 +26,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ org
   // Store challenge temporarily
   await prisma.attEmployee.update({
     where: { id: employee.id },
-    data:  { notes: options.challenge } as never,
+    data:  { challenge: options.challenge } as never,
   });
 
   return NextResponse.json({ ...options, employeeId: employee.id });
