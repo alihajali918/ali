@@ -18,7 +18,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ org
     where: { org: { slug: org }, active: true },
   });
   if (!qrSession) return NextResponse.json({ error: "رمز QR غير صحيح أو منتهي الصلاحية" }, { status: 400 });
-  const valid = await totpVerify({ token: String(qrToken), secret: qrSession.secret });
+  const verifyFn = totpVerify as (opts: Record<string, unknown>) => unknown;
+  const vCurrent = await verifyFn({ token: String(qrToken), secret: qrSession.secret });
+  const vPrev    = await verifyFn({ token: String(qrToken), secret: qrSession.secret, epoch: Date.now() - 30000 });
+  const valid    = vCurrent === true || (vCurrent as { isValid?: boolean })?.isValid === true
+                || vPrev    === true || (vPrev    as { isValid?: boolean })?.isValid === true;
   if (!valid) {
     return NextResponse.json({ error: "رمز QR غير صحيح أو منتهي الصلاحية" }, { status: 400 });
   }
