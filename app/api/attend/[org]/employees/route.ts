@@ -19,11 +19,13 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ org:
     orderBy: { createdAt: "asc" },
   });
 
-  return NextResponse.json(employees.map(e => ({
-    ...e,
-    password:            undefined,
-    credentialPublicKey: undefined,
-  })));
+  return NextResponse.json({
+    employees: employees.map(e => ({
+      ...e,
+      password:            undefined,
+      credentialPublicKey: undefined,
+    })),
+  });
 }
 
 // POST — create employee

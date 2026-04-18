@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, use } from "react";
-import { UserPlus, Pencil, Trash2, Loader2, ShieldOff, RotateCcw } from "lucide-react";
+import { UserPlus, Pencil, Trash2, Loader2, RotateCcw, Link2 } from "lucide-react";
 
 type Employee = {
   id: string; name: string; email: string; role: string;
@@ -93,10 +93,21 @@ export default function EmployeesPage({ params }: { params: Promise<{ org: strin
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-black text-white">الموظفون</h1>
-        <button onClick={openAdd}
-          className="flex items-center gap-2 px-4 py-2 bg-neon-cyan text-dark-bg font-bold rounded-xl text-sm hover:scale-105 transition-transform">
-          <UserPlus size={16}/> موظف جديد
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={() => {
+              const url = `${window.location.origin}/attend/${org}/login`;
+              navigator.clipboard.writeText(url);
+              alert("تم نسخ رابط دخول الموظفين!");
+            }}
+            className="flex items-center gap-2 px-4 py-2 bg-white/10 text-gray-300 font-bold rounded-xl text-sm hover:bg-white/20 transition-colors">
+            <Link2 size={16}/> رابط الدخول
+          </button>
+          <button onClick={openAdd}
+            className="flex items-center gap-2 px-4 py-2 bg-neon-cyan text-dark-bg font-bold rounded-xl text-sm hover:scale-105 transition-transform">
+            <UserPlus size={16}/> موظف جديد
+          </button>
+        </div>
       </div>
 
       {loading ? (
