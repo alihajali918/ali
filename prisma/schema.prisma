@@ -98,3 +98,113 @@ model ReportHistory {
 
   @@map("report_history")
 }
+
+// ══════════════════════════════════════════
+//  ATTENDANCE SAAS — multi-tenant
+// ══════════════════════════════════════════
+
+enum AttPlan {
+  TRIAL
+  BASIC
+  PRO
+}
+
+enum AttRole {
+  ADMIN
+  EMPLOYEE
+}
+
+enum AttStatus {
+  PRESENT
+  LATE
+  ABSENT
+  HALF_DAY
+}
+
+model AttOrganization {
+  id          Int        @id @default(autoincrement())
+  name        String
+  slug        String     @unique        // company-slug → subdomain later
+  plan        AttPlan    @default(TRIAL)
+  planExpires DateTime?
+  adminSecret String                    // hashed password for org admin login
+  createdAt   DateTime   @default(now())
+
+  employees   AttEmployee[]
+  shifts      AttShift[]
+  attendance  AttRecord[]
+  qrSessions  AttQrSession[]
+
+  @@map("att_organizations")
+}
+
+model AttEmployee {
+  id                  Int             @id @default(autoincrement())
+  organizationId      Int
+  org                 AttOrganization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name                String
+  email               String
+  password            String
+  role                AttRole         @default(EMPLOYEE)
+  shiftId             Int?
+  shift               AttShift?       @relation(fields: [shiftId], references: [id])
+  active              Boolean         @default(true)
+  // WebAuthn device binding
+  credentialId        String?         // base64url — bound on first login
+  credentialPublicKey Bytes?          // public key stored as bytes
+  credentialCounter   Int             @default(0)
+  deviceBound         Boolean         @default(false)
+  createdAt           DateTime        @default(now())
+
+  attendance          AttRecord[]
+
+  @@unique([email, organizationId])
+  @@map("att_employees")
+}
+
+model AttShift {
+  id             Int             @id @default(autoincrement())
+  organizationId Int
+  org            AttOrganization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name           String          // "Morning" / "Evening"
+  startTime      String          // "09:00"
+  endTime        String          // "17:00"
+  workDays       String[]        // ["MON","TUE","WED","THU","FRI"]
+  createdAt      DateTime        @default(now())
+
+  employees      AttEmployee[]
+
+  @@map("att_shifts")
+}
+
+model AttRecord {
+  id              Int             @id @default(autoincrement())
+  organizationId  Int
+  org             AttOrganization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  employeeId      Int
+  employee        AttEmployee     @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  date            DateTime        @db.Date
+  checkIn         DateTime?
+  checkOut        DateTime?
+  status          AttStatus       @default(PRESENT)
+  lateMinutes     Int             @default(0)
+  overtimeMinutes Int             @default(0)
+  notes           String?
+  editedBy        String?         // admin override
+  createdAt       DateTime        @default(now())
+
+  @@unique([employeeId, date])
+  @@map("att_records")
+}
+
+model AttQrSession {
+  id             Int             @id @default(autoincrement())
+  organizationId Int
+  org            AttOrganization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  secret         String          // TOTP secret for this org
+  active         Boolean         @default(true)
+  updatedAt      DateTime        @updatedAt
+
+  @@unique([organizationId])
+  @@map("att_qr_sessions")
+}

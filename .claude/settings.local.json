@@ -58,7 +58,13 @@
       "Bash(git commit -m 'Add AI image upscaler tool with ESRGAN \\(2x/3x/4x/8x\\):*)",
       "Bash(git commit -m 'Replace UpscalerJS with pica \\(Lanczos3\\) — lighter upscale tool:*)",
       "Bash(git commit -m 'Switch upscaler back to UpscalerJS with lazy dynamic imports:*)",
-      "Bash(git commit -m 'Remove upscale tool — not delivering real quality improvement:*)"
+      "Bash(git commit -m 'Remove upscale tool — not delivering real quality improvement:*)",
+      "Bash(git commit -m 'Add background removal tool using @imgly/background-removal:*)",
+      "Bash(node_modules/.bin/prisma migrate:*)",
+      "Bash(node --max-old-space-size=4096 node_modules/typescript/bin/tsc --noEmit)",
+      "Bash(node_modules/.bin/next build *)",
+      "Bash(node_modules/.bin/prisma generate *)",
+      "Bash(git commit -m 'Add Smart Attendance SaaS — schema, WebAuthn, QR, API routes, admin UI, employee PWA *)"
     ]
   }
 }
