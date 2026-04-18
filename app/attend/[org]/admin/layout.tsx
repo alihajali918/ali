@@ -4,7 +4,7 @@ import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   LayoutDashboard, Users, ClipboardList,
-  Clock, QrCode, LogOut, Menu, X,
+  Clock, QrCode, LogOut, Menu, X, Monitor,
 } from "lucide-react";
 import { useState, use } from "react";
 
@@ -13,7 +13,8 @@ const navItems = (org: string) => [
   { href: `/attend/${org}/admin/employees`, label: "الموظفون",   icon: Users },
   { href: `/attend/${org}/admin/records`,   label: "السجلات",    icon: ClipboardList },
   { href: `/attend/${org}/admin/shifts`,    label: "الورديات",   icon: Clock },
-  { href: `/attend/${org}/admin/qr`,        label: "شاشة QR",    icon: QrCode },
+  { href: `/attend/${org}/admin/qr`,        label: "QR (أدمن)",  icon: QrCode },
+  { href: `/attend/${org}/display`,         label: "شاشة العرض", icon: Monitor },
 ];
 
 export default function AdminLayout({

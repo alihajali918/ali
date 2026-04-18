@@ -3,7 +3,7 @@ import { generate, verify, generateSecret } from "otplib";
 import { db as prisma } from "@/app/lib/db";
 import { getAttSession } from "@/app/lib/attendance";
 
-const STEP = 30;
+const STEP = 15;
 const remaining = () => STEP - (Math.floor(Date.now() / 1000) % STEP);
 
 // GET — current QR token (admin only)
