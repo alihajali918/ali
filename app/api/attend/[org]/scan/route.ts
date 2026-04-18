@@ -50,9 +50,23 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ org
     return NextResponse.json({
       hasSession:  true,
       name:        employee.name,
+      email:       employee.email,
       employeeId:  employee.id,
       attType:     getAttType(record),
     });
+  }
+
+  if (action === "check_employee") {
+    const { email } = body;
+    const organization = await prisma.attOrganization.findUnique({ where: { slug: org } });
+    if (!organization) return NextResponse.json({ error: "المؤسسة غير موجودة" }, { status: 404 });
+
+    const employee = await prisma.attEmployee.findFirst({
+      where: { email: String(email).toLowerCase().trim(), organizationId: organization.id, active: true },
+    });
+    if (!employee) return NextResponse.json({ error: "البريد غير موجود" }, { status: 404 });
+
+    return NextResponse.json({ deviceBound: employee.deviceBound });
   }
 
   if (action === "record") {
