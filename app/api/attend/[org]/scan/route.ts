@@ -1,21 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verify } from "otplib";
 import { db as prisma } from "@/app/lib/db";
-import { getAttSession } from "@/app/lib/attendance";
+import { getAttSession, verifyTOTP } from "@/app/lib/attendance";
 
 async function validateQrToken(org: string, token: string): Promise<boolean> {
   const qrSession = await prisma.attQrSession.findFirst({
     where: { org: { slug: org }, active: true },
   });
   if (!qrSession) return false;
-  // Check current window AND previous window manually for tolerance
-  const verifyFn = verify as (opts: Record<string, unknown>) => unknown;
-  const current  = await verifyFn({ token: String(token), secret: qrSession.secret });
-  if (current === true || (current as { isValid?: boolean })?.isValid === true) return true;
-
-  // Try previous 30s window by shifting epoch
-  const shifted = await verifyFn({ token: String(token), secret: qrSession.secret, epoch: Date.now() - 30000 });
-  return shifted === true || (shifted as { isValid?: boolean })?.isValid === true;
+  return verifyTOTP(qrSession.secret, token);
 }
 
 function getAttType(record: { checkIn: Date | null; checkOut: Date | null } | null): "CHECK_IN" | "CHECK_OUT" {

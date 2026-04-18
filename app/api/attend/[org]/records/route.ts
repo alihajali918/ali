@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db as prisma } from "@/app/lib/db";
 import { getAttSession, calcMinutes } from "@/app/lib/attendance";
-import { verify as totpVerify } from "otplib";
+import { verifyTOTP } from "@/app/lib/attendance";
 
 // POST — check-in or check-out
 export async function POST(req: NextRequest, { params }: { params: Promise<{ org: string }> }) {
@@ -18,11 +18,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ org
     where: { org: { slug: org }, active: true },
   });
   if (!qrSession) return NextResponse.json({ error: "رمز QR غير صحيح أو منتهي الصلاحية" }, { status: 400 });
-  const verifyFn = totpVerify as (opts: Record<string, unknown>) => unknown;
-  const vCurrent = await verifyFn({ token: String(qrToken), secret: qrSession.secret });
-  const vPrev    = await verifyFn({ token: String(qrToken), secret: qrSession.secret, epoch: Date.now() - 30000 });
-  const valid    = vCurrent === true || (vCurrent as { isValid?: boolean })?.isValid === true
-                || vPrev    === true || (vPrev    as { isValid?: boolean })?.isValid === true;
+  const valid = verifyTOTP(qrSession.secret, String(qrToken));
   if (!valid) {
     return NextResponse.json({ error: "رمز QR غير صحيح أو منتهي الصلاحية" }, { status: 400 });
   }
