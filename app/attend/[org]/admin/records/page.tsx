@@ -1,23 +1,28 @@
 "use client";
 
 import { useState, useEffect, use } from "react";
-import { Loader2, Pencil, Check, X } from "lucide-react";
+import { Loader2, Pencil, Check, X, FileText, Eye } from "lucide-react";
 
 type AttRecord = {
   id: string; date: string; status: string;
   checkIn: string | null; checkOut: string | null;
   lateMinutes: number; overtimeMinutes: number;
   employee: { name: string; email: string };
+  excuseType: string | null; excuseNote: string | null;
+  excuseFile: string | null; excuseApproved: boolean | null;
 };
 
-const statusLabel: { [k: string]: string } = {
+const statusLabel: Record<string, string> = {
   PRESENT: "حاضر", LATE: "متأخر", ABSENT: "غائب", HALF_DAY: "نصف يوم",
 };
-const statusColor: { [k: string]: string } = {
-  PRESENT: "text-green-400 bg-green-500/20",
-  LATE:    "text-yellow-400 bg-yellow-500/20",
-  ABSENT:  "text-red-400 bg-red-500/20",
-  HALF_DAY:"text-blue-400 bg-blue-500/20",
+const statusColor: Record<string, string> = {
+  PRESENT:  "text-green-400 bg-green-500/20",
+  LATE:     "text-yellow-400 bg-yellow-500/20",
+  ABSENT:   "text-red-400 bg-red-500/20",
+  HALF_DAY: "text-blue-400 bg-blue-500/20",
+};
+const excuseLabels: Record<string, string> = {
+  SICK: "تقرير طبي", VACATION: "إجازة", PERSONAL: "ظرف شخصي", OTHER: "سبب آخر",
 };
 
 export default function RecordsPage({ params }: { params: Promise<{ org: string }> }) {
@@ -28,6 +33,7 @@ export default function RecordsPage({ params }: { params: Promise<{ org: string 
   const [editId, setEditId]   = useState<string | null>(null);
   const [editForm, setEditForm] = useState({ status: "", notes: "" });
   const [saving, setSaving]   = useState(false);
+  const [previewFile, setPreviewFile] = useState<string | null>(null);
 
   const fetch_ = async (d: string) => {
     setLoading(true);
@@ -56,7 +62,16 @@ export default function RecordsPage({ params }: { params: Promise<{ org: string 
     fetch_(date);
   };
 
-  const fmt = (iso: string | null) => iso ? new Date(iso).toLocaleTimeString("ar-SA", { hour: "2-digit", minute: "2-digit" }) : "—";
+  const approveExcuse = async (recordId: string, approved: boolean) => {
+    await fetch(`/api/attend/${org}/excuse`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ recordId, approved }),
+    });
+    fetch_(date);
+  };
+
+  const fmt = (iso: string | null) =>
+    iso ? new Date(iso).toLocaleTimeString("ar-SA", { hour: "2-digit", minute: "2-digit" }) : "—";
 
   return (
     <div dir="rtl">
@@ -79,6 +94,7 @@ export default function RecordsPage({ params }: { params: Promise<{ org: string 
                 <th className="text-right px-5 py-3 font-semibold">الحالة</th>
                 <th className="text-right px-5 py-3 font-semibold">التأخر</th>
                 <th className="text-right px-5 py-3 font-semibold">الإضافي</th>
+                <th className="text-right px-5 py-3 font-semibold">العذر</th>
                 <th className="px-5 py-3"/>
               </tr>
             </thead>
@@ -94,7 +110,8 @@ export default function RecordsPage({ params }: { params: Promise<{ org: string 
                   <td className="px-5 py-4">
                     {editId === r.id ? (
                       <select value={editForm.status} onChange={e => setEditForm(f => ({ ...f, status: e.target.value }))}
-                        className="bg-white/10 text-white text-xs rounded-lg px-2 py-1 focus:outline-none">
+                        className="bg-[#111] text-white text-xs rounded-lg px-2 py-1 border border-white/10 focus:outline-none"
+                        style={{ colorScheme: "dark" }}>
                         {Object.keys(statusLabel).map(s => <option key={s} value={s}>{statusLabel[s]}</option>)}
                       </select>
                     ) : (
@@ -105,6 +122,42 @@ export default function RecordsPage({ params }: { params: Promise<{ org: string 
                   </td>
                   <td className="px-5 py-4 text-yellow-400 text-xs">{r.lateMinutes > 0 ? `${r.lateMinutes} د` : "—"}</td>
                   <td className="px-5 py-4 text-blue-400 text-xs">{r.overtimeMinutes > 0 ? `${r.overtimeMinutes} د` : "—"}</td>
+
+                  {/* Excuse column */}
+                  <td className="px-5 py-4">
+                    {r.excuseType ? (
+                      <div className="flex flex-col gap-1">
+                        <div className="flex items-center gap-1.5">
+                          {r.excuseApproved === true  && <span className="text-xs text-green-400 font-bold">✓ موافق</span>}
+                          {r.excuseApproved === false && <span className="text-xs text-red-400 font-bold">✗ مرفوض</span>}
+                          {r.excuseApproved === null  && (
+                            <div className="flex items-center gap-1">
+                              <span className="text-xs text-yellow-400">بانتظار المراجعة</span>
+                              <button onClick={() => approveExcuse(r.id, true)}
+                                className="text-green-400 hover:text-green-300 ml-1"><Check size={13}/></button>
+                              <button onClick={() => approveExcuse(r.id, false)}
+                                className="text-red-400 hover:text-red-300"><X size={13}/></button>
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <span className="text-xs text-gray-500">{excuseLabels[r.excuseType] ?? r.excuseType}</span>
+                          {r.excuseFile && (
+                            <button onClick={() => setPreviewFile(r.excuseFile)}
+                              className="text-neon-cyan hover:text-white" title="عرض المستند">
+                              <Eye size={13}/>
+                            </button>
+                          )}
+                        </div>
+                        {r.excuseNote && <p className="text-xs text-gray-600 max-w-[140px] truncate">{r.excuseNote}</p>}
+                      </div>
+                    ) : r.status === "ABSENT" ? (
+                      <span className="text-xs text-gray-600">لا يوجد</span>
+                    ) : (
+                      <span className="text-gray-700">—</span>
+                    )}
+                  </td>
+
                   <td className="px-5 py-4">
                     {editId === r.id ? (
                       <div className="flex gap-2">
@@ -121,10 +174,29 @@ export default function RecordsPage({ params }: { params: Promise<{ org: string 
                 </tr>
               ))}
               {records.length === 0 && (
-                <tr><td colSpan={7} className="text-center text-gray-500 py-10">لا توجد سجلات لهذا اليوم</td></tr>
+                <tr><td colSpan={8} className="text-center text-gray-500 py-10">لا توجد سجلات لهذا اليوم</td></tr>
               )}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {/* Document preview modal */}
+      {previewFile && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          onClick={() => setPreviewFile(null)}>
+          <div className="relative max-w-2xl w-full max-h-[85vh] overflow-auto rounded-2xl bg-[#111] p-2"
+            onClick={e => e.stopPropagation()}>
+            <button onClick={() => setPreviewFile(null)}
+              className="absolute top-3 left-3 text-gray-400 hover:text-white bg-black/50 rounded-full p-1 z-10">
+              <X size={18}/>
+            </button>
+            {previewFile.startsWith("data:image") ? (
+              <img src={previewFile} alt="عذر طبي" className="w-full rounded-xl"/>
+            ) : (
+              <iframe src={previewFile} className="w-full h-[80vh] rounded-xl" title="مستند العذر"/>
+            )}
+          </div>
         </div>
       )}
     </div>

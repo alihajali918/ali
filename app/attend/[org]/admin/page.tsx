@@ -17,10 +17,15 @@ export default function AdminDashboard({ params }: { params: Promise<{ org: stri
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    fetch(`/api/attend/${org}/analytics`)
-      .then(r => r.json())
-      .then(d => { if (!d.error) setStats(d); })
-      .catch(() => {});
+    // Mark absences for past workdays, then load stats
+    fetch(`/api/attend/${org}/mark-absences`, { method: "POST" })
+      .catch(() => {})
+      .finally(() => {
+        fetch(`/api/attend/${org}/analytics`)
+          .then(r => r.json())
+          .then(d => { if (!d.error) setStats(d); })
+          .catch(() => {});
+      });
   }, [org]);
 
   const copyLink = (path: string) => {

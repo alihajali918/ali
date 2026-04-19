@@ -199,6 +199,10 @@ model AttRecord {
   overtimeMinutes Int             @default(0)
   notes           String?
   editedBy        String?         // admin override
+  excuseType      String?         // SICK | VACATION | PERSONAL | OTHER
+  excuseFile      String?         // base64 data URL of uploaded document
+  excuseNote      String?         // employee's text note
+  excuseApproved  Boolean?        // null=pending, true=approved, false=rejected
   createdAt       DateTime        @default(now())
 
   @@unique([employeeId, date])

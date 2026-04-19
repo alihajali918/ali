@@ -86,6 +86,11 @@ ALTER TABLE "att_employees" ADD COLUMN IF NOT EXISTS "challenge"    TEXT;
 ALTER TABLE "att_employees" ADD COLUMN IF NOT EXISTS "salary"       DECIMAL(12,2);
 ALTER TABLE "att_employees" ADD COLUMN IF NOT EXISTS "overtimeRate" DECIMAL(12,2);
 
+ALTER TABLE "att_records" ADD COLUMN IF NOT EXISTS "excuseType"     TEXT;
+ALTER TABLE "att_records" ADD COLUMN IF NOT EXISTS "excuseFile"     TEXT;
+ALTER TABLE "att_records" ADD COLUMN IF NOT EXISTS "excuseNote"     TEXT;
+ALTER TABLE "att_records" ADD COLUMN IF NOT EXISTS "excuseApproved" BOOLEAN;
+
 -- RLS (block direct PostgREST access)
 ALTER TABLE "att_organizations" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "att_employees"     ENABLE ROW LEVEL SECURITY;
