@@ -2,10 +2,10 @@
 
 import { use, useEffect, useState, Suspense, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
-import { startRegistration } from "@simplewebauthn/browser";
+import { startRegistration, startAuthentication } from "@simplewebauthn/browser";
 import { Fingerprint, Loader2, CheckCircle2, AlertCircle, LogIn, LogOut } from "lucide-react";
 
-type Stage = "validating" | "login" | "binding" | "confirm" | "done" | "error";
+type Stage = "validating" | "login" | "webauthn" | "binding" | "confirm" | "done" | "error";
 type AttType = "CHECK_IN" | "CHECK_OUT";
 
 function ScanContent({ org }: { org: string }) {
@@ -13,9 +13,10 @@ function ScanContent({ org }: { org: string }) {
 
   const [stage, setStage]     = useState<Stage>("validating");
   const [attType, setAttType] = useState<AttType>("CHECK_IN");
-  const [name, setName]       = useState("");
-  const [email, setEmail]     = useState("");
+  const [name, setName]         = useState("");
+  const [email, setEmail]       = useState("");
   const [password, setPassword] = useState("");
+  const [pendingEmpId, setPendingEmpId] = useState<number | null>(null);
   const [error, setError]     = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -51,8 +52,10 @@ function ScanContent({ org }: { org: string }) {
       if (!res.ok) { setError(data.error); return; }
       setName(data.name);
       if (data.needsBinding) { setStage("binding"); }
-      else {
-        // Re-validate after login to get correct attType from server
+      else if (data.needsWebAuthn) {
+        setPendingEmpId(data.employeeId);
+        setStage("webauthn");
+      } else {
         const val = await fetch(`/api/attend/${org}/scan`, {
           method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ action: "validate", token }),
@@ -61,6 +64,37 @@ function ScanContent({ org }: { org: string }) {
         setAttType(valData.attType ?? "CHECK_IN");
         setStage("confirm");
       }
+    } finally { setLoading(false); }
+  };
+
+  const authenticateDevice = async () => {
+    setLoading(true); setError("");
+    try {
+      const optRes = await fetch(`/api/attend/${org}/webauthn/authenticate`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const opts = await optRes.json();
+      if (!optRes.ok) { setError(opts.error); return; }
+
+      const response = await startAuthentication({ optionsJSON: opts });
+      const verRes   = await fetch(`/api/attend/${org}/webauthn/auth-verify`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ employeeId: pendingEmpId, response }),
+      });
+      const ver = await verRes.json();
+      if (!verRes.ok) { setError(ver.error); return; }
+
+      // Session now set — re-validate to get attType
+      const val = await fetch(`/api/attend/${org}/scan`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "validate", token }),
+      });
+      const valData = await val.json();
+      setAttType(valData.attType ?? "CHECK_IN");
+      setStage("confirm");
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "فشل التحقق بالبصمة");
     } finally { setLoading(false); }
   };
 
@@ -134,6 +168,21 @@ function ScanContent({ org }: { org: string }) {
               {loading ? <Loader2 size={18} className="animate-spin mx-auto"/> : "دخول"}
             </button>
           </form>
+        )}
+
+        {stage === "webauthn" && (
+          <div className="glass-card rounded-2xl p-8 flex flex-col items-center gap-5 text-center">
+            <Fingerprint size={40} className="text-neon-cyan"/>
+            <div>
+              <p className="text-white font-black text-lg">مرحباً {name}</p>
+              <p className="text-gray-400 text-sm mt-1">تحقق بالبصمة أو Face ID للمتابعة</p>
+            </div>
+            {error && <p className="text-red-400 text-sm bg-red-500/10 rounded-xl px-4 py-2 w-full">{error}</p>}
+            <button onClick={authenticateDevice} disabled={loading}
+              className="flex items-center justify-center gap-2 w-full py-4 bg-neon-cyan text-dark-bg font-black rounded-2xl hover:scale-105 active:scale-95 transition-transform disabled:opacity-60">
+              {loading ? <Loader2 size={18} className="animate-spin"/> : <><Fingerprint size={18}/> تحقق بالبصمة</>}
+            </button>
+          </div>
         )}
 
         {stage === "binding" && (

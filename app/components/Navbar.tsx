@@ -6,11 +6,11 @@ import { useState, useEffect, useRef, type ElementType } from "react";
 import {
   Menu, X, LogOut, LayoutDashboard,
   QrCode, ImageDown, FileImage, FilePlus2, Scissors,
-  Award, FileText, ChevronDown, Wrench, Building2, Lock,
+  Award, FileText, ChevronDown, Wrench, Building2, Lock, Fingerprint, ShoppingBag,
 } from "lucide-react";
 
 type ToolNavItem = { href: string; label: string; icon: ElementType; desc: string };
-type ProductNavItem = { id: string; label: string; icon: ElementType; desc: string };
+type ProductNavItem = { id: string; label: string; icon: ElementType; desc: string; href?: string; live?: boolean };
 type NavItem = ToolNavItem | ProductNavItem;
 
 /* ─── dropdown data ─────────────────────────────────── */
@@ -23,6 +23,7 @@ const TOOLS: ToolNavItem[] = [
 ];
 
 const PRODUCTS: ProductNavItem[] = [
+  { id: "attendance", label: "نظام الحضور", icon: Fingerprint, desc: "QR + بصمة الجهاز · متأخر · أوفرتايم", href: "/attend", live: true },
   { id: "certs", label: "صانع الشهادات", icon: Award, desc: "6 قوالب · ذكاء اصطناعي · PDF" },
   { id: "reports", label: "صانع التقارير", icon: FileText, desc: "تقارير Excel/PDF احترافية" },
 ];
@@ -65,20 +66,27 @@ function NavDropdown({
           {items.map(item => {
             const ItemIcon = item.icon;
             const isProduct = "id" in item;
+            const isLive    = isProduct && (item as ProductNavItem).live;
+            const isLocked  = isProduct && !isLive;
             const rowClass =
               "flex items-center gap-3 px-4 py-3 transition-all group w-full text-right " +
-              (isProduct ? "opacity-70 cursor-default" : "hover:bg-white/4");
+              (isLocked ? "opacity-70 cursor-default" : "hover:bg-white/4");
             const inner = (
               <>
                 <div className="w-8 h-8 rounded-xl bg-white/5 flex items-center justify-center shrink-0 group-hover:bg-neon-cyan/8 transition-colors">
-                  <ItemIcon size={15} className={isProduct ? "text-gray-500" : "text-neon-cyan"}/>
+                  <ItemIcon size={15} className={isLocked ? "text-gray-500" : "text-neon-cyan"}/>
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-bold text-white truncate">{item.label}</span>
-                    {isProduct && (
+                    {isLocked && (
                       <span className="flex items-center gap-1 text-[9px] font-black px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 shrink-0">
                         <Lock size={8}/> قريباً
+                      </span>
+                    )}
+                    {isLive && (
+                      <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full bg-neon-cyan/10 text-neon-cyan border border-neon-cyan/20 shrink-0">
+                        متاح
                       </span>
                     )}
                   </div>
@@ -86,26 +94,17 @@ function NavDropdown({
                 </div>
               </>
             );
-            if (isProduct) {
+            if (isLocked) {
               return (
-                <button
-                  key={item.id}
-                  type="button"
-                  title="هذه الميزة قيد التطوير"
-                  onClick={() => setOpen(false)}
-                  className={rowClass}
-                >
+                <button key={(item as ProductNavItem).id} type="button"
+                  title="هذه الميزة قيد التطوير" onClick={() => setOpen(false)} className={rowClass}>
                   {inner}
                 </button>
               );
             }
+            const href = isLive ? (item as ProductNavItem).href! : (item as ToolNavItem).href;
             return (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={() => setOpen(false)}
-                className={rowClass}
-              >
+              <Link key={href} href={href} onClick={() => setOpen(false)} className={rowClass}>
                 {inner}
               </Link>
             );
@@ -118,6 +117,7 @@ function NavDropdown({
 
 /* ─── static links ──────────────────────────────────── */
 const STATIC_LINKS = [
+  { href: "/products",  label: "المنتجات" },
   { href: "/portfolio", label: "الأعمال" },
   { href: "/pricing",   label: "التسعير" },
 ];
@@ -301,13 +301,19 @@ export default function Navbar({ initialUser }: { initialUser: NavUser | null })
             </p>
             {PRODUCTS.map(item => {
               const Icon = item.icon;
+              if (item.live && item.href) {
+                return (
+                  <Link key={item.id} href={item.href}
+                    className="flex items-center gap-3 px-4 py-3 rounded-2xl text-gray-300 hover:text-white hover:bg-white/5 transition-all">
+                    <Icon size={16} className="text-neon-cyan shrink-0"/>
+                    <span className="text-sm font-bold">{item.label}</span>
+                    <span className="mr-auto text-[9px] font-black px-1.5 py-0.5 rounded-full bg-neon-cyan/10 text-neon-cyan border border-neon-cyan/20">متاح</span>
+                  </Link>
+                );
+              }
               return (
-                <button
-                  key={item.id}
-                  type="button"
-                  title="قيد التطوير"
-                  className="flex items-center gap-3 px-4 py-3 rounded-2xl text-gray-500 opacity-60 w-full text-right cursor-default"
-                >
+                <button key={item.id} type="button" title="قيد التطوير"
+                  className="flex items-center gap-3 px-4 py-3 rounded-2xl text-gray-500 opacity-60 w-full text-right cursor-default">
                   <Icon size={16} className="text-amber-400 shrink-0"/>
                   <span className="text-sm font-bold">{item.label}</span>
                   <span className="mr-auto text-[9px] font-black px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center gap-1">

@@ -81,6 +81,8 @@ ALTER TABLE "att_organizations" ADD COLUMN IF NOT EXISTS "phone"   TEXT;
 ALTER TABLE "att_organizations" ADD COLUMN IF NOT EXISTS "address" TEXT;
 ALTER TABLE "att_organizations" ADD COLUMN IF NOT EXISTS "attendanceWindowMins" INTEGER NOT NULL DEFAULT 10;
 ALTER TABLE "att_organizations" ADD COLUMN IF NOT EXISTS "lateToleranceMins"    INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE "att_organizations" ADD COLUMN IF NOT EXISTS "displayKey"           TEXT UNIQUE DEFAULT gen_random_uuid()::TEXT;
+UPDATE "att_organizations" SET "displayKey" = gen_random_uuid()::TEXT WHERE "displayKey" IS NULL;
 
 ALTER TABLE "att_employees" ADD COLUMN IF NOT EXISTS "challenge"    TEXT;
 ALTER TABLE "att_employees" ADD COLUMN IF NOT EXISTS "salary"       DECIMAL(12,2);

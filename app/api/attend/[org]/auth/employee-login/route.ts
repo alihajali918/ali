@@ -17,17 +17,18 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ org
   const valid = await verifyPassword(password, employee.password);
   if (!valid) return NextResponse.json({ error: "البريد أو كلمة المرور غير صحيحة" }, { status: 401 });
 
+  // Device-bound employees must verify via WebAuthn — don't issue session yet
+  if (employee.deviceBound) {
+    return NextResponse.json({ ok: true, name: employee.name, needsWebAuthn: true, employeeId: employee.id });
+  }
+
+  // First-time (unbound) — issue session and prompt for device binding
   const token = await signAttToken(
     { orgSlug: org, orgId: organization.id, employeeId: employee.id, role: "EMPLOYEE" },
     "12h"
   );
 
-  const res = NextResponse.json({
-    ok:          true,
-    name:        employee.name,
-    needsBinding: !employee.deviceBound,
-  });
-
+  const res = NextResponse.json({ ok: true, name: employee.name, needsBinding: true });
   res.cookies.set("att_emp_token", token, {
     httpOnly: true,
     secure:   process.env.NODE_ENV === "production",
@@ -35,6 +36,5 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ org
     path:     "/",
     maxAge:   60 * 60 * 12,
   });
-
   return res;
 }

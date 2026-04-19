@@ -131,8 +131,9 @@ model AttOrganization {
   email                String?
   phone                String?
   address              String?
-  attendanceWindowMins Int        @default(10)   // ±minutes around shift start/end for check-in/out
-  lateToleranceMins    Int        @default(0)    // grace minutes before marking as late
+  attendanceWindowMins Int        @default(10)
+  lateToleranceMins    Int        @default(0)
+  displayKey           String     @unique @default(cuid())  // secret key for display screen URL
   createdAt            DateTime   @default(now())
 
   employees    AttEmployee[]

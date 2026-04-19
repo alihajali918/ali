@@ -1,16 +1,17 @@
 "use client";
 
 import { use, useEffect, useState } from "react";
-import { Loader2, Save, Building2 } from "lucide-react";
+import { Loader2, Save, Building2, Copy, Monitor } from "lucide-react";
 
 type OrgSettings = {
   name: string; slug: string; email: string; phone: string; address: string; plan: string;
-  attendanceWindowMins: number; lateToleranceMins: number;
+  attendanceWindowMins: number; lateToleranceMins: number; displayKey: string;
 };
 
 export default function SettingsPage({ params }: { params: Promise<{ org: string }> }) {
   const { org } = use(params);
-  const [form, setForm] = useState<OrgSettings>({ name: "", slug: "", email: "", phone: "", address: "", plan: "", attendanceWindowMins: 10, lateToleranceMins: 0 });
+  const [form, setForm] = useState<OrgSettings>({ name: "", slug: "", email: "", phone: "", address: "", plan: "", attendanceWindowMins: 10, lateToleranceMins: 0, displayKey: "" });
+  const [copiedDk, setCopiedDk] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving]   = useState(false);
   const [saved, setSaved]     = useState(false);
@@ -67,6 +68,29 @@ export default function SettingsPage({ params }: { params: Promise<{ org: string
             </span>
           </div>
         </div>
+
+        {/* Display screen URL */}
+        {form.displayKey && (
+          <div className="bg-white/3 border border-white/8 rounded-xl px-4 py-3">
+            <div className="flex items-center gap-2 mb-1.5">
+              <Monitor size={14} className="text-neon-cyan"/>
+              <p className="text-xs font-bold text-neon-cyan">رابط شاشة العرض (للتلفزيون)</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <p className="text-[11px] text-gray-400 font-mono break-all flex-1">
+                {typeof window !== "undefined" ? `${window.location.origin}/attend/${org}/display?dk=${form.displayKey}` : `/attend/${org}/display?dk=${form.displayKey}`}
+              </p>
+              <button type="button" onClick={() => {
+                navigator.clipboard.writeText(`${window.location.origin}/attend/${org}/display?dk=${form.displayKey}`);
+                setCopiedDk(true); setTimeout(() => setCopiedDk(false), 2000);
+              }} className="text-gray-500 hover:text-neon-cyan shrink-0">
+                <Copy size={13}/>
+              </button>
+            </div>
+            {copiedDk && <p className="text-[10px] text-green-400 mt-1">✓ تم النسخ</p>}
+            <p className="text-[10px] text-gray-600 mt-1">افتح هذا الرابط على شاشة الاستقبال — لا يحتاج تسجيل دخول</p>
+          </div>
+        )}
 
         <div className="grid sm:grid-cols-2 gap-4">
           <div>

@@ -23,6 +23,7 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ org: s
     plan:                 organization.plan,
     attendanceWindowMins: organization.attendanceWindowMins,
     lateToleranceMins:    organization.lateToleranceMins,
+    displayKey:           organization.displayKey,
   });
 }
 
