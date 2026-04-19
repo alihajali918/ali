@@ -24,17 +24,21 @@ export async function POST(_: NextRequest, { params }: { params: Promise<{ org: 
   for (const emp of employees) {
     if (!emp.shift) continue;
 
-    // Check last 7 days (excluding today)
-    for (let daysAgo = 1; daysAgo <= 7; daysAgo++) {
-      const day = new Date();
-      day.setDate(day.getDate() - daysAgo);
-      day.setHours(0, 0, 0, 0);
+    // Walk backwards from yesterday all the way to the employee's creation date
+    const startDate = new Date(emp.createdAt);
+    startDate.setHours(0, 0, 0, 0);
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    yesterday.setHours(0, 0, 0, 0);
 
-      const dayOfWeek = day.getDay().toString(); // "0"=Sun … "6"=Sat
+    for (let day = new Date(yesterday); day >= startDate; day.setDate(day.getDate() - 1)) {
+      const day_ = new Date(day);
+
+      const dayOfWeek = day_.getDay().toString(); // "0"=Sun … "6"=Sat
       if (!emp.shift.workDays.includes(dayOfWeek)) continue;
 
       const existing = await prisma.attRecord.findUnique({
-        where: { employeeId_date: { employeeId: emp.id, date: day } },
+        where: { employeeId_date: { employeeId: emp.id, date: day_ } },
       });
       if (existing) continue;
 
@@ -42,7 +46,7 @@ export async function POST(_: NextRequest, { params }: { params: Promise<{ org: 
         data: {
           organizationId: organization.id,
           employeeId:     emp.id,
-          date:           day,
+          date:           day_,
           status:         "ABSENT",
         },
       });
