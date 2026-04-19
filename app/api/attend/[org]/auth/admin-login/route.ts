@@ -25,5 +25,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ org
     path:     "/",
     maxAge:   60 * 60 * 24,
   });
+  res.cookies.set("att_emp_token", "", { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "strict", path: "/", maxAge: 0 });
   return res;
 }

@@ -19,7 +19,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ org
 
   // Device-bound employees must verify via WebAuthn — don't issue session yet
   if (employee.deviceBound) {
-    return NextResponse.json({ ok: true, name: employee.name, needsWebAuthn: true, employeeId: employee.id });
+    const r = NextResponse.json({ ok: true, name: employee.name, needsWebAuthn: true, employeeId: employee.id });
+    r.cookies.set("att_admin_token", "", { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "strict", path: "/", maxAge: 0 });
+    return r;
   }
 
   // First-time (unbound) — issue session and prompt for device binding
@@ -36,5 +38,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ org
     path:     "/",
     maxAge:   60 * 60 * 12,
   });
+  res.cookies.set("att_admin_token", "", { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "strict", path: "/", maxAge: 0 });
   return res;
 }

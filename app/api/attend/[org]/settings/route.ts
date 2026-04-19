@@ -7,12 +7,16 @@ async function guard(org: string) {
   return s?.orgSlug === org ? s : null;
 }
 
-export async function GET(_: NextRequest, { params }: { params: Promise<{ org: string }> }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ org: string }> }) {
   const { org } = await params;
-  if (!await guard(org)) return NextResponse.json({ error: "غير مصرح" }, { status: 401 });
 
   const organization = await prisma.attOrganization.findUnique({ where: { slug: org } });
   if (!organization) return NextResponse.json({ error: "غير موجود" }, { status: 404 });
+
+  // Admin session required for sensitive fields
+  if (!await guard(org)) {
+    return NextResponse.json({ exists: true, name: organization.name });
+  }
 
   return NextResponse.json({
     name:                 organization.name,
