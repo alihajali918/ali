@@ -100,23 +100,24 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ org
         const [h, m] = t.split(":").map(Number);
         const d = new Date(today); d.setHours(h, m, 0, 0); return d;
       };
+      const fmt = (d: Date) => d.toLocaleTimeString("ar-SA", { hour: "2-digit", minute: "2-digit" });
 
       if (attType === "CHECK_IN") {
-        const open  = new Date(parseTime(employee.shift.startTime).getTime() - WINDOW * 60000);
-        const close = new Date(parseTime(employee.shift.startTime).getTime() + WINDOW * 60000);
-        if (now < open || now > close) {
-          const fmt = (d: Date) => d.toLocaleTimeString("ar-SA", { hour: "2-digit", minute: "2-digit" });
+        // Only block check-in if employee is too early (before window opens).
+        // Late arrivals are always allowed — they get marked LATE with minutes counted.
+        const earliest = new Date(parseTime(employee.shift.startTime).getTime() - WINDOW * 60000);
+        if (now < earliest) {
           return NextResponse.json({
-            error: `تسجيل الحضور مقبول فقط بين ${fmt(open)} و ${fmt(close)}`,
+            error: `تسجيل الحضور لا يبدأ قبل ${fmt(earliest)}`,
           }, { status: 400 });
         }
       } else {
-        const open  = new Date(parseTime(employee.shift.endTime).getTime() - WINDOW * 60000);
-        const close = new Date(parseTime(employee.shift.endTime).getTime() + WINDOW * 60000);
-        if (now < open || now > close) {
-          const fmt = (d: Date) => d.toLocaleTimeString("ar-SA", { hour: "2-digit", minute: "2-digit" });
+        // Check-out: block if too early before shift end.
+        // Allow any time after window opens (late check-out = overtime).
+        const earliest = new Date(parseTime(employee.shift.endTime).getTime() - WINDOW * 60000);
+        if (now < earliest) {
           return NextResponse.json({
-            error: `تسجيل الانصراف مقبول فقط بين ${fmt(open)} و ${fmt(close)}`,
+            error: `تسجيل الانصراف لا يبدأ قبل ${fmt(earliest)}`,
           }, { status: 400 });
         }
       }
