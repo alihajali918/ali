@@ -145,6 +145,13 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ or
   }
 
   const { id, checkIn, checkOut, status, notes } = await req.json();
+
+  // Verify record belongs to this org before mutating
+  const existing = await prisma.attRecord.findFirst({
+    where: { id: Number(id), org: { slug: org } },
+  });
+  if (!existing) return NextResponse.json({ error: "السجل غير موجود" }, { status: 404 });
+
   const updated = await prisma.attRecord.update({
     where: { id: Number(id) },
     data:  {

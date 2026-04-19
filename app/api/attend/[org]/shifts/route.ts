@@ -46,6 +46,13 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ or
   if (!session || session.orgSlug !== org) return NextResponse.json({ error: "غير مصرح" }, { status: 401 });
 
   const { id, name, startTime, endTime, workDays } = await req.json();
+
+  // Verify shift belongs to this org
+  const organization = await getOrg(org);
+  if (!organization) return NextResponse.json({ error: "غير موجود" }, { status: 404 });
+  const existing = await prisma.attShift.findFirst({ where: { id, organizationId: organization.id } });
+  if (!existing) return NextResponse.json({ error: "الوردية غير موجودة" }, { status: 404 });
+
   const shift = await prisma.attShift.update({
     where: { id },
     data: { name, startTime, endTime, workDays },
@@ -59,6 +66,13 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ o
   if (!session || session.orgSlug !== org) return NextResponse.json({ error: "غير مصرح" }, { status: 401 });
 
   const { id } = await req.json();
+
+  // Verify shift belongs to this org
+  const organization = await getOrg(org);
+  if (!organization) return NextResponse.json({ error: "غير موجود" }, { status: 404 });
+  const existing = await prisma.attShift.findFirst({ where: { id, organizationId: organization.id } });
+  if (!existing) return NextResponse.json({ error: "الوردية غير موجودة" }, { status: 404 });
+
   await prisma.attShift.delete({ where: { id } });
   return NextResponse.json({ ok: true });
 }

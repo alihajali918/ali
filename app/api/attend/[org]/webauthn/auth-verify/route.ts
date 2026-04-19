@@ -21,8 +21,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ org
 
   const host           = req.headers.get("host") ?? "localhost";
   const rpID           = getRpId(host);
-  const expectedOrigin = `https://${host}`;
-  const challenge      = (employee as never as { challenge: string }).challenge;
+  const proto          = process.env.NODE_ENV === "production" ? "https" : (req.headers.get("x-forwarded-proto") ?? "http");
+  const expectedOrigin = `${proto}://${host}`;
+  const challenge      = (employee as never as { challenge: string | null }).challenge;
+  if (!challenge) return NextResponse.json({ error: "لم يُطلب تحدي المصادقة — أعد المحاولة" }, { status: 400 });
 
   try {
     const verification = await verifyAuthenticationResponse({

@@ -17,10 +17,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ org
   if (!employee) return NextResponse.json({ error: "موظف غير موجود" }, { status: 404 });
 
   const body          = await req.json();
-  const host          = req.headers.get("host") ?? "localhost";
-  const rpID          = getRpId(host);
-  const expectedOrigin = `https://${host}`;
-  const challenge     = (employee as never as { challenge: string }).challenge;
+  const host           = req.headers.get("host") ?? "localhost";
+  const rpID           = getRpId(host);
+  const proto          = process.env.NODE_ENV === "production" ? "https" : (req.headers.get("x-forwarded-proto") ?? "http");
+  const expectedOrigin = `${proto}://${host}`;
+  const challenge = (employee as never as { challenge: string | null }).challenge;
+  if (!challenge) return NextResponse.json({ error: "لم يُطلب تحدي التسجيل — أعد المحاولة" }, { status: 400 });
 
   try {
     const verification = await verifyRegistrationResponse({

@@ -63,6 +63,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ or
 
   const { id, name, email, shiftId, active, resetDevice, salary, overtimeRate, password: newPw } = await req.json();
 
+  // Verify employee belongs to this org before mutating
+  const organization = await prisma.attOrganization.findUnique({ where: { slug: org } });
+  if (!organization) return NextResponse.json({ error: "المؤسسة غير موجودة" }, { status: 404 });
+  const existing = await prisma.attEmployee.findFirst({ where: { id: Number(id), organizationId: organization.id } });
+  if (!existing) return NextResponse.json({ error: "الموظف غير موجود" }, { status: 404 });
+
   const data: Record<string, unknown> = {};
   if (name        !== undefined) data.name        = name;
   if (email       !== undefined) data.email       = email;
@@ -94,6 +100,13 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ o
   if (!await adminGuard(req, org)) return NextResponse.json({ error: "غير مصرح" }, { status: 401 });
 
   const { id } = await req.json();
+
+  // Verify employee belongs to this org before deleting
+  const organization = await prisma.attOrganization.findUnique({ where: { slug: org } });
+  if (!organization) return NextResponse.json({ error: "المؤسسة غير موجودة" }, { status: 404 });
+  const existing = await prisma.attEmployee.findFirst({ where: { id: Number(id), organizationId: organization.id } });
+  if (!existing) return NextResponse.json({ error: "الموظف غير موجود" }, { status: 404 });
+
   await prisma.attEmployee.delete({ where: { id: Number(id) } });
   return NextResponse.json({ ok: true });
 }
