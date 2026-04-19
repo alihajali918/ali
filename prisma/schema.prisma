@@ -128,6 +128,9 @@ model AttOrganization {
   plan        AttPlan    @default(TRIAL)
   planExpires DateTime?
   adminSecret String                    // hashed password for org admin login
+  email       String?
+  phone       String?
+  address     String?
   createdAt   DateTime   @default(now())
 
   employees   AttEmployee[]
@@ -155,6 +158,8 @@ model AttEmployee {
   credentialCounter   Int             @default(0)
   deviceBound         Boolean         @default(false)
   challenge           String?         // temporary WebAuthn challenge
+  salary              Decimal?        // monthly salary
+  overtimeRate        Decimal?        // overtime hourly rate (if null, auto-calculated from salary)
   createdAt           DateTime        @default(now())
 
   attendance          AttRecord[]

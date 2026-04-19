@@ -36,7 +36,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ org
   const organization = await prisma.attOrganization.findUnique({ where: { slug: org } });
   if (!organization) return NextResponse.json({ error: "المؤسسة غير موجودة" }, { status: 404 });
 
-  const { name, email, password, shiftId } = await req.json();
+  const { name, email, password, shiftId, salary, overtimeRate } = await req.json();
   if (!name || !email || !password) {
     return NextResponse.json({ error: "الاسم والإيميل وكلمة المرور مطلوبة" }, { status: 400 });
   }
@@ -47,7 +47,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ org
       organizationId: organization.id,
       name, email,
       password: hashed,
-      ...(shiftId && { shiftId: Number(shiftId) }),
+      ...(shiftId     && { shiftId: Number(shiftId) }),
+      ...(salary      != null && { salary }),
+      ...(overtimeRate != null && { overtimeRate }),
     },
   });
 
@@ -59,13 +61,16 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ or
   const { org } = await params;
   if (!await adminGuard(req, org)) return NextResponse.json({ error: "غير مصرح" }, { status: 401 });
 
-  const { id, name, email, shiftId, active, resetDevice } = await req.json();
+  const { id, name, email, shiftId, active, resetDevice, salary, overtimeRate, password: newPw } = await req.json();
 
   const data: Record<string, unknown> = {};
-  if (name    !== undefined) data.name    = name;
-  if (email   !== undefined) data.email   = email;
-  if (active  !== undefined) data.active  = active;
-  if (shiftId !== undefined) data.shiftId = shiftId ? Number(shiftId) : null;
+  if (name        !== undefined) data.name        = name;
+  if (email       !== undefined) data.email       = email;
+  if (active      !== undefined) data.active      = active;
+  if (shiftId     !== undefined) data.shiftId     = shiftId ? Number(shiftId) : null;
+  if (salary      !== undefined) data.salary      = salary;
+  if (overtimeRate !== undefined) data.overtimeRate = overtimeRate;
+  if (newPw) data.password = await hashPassword(newPw);
 
   // Reset WebAuthn binding
   if (resetDevice) {
