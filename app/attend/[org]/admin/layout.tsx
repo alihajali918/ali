@@ -4,7 +4,7 @@ import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   LayoutDashboard, Users, ClipboardList,
-  Clock, QrCode, LogOut, Menu, X, Monitor, Settings,
+  Clock, QrCode, LogOut, Menu, X, Monitor, Settings, Archive,
 } from "lucide-react";
 import { useState, use } from "react";
 
@@ -15,6 +15,7 @@ const navItems = (org: string) => [
   { href: `/attend/${org}/admin/shifts`,    label: "الورديات",   icon: Clock },
   { href: `/attend/${org}/admin/qr`,        label: "QR (أدمن)",  icon: QrCode },
   { href: `/attend/${org}/display`,         label: "شاشة العرض", icon: Monitor },
+  { href: `/attend/${org}/admin/archive`,   label: "الأرشيف",    icon: Archive },
   { href: `/attend/${org}/admin/settings`,  label: "الإعدادات",  icon: Settings },
 ];
 

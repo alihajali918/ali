@@ -91,6 +91,25 @@ ALTER TABLE "att_records" ADD COLUMN IF NOT EXISTS "excuseFile"     TEXT;
 ALTER TABLE "att_records" ADD COLUMN IF NOT EXISTS "excuseNote"     TEXT;
 ALTER TABLE "att_records" ADD COLUMN IF NOT EXISTS "excuseApproved" BOOLEAN;
 
+CREATE TABLE IF NOT EXISTS "att_month_archives" (
+    "id"              SERIAL PRIMARY KEY,
+    "organizationId"  INTEGER NOT NULL REFERENCES "att_organizations"("id") ON DELETE CASCADE,
+    "employeeId"      INTEGER NOT NULL REFERENCES "att_employees"("id") ON DELETE CASCADE,
+    "year"            INTEGER NOT NULL,
+    "month"           INTEGER NOT NULL,
+    "presentDays"     INTEGER NOT NULL DEFAULT 0,
+    "lateDays"        INTEGER NOT NULL DEFAULT 0,
+    "absentDays"      INTEGER NOT NULL DEFAULT 0,
+    "excusedDays"     INTEGER NOT NULL DEFAULT 0,
+    "lateMinutes"     INTEGER NOT NULL DEFAULT 0,
+    "overtimeMinutes" INTEGER NOT NULL DEFAULT 0,
+    "salarySnapshot"  DECIMAL(12,2),
+    "overtimePay"     DECIMAL(12,2),
+    "totalDue"        DECIMAL(12,2),
+    "createdAt"       TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE("employeeId", "year", "month")
+);
+
 -- RLS (block direct PostgREST access)
 ALTER TABLE "att_organizations" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "att_employees"     ENABLE ROW LEVEL SECURITY;

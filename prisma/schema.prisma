@@ -135,10 +135,11 @@ model AttOrganization {
   lateToleranceMins    Int        @default(0)    // grace minutes before marking as late
   createdAt            DateTime   @default(now())
 
-  employees   AttEmployee[]
-  shifts      AttShift[]
-  attendance  AttRecord[]
-  qrSessions  AttQrSession[]
+  employees    AttEmployee[]
+  shifts       AttShift[]
+  attendance   AttRecord[]
+  qrSessions   AttQrSession[]
+  monthArchives AttMonthArchive[]
 
   @@map("att_organizations")
 }
@@ -164,7 +165,8 @@ model AttEmployee {
   overtimeRate        Decimal?        // overtime hourly rate (if null, auto-calculated from salary)
   createdAt           DateTime        @default(now())
 
-  attendance          AttRecord[]
+  attendance    AttRecord[]
+  monthArchives AttMonthArchive[]
 
   @@unique([email, organizationId])
   @@map("att_employees")
@@ -207,6 +209,29 @@ model AttRecord {
 
   @@unique([employeeId, date])
   @@map("att_records")
+}
+
+model AttMonthArchive {
+  id              Int             @id @default(autoincrement())
+  organizationId  Int
+  org             AttOrganization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  employeeId      Int
+  employee        AttEmployee     @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  year            Int
+  month           Int             // 1–12
+  presentDays     Int             @default(0)
+  lateDays        Int             @default(0)
+  absentDays      Int             @default(0)
+  excusedDays     Int             @default(0)  // absences with approved excuse
+  lateMinutes     Int             @default(0)
+  overtimeMinutes Int             @default(0)
+  salarySnapshot  Decimal?        // salary at time of archive
+  overtimePay     Decimal?
+  totalDue        Decimal?
+  createdAt       DateTime        @default(now())
+
+  @@unique([employeeId, year, month])
+  @@map("att_month_archives")
 }
 
 model AttQrSession {
