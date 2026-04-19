@@ -50,7 +50,7 @@ export default function ArchivePage({ params }: { params: Promise<{ org: string 
   useEffect(() => { load(); }, []);
 
   const doArchive = async () => {
-    if (!confirm(`أرشفة شهر ${MONTHS_AR[pickMonth]} ${pickYear}؟ سيتم حذف السجلات اليومية بعد الأرشفة.`)) return;
+    if (!confirm(`أرشفة شهر ${MONTHS_AR[pickMonth]} ${pickYear}؟`)) return;
     setArchiving(true); setArchiveMsg("");
     try {
       const res  = await fetch(`/api/attend/${org}/archive`, {
@@ -59,7 +59,7 @@ export default function ArchivePage({ params }: { params: Promise<{ org: string 
       });
       const data = await res.json();
       if (!res.ok) { setArchiveMsg(data.error); return; }
-      setArchiveMsg(`✓ تم أرشفة ${data.employeesArchived} موظف، وحذف ${data.recordsDeleted} سجل`);
+      setArchiveMsg(`✓ تم أرشفة ${data.employeesArchived} موظف`);
       load();
     } finally { setArchiving(false); }
   };
@@ -100,12 +100,12 @@ export default function ArchivePage({ params }: { params: Promise<{ org: string 
           <button onClick={doArchive} disabled={archiving}
             className="flex items-center gap-2 px-5 py-2.5 bg-neon-cyan text-dark-bg font-black rounded-xl text-sm hover:scale-105 active:scale-95 transition-transform disabled:opacity-60">
             {archiving ? <Loader2 size={15} className="animate-spin"/> : <Archive size={15}/>}
-            أرشفة وحذف السجلات
+            أرشفة الشهر
           </button>
           {archiveMsg && <p className={`text-xs ${archiveMsg.startsWith("✓") ? "text-green-400" : "text-red-400"}`}>{archiveMsg}</p>}
         </div>
         <p className="text-xs text-gray-600 sm:mr-auto sm:text-left max-w-xs">
-          الأرشفة تحفظ ملخص الشهر لكل موظف ثم تمسح السجلات اليومية لتخفيف قاعدة البيانات
+          الأرشفة تحفظ ملخص الشهر لكل موظف — السجلات اليومية تبقى كما هي
         </p>
       </div>
 

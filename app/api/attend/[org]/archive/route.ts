@@ -113,10 +113,5 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ org
     archived.push(empId);
   }
 
-  // Delete raw records for this month
-  const deleted = await prisma.attRecord.deleteMany({
-    where: { organizationId: organization.id, date: { gte: from, lte: to } },
-  });
-
-  return NextResponse.json({ ok: true, employeesArchived: archived.length, recordsDeleted: deleted.count });
+  return NextResponse.json({ ok: true, employeesArchived: archived.length });
 }
