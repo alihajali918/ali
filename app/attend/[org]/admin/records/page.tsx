@@ -191,10 +191,19 @@ export default function RecordsPage({ params }: { params: Promise<{ org: string 
               className="absolute top-3 left-3 text-gray-400 hover:text-white bg-black/50 rounded-full p-1 z-10">
               <X size={18}/>
             </button>
-            {previewFile.startsWith("data:image") ? (
+            {previewFile.startsWith("data:image/") ? (
               <img src={previewFile} alt="عذر طبي" className="w-full rounded-xl"/>
+            ) : previewFile.startsWith("data:application/pdf") ? (
+              <iframe
+                src={previewFile}
+                className="w-full h-[80vh] rounded-xl"
+                title="مستند العذر"
+                sandbox="allow-scripts"
+              />
             ) : (
-              <iframe src={previewFile} className="w-full h-[80vh] rounded-xl" title="مستند العذر"/>
+              <div className="flex items-center justify-center h-40 text-gray-500 text-sm">
+                نوع الملف غير مدعوم للمعاينة
+              </div>
             )}
           </div>
         </div>

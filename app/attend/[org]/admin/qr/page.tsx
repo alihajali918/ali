@@ -41,7 +41,7 @@ export default function QrScreen({ params }: { params: Promise<{ org: string }> 
           {/* QR card */}
           <div className="bg-white p-6 rounded-3xl shadow-2xl">
             <QRCode
-              value={JSON.stringify({ org, token: data.token })}
+              value={typeof window !== "undefined" ? `${window.location.origin}/attend/${org}/scan?t=${data.token}` : `/attend/${org}/scan?t=${data.token}`}
               size={280}
               level="H"
             />

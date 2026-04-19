@@ -30,37 +30,50 @@ export async function POST(_: NextRequest, { params }: { params: Promise<{ org: 
   const isArchived = (d: Date) =>
     archivedMonths.some(a => a.year === d.getFullYear() && a.month === d.getMonth() + 1);
 
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  yesterday.setHours(0, 0, 0, 0);
+
   for (const emp of employees) {
     if (!emp.shift) continue;
 
-    // Walk backwards from yesterday all the way to the employee's creation date
     const startDate = new Date(emp.createdAt);
     startDate.setHours(0, 0, 0, 0);
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    yesterday.setHours(0, 0, 0, 0);
 
+    // Collect all expected workdays for this employee in one pass
+    const expectedDays: Date[] = [];
     for (let day = new Date(yesterday); day >= startDate; day.setDate(day.getDate() - 1)) {
       const day_ = new Date(day);
-      if (isArchived(day_)) continue; // skip months already archived
+      if (isArchived(day_)) continue;
+      if (emp.shift.workDays.includes(day_.getDay().toString())) {
+        expectedDays.push(day_);
+      }
+    }
+    if (expectedDays.length === 0) continue;
 
-      const dayOfWeek = day_.getDay().toString(); // "0"=Sun … "6"=Sat
-      if (!emp.shift.workDays.includes(dayOfWeek)) continue;
+    // Fetch all existing records in range in ONE query
+    const existing = await prisma.attRecord.findMany({
+      where: {
+        employeeId: emp.id,
+        date: { gte: startDate, lte: yesterday },
+      },
+      select: { date: true },
+    });
+    const existingSet = new Set(existing.map(r => r.date.toISOString().slice(0, 10)));
 
-      const existing = await prisma.attRecord.findUnique({
-        where: { employeeId_date: { employeeId: emp.id, date: day_ } },
-      });
-      if (existing) continue;
+    // Batch-create all missing absent days
+    const toCreate = expectedDays
+      .filter(d => !existingSet.has(d.toISOString().slice(0, 10)))
+      .map(d => ({
+        organizationId: organization.id,
+        employeeId:     emp.id,
+        date:           d,
+        status:         "ABSENT" as const,
+      }));
 
-      await prisma.attRecord.create({
-        data: {
-          organizationId: organization.id,
-          employeeId:     emp.id,
-          date:           day_,
-          status:         "ABSENT",
-        },
-      });
-      marked++;
+    if (toCreate.length > 0) {
+      await prisma.attRecord.createMany({ data: toCreate, skipDuplicates: true });
+      marked += toCreate.length;
     }
   }
 

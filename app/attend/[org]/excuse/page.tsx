@@ -1,7 +1,8 @@
 "use client";
 
 import { use, useEffect, useState } from "react";
-import { Loader2, FileUp, CheckCircle2, XCircle, Clock, AlertCircle } from "lucide-react";
+import { startAuthentication } from "@simplewebauthn/browser";
+import { Loader2, FileUp, CheckCircle2, XCircle, Clock, AlertCircle, Fingerprint } from "lucide-react";
 
 type AbsenceRecord = {
   id: string; date: string;
@@ -17,9 +18,10 @@ const excuseLabels: Record<string, string> = {
 
 export default function ExcusePage({ params }: { params: Promise<{ org: string }> }) {
   const { org } = use(params);
-  const [stage, setStage] = useState<"login" | "list" | "submit" | "done">("login");
+  const [stage, setStage] = useState<"login" | "webauthn" | "list" | "submit" | "done">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [pendingEmpId, setPendingEmpId] = useState<number | null>(null);
   const [loginError, setLoginError] = useState("");
   const [loginLoading, setLoginLoading] = useState(false);
   const [records, setRecords] = useState<AbsenceRecord[]>([]);
@@ -40,7 +42,35 @@ export default function ExcusePage({ params }: { params: Promise<{ org: string }
       });
       const data = await res.json();
       if (!res.ok) { setLoginError(data.error); return; }
+      if (data.needsWebAuthn) {
+        setPendingEmpId(data.employeeId);
+        setStage("webauthn");
+        return;
+      }
       loadRecords();
+    } finally { setLoginLoading(false); }
+  };
+
+  const handleWebAuthn = async () => {
+    setLoginLoading(true); setLoginError("");
+    try {
+      const optRes = await fetch(`/api/attend/${org}/webauthn/authenticate`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const opts = await optRes.json();
+      if (!optRes.ok) { setLoginError(opts.error); return; }
+
+      const response = await startAuthentication({ optionsJSON: opts });
+      const verRes   = await fetch(`/api/attend/${org}/webauthn/auth-verify`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ employeeId: pendingEmpId, response }),
+      });
+      const ver = await verRes.json();
+      if (!verRes.ok) { setLoginError(ver.error); return; }
+      loadRecords();
+    } catch (e: unknown) {
+      setLoginError(e instanceof Error ? e.message : "فشل التحقق بالبصمة");
     } finally { setLoginLoading(false); }
   };
 
@@ -114,6 +144,25 @@ export default function ExcusePage({ params }: { params: Promise<{ org: string }
             </button>
           </form>
         )}
+
+        {/* WebAuthn step */}
+        {stage === "webauthn" && (
+          <div className="glass-card rounded-2xl p-8 flex flex-col items-center gap-5 text-center">
+            <Fingerprint size={40} className="text-neon-cyan"/>
+            <div>
+              <p className="text-white font-black text-lg">تحقق بالبصمة</p>
+              <p className="text-gray-400 text-sm mt-1">مطلوب تحقق الجهاز للمتابعة</p>
+            </div>
+            {loginError && <p className="text-red-400 text-sm bg-red-500/10 rounded-xl px-4 py-2 w-full">{loginError}</p>}
+            <button onClick={handleWebAuthn} disabled={loginLoading}
+              className="flex items-center justify-center gap-2 w-full py-4 bg-neon-cyan text-dark-bg font-black rounded-2xl hover:scale-105 active:scale-95 transition-transform disabled:opacity-60">
+              {loginLoading ? <Loader2 size={18} className="animate-spin"/> : <><Fingerprint size={18}/> تحقق بالبصمة</>}
+            </button>
+            <button onClick={() => { setStage("login"); setLoginError(""); }}
+              className="text-gray-500 hover:text-white text-xs">رجوع</button>
+          </div>
+        )}
+
 
         {/* Absence list */}
         {stage === "list" && (
