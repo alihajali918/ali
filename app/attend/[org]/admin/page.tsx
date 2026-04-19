@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, use } from "react";
-import { Users, UserCheck, UserX, Clock, TrendingUp, Link2, Copy } from "lucide-react";
+import { Users, UserCheck, UserX, Clock, TrendingUp, Copy } from "lucide-react";
 
 type Stats = {
   totalEmployees: number;
@@ -23,12 +23,8 @@ export default function AdminDashboard({ params }: { params: Promise<{ org: stri
       .catch(() => {});
   }, [org]);
 
-  const employeeLink = typeof window !== "undefined"
-    ? `${window.location.origin}/attend/${org}/scan`
-    : "";
-
-  const copyLink = () => {
-    navigator.clipboard.writeText(`${window.location.origin}/attend/${org}/display`);
+  const copyLink = (path: string) => {
+    navigator.clipboard.writeText(`${window.location.origin}${path}`);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -49,24 +45,29 @@ export default function AdminDashboard({ params }: { params: Promise<{ org: stri
           <p className="text-gray-500 text-sm">لوحة تحكم</p>
           <h1 className="text-2xl font-black text-white capitalize">{org}</h1>
         </div>
-        <div className="flex gap-3">
-          <button onClick={copyLink}
-            className="flex items-center gap-2 px-4 py-2 bg-white/10 text-gray-300 font-bold rounded-xl text-sm hover:bg-white/20 transition-colors">
-            {copied ? <><Copy size={14}/> تم النسخ!</> : <><Link2 size={14}/> رابط شاشة QR</>}
-          </button>
-        </div>
       </div>
 
       {/* روابط سريعة */}
-      <div className="glass-card rounded-2xl p-5 mb-6 flex flex-col sm:flex-row gap-3">
-        <div className="flex-1">
-          <p className="text-xs text-gray-500 mb-1">رابط دخول الموظفين</p>
-          <p className="text-neon-cyan font-mono text-sm break-all">/attend/{org}/scan</p>
-        </div>
-        <div className="flex-1">
-          <p className="text-xs text-gray-500 mb-1">شاشة QR للعرض</p>
-          <p className="text-neon-cyan font-mono text-sm break-all">/attend/{org}/display</p>
-        </div>
+      <div className="glass-card rounded-2xl p-5 mb-6 flex flex-col sm:flex-row gap-4">
+        {[
+          { label: "رابط دخول الموظفين", path: `/attend/${org}/scan` },
+          { label: "شاشة QR للعرض",      path: `/attend/${org}/display` },
+          { label: "لوحة التحكم",         path: `/attend/${org}/admin` },
+        ].map(({ label, path }) => {
+          const full = typeof window !== "undefined" ? `${window.location.origin}${path}` : path;
+          return (
+            <div key={path} className="flex-1 min-w-0">
+              <p className="text-xs text-gray-500 mb-1">{label}</p>
+              <div className="flex items-center gap-2">
+                <p className="text-neon-cyan font-mono text-xs break-all flex-1">{full}</p>
+                <button onClick={() => copyLink(path)}
+                  className="text-gray-500 hover:text-neon-cyan transition-colors shrink-0" title="نسخ">
+                  <Copy size={13}/>
+                </button>
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       {/* stats grid */}

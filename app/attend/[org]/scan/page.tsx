@@ -51,7 +51,16 @@ function ScanContent({ org }: { org: string }) {
       if (!res.ok) { setError(data.error); return; }
       setName(data.name);
       if (data.needsBinding) { setStage("binding"); }
-      else { setAttType(data.attType ?? "CHECK_IN"); setStage("confirm"); }
+      else {
+        // Re-validate after login to get correct attType from server
+        const val = await fetch(`/api/attend/${org}/scan`, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "validate", token }),
+        });
+        const valData = await val.json();
+        setAttType(valData.attType ?? "CHECK_IN");
+        setStage("confirm");
+      }
     } finally { setLoading(false); }
   };
 
@@ -68,6 +77,12 @@ function ScanContent({ org }: { org: string }) {
       });
       const ver = await verRes.json();
       if (!verRes.ok) { setError(ver.error); return; }
+      const val = await fetch(`/api/attend/${org}/scan`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "validate", token }),
+      });
+      const valData = await val.json();
+      setAttType(valData.attType ?? "CHECK_IN");
       setStage("confirm");
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "فشل ربط الجهاز");

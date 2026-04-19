@@ -91,8 +91,37 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ org
     const org_    = await prisma.attOrganization.findUnique({ where: { slug: org } });
     if (!org_) return NextResponse.json({ error: "المؤسسة غير موجودة" }, { status: 404 });
 
+    const WINDOW = 10; // minutes
+
+    // ── Shift time window validation ──────────────────────
+    if (employee.shift) {
+      const parseTime = (t: string) => {
+        const [h, m] = t.split(":").map(Number);
+        const d = new Date(today); d.setHours(h, m, 0, 0); return d;
+      };
+
+      if (attType === "CHECK_IN") {
+        const open  = new Date(parseTime(employee.shift.startTime).getTime() - WINDOW * 60000);
+        const close = new Date(parseTime(employee.shift.startTime).getTime() + WINDOW * 60000);
+        if (now < open || now > close) {
+          const fmt = (d: Date) => d.toLocaleTimeString("ar-SA", { hour: "2-digit", minute: "2-digit" });
+          return NextResponse.json({
+            error: `تسجيل الحضور مقبول فقط بين ${fmt(open)} و ${fmt(close)}`,
+          }, { status: 400 });
+        }
+      } else {
+        const open  = new Date(parseTime(employee.shift.endTime).getTime() - WINDOW * 60000);
+        const close = new Date(parseTime(employee.shift.endTime).getTime() + WINDOW * 60000);
+        if (now < open || now > close) {
+          const fmt = (d: Date) => d.toLocaleTimeString("ar-SA", { hour: "2-digit", minute: "2-digit" });
+          return NextResponse.json({
+            error: `تسجيل الانصراف مقبول فقط بين ${fmt(open)} و ${fmt(close)}`,
+          }, { status: 400 });
+        }
+      }
+    }
+
     if (attType === "CHECK_IN") {
-      // Calculate if late
       let lateMinutes = 0;
       if (employee.shift) {
         const [h, m]    = employee.shift.startTime.split(":").map(Number);
@@ -108,7 +137,15 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ org
         update: { checkIn: now, status, lateMinutes },
       });
     } else {
-      // CHECK_OUT — calculate overtime
+      // CHECK_OUT — enforce minimum 30 min since check-in
+      if (record?.checkIn) {
+        const minsSince = Math.round((now.getTime() - record.checkIn.getTime()) / 60000);
+        if (minsSince < 30) {
+          return NextResponse.json({
+            error: `لا يمكن تسجيل الانصراف — مرّ ${minsSince} دقيقة فقط من الحضور (الحد الأدنى 30 دقيقة)`,
+          }, { status: 400 });
+        }
+      }
       let overtimeMinutes = 0;
       if (employee.shift && record?.checkIn) {
         const [h, m]   = employee.shift.endTime.split(":").map(Number);
