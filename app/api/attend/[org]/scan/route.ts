@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db as prisma } from "@/app/lib/db";
-import { getAttSession, verifyTOTP } from "@/app/lib/attendance";
+import { getAttSession, verifyTOTP, nowInQatar, todayInQatar, shiftTimeToday } from "@/app/lib/attendance";
 
 async function validateQrToken(org: string, token: string): Promise<boolean> {
   const qrSession = await prisma.attQrSession.findFirst({
@@ -27,8 +27,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ org
     return NextResponse.json({ error: "رمز QR منتهي أو غير صالح — سكّن الكود مجدداً" }, { status: 400 });
   }
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const today = todayInQatar();
+  const now   = nowInQatar();
 
   if (action === "validate") {
     // Check if employee has a valid session
@@ -82,7 +82,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ org
     });
     if (!employee) return NextResponse.json({ error: "الموظف غير موجود" }, { status: 404 });
 
-    const now    = new Date();
     const record = await prisma.attRecord.findFirst({
       where: { employeeId: employee.id, date: today },
     });
@@ -96,25 +95,17 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ org
 
     // ── Shift time window validation ──────────────────────
     if (employee.shift) {
-      const parseTime = (t: string) => {
-        const [h, m] = t.split(":").map(Number);
-        const d = new Date(today); d.setHours(h, m, 0, 0); return d;
-      };
       const fmt = (d: Date) => d.toLocaleTimeString("ar-SA", { hour: "2-digit", minute: "2-digit" });
 
       if (attType === "CHECK_IN") {
-        // Only block check-in if employee is too early (before window opens).
-        // Late arrivals are always allowed — they get marked LATE with minutes counted.
-        const earliest = new Date(parseTime(employee.shift.startTime).getTime() - WINDOW * 60000);
+        const earliest = new Date(shiftTimeToday(employee.shift.startTime).getTime() - WINDOW * 60_000);
         if (now < earliest) {
           return NextResponse.json({
             error: `تسجيل الحضور لا يبدأ قبل ${fmt(earliest)}`,
           }, { status: 400 });
         }
       } else {
-        // Check-out: block if too early before shift end.
-        // Allow any time after window opens (late check-out = overtime).
-        const earliest = new Date(parseTime(employee.shift.endTime).getTime() - WINDOW * 60000);
+        const earliest = new Date(shiftTimeToday(employee.shift.endTime).getTime() - WINDOW * 60_000);
         if (now < earliest) {
           return NextResponse.json({
             error: `تسجيل الانصراف لا يبدأ قبل ${fmt(earliest)}`,
@@ -126,10 +117,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ org
     if (attType === "CHECK_IN") {
       let lateMinutes = 0;
       if (employee.shift) {
-        const [h, m]    = employee.shift.startTime.split(":").map(Number);
-        const shiftStart = new Date(today);
-        shiftStart.setHours(h, m, 0, 0);
-        const rawLate = Math.round((now.getTime() - shiftStart.getTime()) / 60000);
+        const shiftStart = shiftTimeToday(employee.shift.startTime);
+        const rawLate = Math.round((now.getTime() - shiftStart.getTime()) / 60_000);
         lateMinutes = Math.max(0, rawLate - LATE_TOLE);
       }
       const status = lateMinutes > 0 ? "LATE" : "PRESENT";
@@ -151,10 +140,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ org
       }
       let overtimeMinutes = 0;
       if (employee.shift && record?.checkIn) {
-        const [h, m]   = employee.shift.endTime.split(":").map(Number);
-        const shiftEnd  = new Date(today);
-        shiftEnd.setHours(h, m, 0, 0);
-        overtimeMinutes = Math.max(0, Math.round((now.getTime() - shiftEnd.getTime()) / 60000));
+        const shiftEnd = shiftTimeToday(employee.shift.endTime);
+        overtimeMinutes = Math.max(0, Math.round((now.getTime() - shiftEnd.getTime()) / 60_000));
       }
       await prisma.attRecord.update({
         where: { employeeId_date: { employeeId: employee.id, date: today } },

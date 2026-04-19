@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db as prisma } from "@/app/lib/db";
-import { getAttSession } from "@/app/lib/attendance";
+import { getAttSession, todayInQatar } from "@/app/lib/attendance";
 
 // Marks absent records for employees who had a workday but never checked in.
 // Checks up to the past 7 days (skips today).
@@ -30,15 +30,14 @@ export async function POST(_: NextRequest, { params }: { params: Promise<{ org: 
   const isArchived = (d: Date) =>
     archivedMonths.some(a => a.year === d.getFullYear() && a.month === d.getMonth() + 1);
 
-  const yesterday = new Date();
-  yesterday.setDate(yesterday.getDate() - 1);
-  yesterday.setHours(0, 0, 0, 0);
+  const yesterday = new Date(todayInQatar().getTime() - 24 * 60 * 60_000);
 
   for (const emp of employees) {
     if (!emp.shift) continue;
 
-    const startDate = new Date(emp.createdAt);
-    startDate.setHours(0, 0, 0, 0);
+    // Align createdAt to midnight in Qatar (UTC+3)
+    const startDate = new Date(emp.createdAt.getTime() + 3 * 60 * 60_000);
+    startDate.setUTCHours(0, 0, 0, 0);
 
     // Collect all expected workdays for this employee in one pass
     const expectedDays: Date[] = [];

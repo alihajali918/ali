@@ -3,6 +3,30 @@ import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import bcrypt from "bcryptjs";
 
+// ── Qatar timezone helpers (UTC+3, no DST) ───────────────
+const TZ_OFFSET_MS = 3 * 60 * 60 * 1000; // +03:00
+
+/** Returns current wall-clock time in Qatar */
+export function nowInQatar(): Date {
+  return new Date(Date.now() + TZ_OFFSET_MS);
+}
+
+/** Returns midnight (00:00:00) of today in Qatar as a UTC Date suitable for Prisma @db.Date */
+export function todayInQatar(): Date {
+  const q = nowInQatar();
+  // Midnight Qatar = subtract the intra-day offset from the Qatar timestamp
+  const midnight = new Date(Date.UTC(q.getUTCFullYear(), q.getUTCMonth(), q.getUTCDate()));
+  return midnight;
+}
+
+/** Parse a "HH:MM" shift time into a Date anchored to today in Qatar */
+export function shiftTimeToday(hhmm: string): Date {
+  const [h, m] = hhmm.split(":").map(Number);
+  const today   = todayInQatar();
+  // today is midnight UTC = midnight Qatar; add hours/mins in Qatar
+  return new Date(today.getTime() + (h * 60 + m) * 60_000);
+}
+
 const ATT_SECRET = new TextEncoder().encode(
   process.env.ATT_JWT_SECRET ?? process.env.NEXTAUTH_SECRET ?? "att-fallback-secret"
 );
