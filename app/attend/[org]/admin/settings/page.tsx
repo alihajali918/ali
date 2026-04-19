@@ -5,11 +5,12 @@ import { Loader2, Save, Building2 } from "lucide-react";
 
 type OrgSettings = {
   name: string; slug: string; email: string; phone: string; address: string; plan: string;
+  attendanceWindowMins: number; lateToleranceMins: number;
 };
 
 export default function SettingsPage({ params }: { params: Promise<{ org: string }> }) {
   const { org } = use(params);
-  const [form, setForm] = useState<OrgSettings>({ name: "", slug: "", email: "", phone: "", address: "", plan: "" });
+  const [form, setForm] = useState<OrgSettings>({ name: "", slug: "", email: "", phone: "", address: "", plan: "", attendanceWindowMins: 10, lateToleranceMins: 0 });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving]   = useState(false);
   const [saved, setSaved]     = useState(false);
@@ -28,7 +29,7 @@ export default function SettingsPage({ params }: { params: Promise<{ org: string
     try {
       const res  = await fetch(`/api/attend/${org}/settings`, {
         method: "PATCH", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: form.name, email: form.email, phone: form.phone, address: form.address }),
+        body: JSON.stringify({ name: form.name, email: form.email, phone: form.phone, address: form.address, attendanceWindowMins: form.attendanceWindowMins, lateToleranceMins: form.lateToleranceMins }),
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error); return; }
@@ -37,7 +38,7 @@ export default function SettingsPage({ params }: { params: Promise<{ org: string
     } finally { setSaving(false); }
   };
 
-  const inp = "w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-neon-cyan/40";
+  const inp = "w-full px-4 py-3 rounded-xl bg-[#111] border border-white/10 text-white text-sm focus:outline-none focus:border-neon-cyan/40";
 
   if (loading) return <div className="flex justify-center py-20"><Loader2 className="animate-spin text-neon-cyan" size={32}/></div>;
 
@@ -89,6 +90,35 @@ export default function SettingsPage({ params }: { params: Promise<{ org: string
             <label className="text-xs font-bold text-gray-400 mb-1.5 block">العنوان</label>
             <input value={form.address ?? ""} onChange={e => setForm(f => ({ ...f, address: e.target.value }))}
               className={inp} placeholder="المدينة، الحي"/>
+          </div>
+        </div>
+
+        {/* Attendance policy */}
+        <div className="border-t border-white/8 pt-5">
+          <p className="text-sm font-black text-white mb-4">سياسة الحضور</p>
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div>
+              <label className="text-xs font-bold text-gray-400 mb-1.5 block">
+                نافذة الحضور/الانصراف (دقيقة)
+              </label>
+              <input type="number" min={0} max={60} value={form.attendanceWindowMins}
+                onChange={e => setForm(f => ({ ...f, attendanceWindowMins: Number(e.target.value) }))}
+                className={inp} placeholder="10"/>
+              <p className="text-[11px] text-gray-600 mt-1">
+                مثال: 10 = يُقبل الحضور من الساعة −10 إلى +10 من موعد الدوام
+              </p>
+            </div>
+            <div>
+              <label className="text-xs font-bold text-gray-400 mb-1.5 block">
+                هامش التأخير المسموح (دقيقة)
+              </label>
+              <input type="number" min={0} max={60} value={form.lateToleranceMins}
+                onChange={e => setForm(f => ({ ...f, lateToleranceMins: Number(e.target.value) }))}
+                className={inp} placeholder="0"/>
+              <p className="text-[11px] text-gray-600 mt-1">
+                مثال: 5 = التأخير يُحسب فقط بعد 5 دقائق من موعد الدوام
+              </p>
+            </div>
           </div>
         </div>
 

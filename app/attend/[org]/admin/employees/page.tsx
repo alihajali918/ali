@@ -12,7 +12,7 @@ type Employee = {
 
 type Shift = { id: string; name: string; startTime: string; endTime: string };
 
-type MonthStats = { overtimeMinutes: number };
+type MonthStats = { overtimeMinutes: number; lateMinutes: number };
 
 export default function EmployeesPage({ params }: { params: Promise<{ org: string }> }) {
   const { org } = use(params);
@@ -49,9 +49,10 @@ export default function EmployeesPage({ params }: { params: Promise<{ org: strin
     const to    = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().slice(0, 10);
     const res   = await fetch(`/api/attend/${org}/records?employeeId=${empId}&from=${from}&to=${to}`);
     const data  = await res.json();
-    const records: { overtimeMinutes: number }[] = data.records ?? [];
-    const total = records.reduce((s, r) => s + (r.overtimeMinutes ?? 0), 0);
-    setEmpStats(prev => ({ ...prev, [empId]: { overtimeMinutes: total } }));
+    const records: { overtimeMinutes: number; lateMinutes: number }[] = data.records ?? [];
+    const totalOvertime = records.reduce((s, r) => s + (r.overtimeMinutes ?? 0), 0);
+    const totalLate     = records.reduce((s, r) => s + (r.lateMinutes ?? 0), 0);
+    setEmpStats(prev => ({ ...prev, [empId]: { overtimeMinutes: totalOvertime, lateMinutes: totalLate } }));
   };
 
   const toggleExpand = (id: string) => {
@@ -125,7 +126,7 @@ export default function EmployeesPage({ params }: { params: Promise<{ org: strin
     return "—";
   };
 
-  const inp = "w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-neon-cyan/40";
+  const inp = "w-full px-4 py-2.5 rounded-xl bg-[#111] border border-white/10 text-white text-sm focus:outline-none focus:border-neon-cyan/40";
 
   return (
     <div dir="rtl">
@@ -199,7 +200,11 @@ export default function EmployeesPage({ params }: { params: Promise<{ org: strin
                     {!stats ? (
                       <Loader2 size={16} className="animate-spin text-neon-cyan"/>
                     ) : (
-                      <div className="grid grid-cols-3 gap-4">
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                        <div className="text-center">
+                          <p className="text-yellow-400 font-black text-xl">{(stats.lateMinutes / 60).toFixed(1)}</p>
+                          <p className="text-gray-500 text-xs">ساعات تأخير</p>
+                        </div>
                         <div className="text-center">
                           <p className="text-blue-400 font-black text-xl">{(stats.overtimeMinutes / 60).toFixed(1)}</p>
                           <p className="text-gray-500 text-xs">ساعات أوفرتايم</p>
@@ -263,7 +268,7 @@ export default function EmployeesPage({ params }: { params: Promise<{ org: strin
               </div>
               <div className="col-span-2">
                 <label className="text-xs font-bold text-gray-400 mb-1 block">الوردية</label>
-                <select value={form.shiftId} onChange={e => setForm(f => ({ ...f, shiftId: e.target.value }))} className={inp}>
+                <select value={form.shiftId} onChange={e => setForm(f => ({ ...f, shiftId: e.target.value }))} className={inp} style={{ colorScheme: "dark" }}>
                   <option value="">بدون وردية</option>
                   {shifts.map(s => (
                     <option key={s.id} value={s.id}>
@@ -274,7 +279,7 @@ export default function EmployeesPage({ params }: { params: Promise<{ org: strin
               </div>
               <div className="col-span-2">
                 <label className="text-xs font-bold text-gray-400 mb-1 block">الدور</label>
-                <select value={form.role} onChange={e => setForm(f => ({ ...f, role: e.target.value }))} className={inp}>
+                <select value={form.role} onChange={e => setForm(f => ({ ...f, role: e.target.value }))} className={inp} style={{ colorScheme: "dark" }}>
                   <option value="EMPLOYEE">موظف</option>
                   <option value="ADMIN">أدمن</option>
                 </select>

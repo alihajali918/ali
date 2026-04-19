@@ -7,7 +7,7 @@ import { motion } from "framer-motion";
 import {
   QrCode, FileText, Award, Check, ArrowLeft,
   Zap, Lock, ImageDown, FileImage, FilePlus2, Scissors,
-  Building2, Wrench,
+  Building2, Wrench, Fingerprint,
 } from "lucide-react";
 
 /* ─── tools — للجميع ─────────────────────────────────── */
@@ -51,6 +51,16 @@ const tools = [
 
 /* ─── enterprise — للمؤسسات ──────────────────────────── */
 const enterprise = [
+  {
+    id: "attendance", icon: <Fingerprint size={28} />,
+    name: "نظام الحضور الذكي",
+    tagline: "تتبّع حضور موظفيك بدقة — QR متجدد + بصمة الجهاز",
+    color: "#00F5D4",
+    href: "/attend/setup",
+    features: ["QR Code يتجدد تلقائياً كل 30 ثانية", "ربط بصمة الجهاز لمنع التحايل", "تتبّع الحضور والانصراف والتأخير", "حساب الأوفرتايم والرواتب تلقائياً", "لوحة تحكم للإدارة في الوقت الفعلي"],
+    audience: "الشركات · المؤسسات · المصانع",
+    live: true,
+  },
   {
     id: "certs", icon: <Award size={28} />,
     name: "صانع الشهادات",
@@ -152,8 +162,8 @@ export default function ProductsPage() {
               <h2 className="text-xl font-black text-white">الحلول المؤسسية</h2>
               <p className="text-[12px] text-gray-600">حلول مخصصة للشركات والمؤسسات</p>
             </div>
-            <span className="mr-auto text-[10px] font-black px-3 py-1 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20">
-              قريباً
+            <span className="mr-auto text-[10px] font-black px-3 py-1 rounded-full bg-neon-cyan/10 text-neon-cyan border border-neon-cyan/20">
+              1 متاح الآن
             </span>
           </div>
 
@@ -165,16 +175,18 @@ export default function ProductsPage() {
                 <div className="absolute top-0 left-0 right-0 h-[2px]"
                   style={{ background: `linear-gradient(90deg, transparent, ${e.color}60, transparent)` }}/>
 
-                {/* lock overlay */}
-                <div className="absolute inset-0 z-10 rounded-3xl flex flex-col items-center justify-center gap-3"
-                  style={{ backdropFilter:"blur(14px)", WebkitBackdropFilter:"blur(14px)", background:"rgba(10,10,10,0.50)" }}>
-                  <div className="w-14 h-14 rounded-2xl flex items-center justify-center"
-                    style={{ background:"rgba(245,158,11,0.12)", border:"1px solid rgba(245,158,11,0.25)", boxShadow:"0 0 30px rgba(245,158,11,0.12)" }}>
-                    <Lock size={22} style={{ color:"#F59E0B" }}/>
+                {/* lock overlay — only for coming-soon cards */}
+                {!e.live && (
+                  <div className="absolute inset-0 z-10 rounded-3xl flex flex-col items-center justify-center gap-3"
+                    style={{ backdropFilter:"blur(14px)", WebkitBackdropFilter:"blur(14px)", background:"rgba(10,10,10,0.50)" }}>
+                    <div className="w-14 h-14 rounded-2xl flex items-center justify-center"
+                      style={{ background:"rgba(245,158,11,0.12)", border:"1px solid rgba(245,158,11,0.25)", boxShadow:"0 0 30px rgba(245,158,11,0.12)" }}>
+                      <Lock size={22} style={{ color:"#F59E0B" }}/>
+                    </div>
+                    <span className="text-white font-black text-base">قريباً</span>
+                    <span className="text-[11px] text-gray-500 tracking-widest">جارٍ التطوير</span>
                   </div>
-                  <span className="text-white font-black text-base">قريباً</span>
-                  <span className="text-[11px] text-gray-500 tracking-widest">جارٍ التطوير</span>
-                </div>
+                )}
 
                 <div className="p-7 flex flex-col flex-1">
                   <div className="flex items-start justify-between mb-5">
@@ -182,13 +194,20 @@ export default function ProductsPage() {
                       style={{ color: e.color, background: `${e.color}12` }}>
                       {e.icon}
                     </div>
-                    <span className="text-[10px] font-bold text-gray-500 bg-white/4 border border-white/8 px-3 py-1 rounded-full">
-                      {e.audience}
-                    </span>
+                    <div className="flex flex-col items-end gap-1.5">
+                      {e.live && (
+                        <span className="text-[10px] font-black px-3 py-1 rounded-full bg-neon-cyan/10 text-neon-cyan border border-neon-cyan/20">
+                          متاح الآن
+                        </span>
+                      )}
+                      <span className="text-[10px] font-bold text-gray-500 bg-white/4 border border-white/8 px-3 py-1 rounded-full">
+                        {e.audience}
+                      </span>
+                    </div>
                   </div>
                   <h2 className="text-xl font-black text-white mb-2">{e.name}</h2>
                   <p className="text-gray-500 text-sm leading-relaxed mb-5">{e.tagline}</p>
-                  <ul className="flex flex-col gap-2.5">
+                  <ul className="flex flex-col gap-2.5 flex-1">
                     {e.features.map(f => (
                       <li key={f} className="flex items-start gap-2.5 text-sm text-gray-400">
                         <Check size={14} className="mt-0.5 shrink-0" style={{ color: e.color }}/>
@@ -196,6 +215,13 @@ export default function ProductsPage() {
                       </li>
                     ))}
                   </ul>
+                  {e.live && e.href && (
+                    <a href={e.href}
+                      className="mt-6 flex items-center justify-center gap-2 py-3 rounded-2xl font-black text-sm transition-all hover:scale-105"
+                      style={{ background: `${e.color}15`, color: e.color, border: `1px solid ${e.color}30` }}>
+                      سجّل مؤسستك الآن <ArrowLeft size={14}/>
+                    </a>
+                  )}
                 </div>
               </motion.div>
             ))}

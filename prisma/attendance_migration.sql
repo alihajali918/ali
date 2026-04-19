@@ -75,6 +75,17 @@ CREATE TABLE "att_qr_sessions" (
     "updatedAt"      TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+-- ══ Incremental additions ══
+ALTER TABLE "att_organizations" ADD COLUMN IF NOT EXISTS "email"   TEXT;
+ALTER TABLE "att_organizations" ADD COLUMN IF NOT EXISTS "phone"   TEXT;
+ALTER TABLE "att_organizations" ADD COLUMN IF NOT EXISTS "address" TEXT;
+ALTER TABLE "att_organizations" ADD COLUMN IF NOT EXISTS "attendanceWindowMins" INTEGER NOT NULL DEFAULT 10;
+ALTER TABLE "att_organizations" ADD COLUMN IF NOT EXISTS "lateToleranceMins"    INTEGER NOT NULL DEFAULT 0;
+
+ALTER TABLE "att_employees" ADD COLUMN IF NOT EXISTS "challenge"    TEXT;
+ALTER TABLE "att_employees" ADD COLUMN IF NOT EXISTS "salary"       DECIMAL(12,2);
+ALTER TABLE "att_employees" ADD COLUMN IF NOT EXISTS "overtimeRate" DECIMAL(12,2);
+
 -- RLS (block direct PostgREST access)
 ALTER TABLE "att_organizations" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "att_employees"     ENABLE ROW LEVEL SECURITY;

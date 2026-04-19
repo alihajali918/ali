@@ -63,7 +63,7 @@ export default function RecordsPage({ params }: { params: Promise<{ org: string 
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-black text-white">سجلات الحضور</h1>
         <input type="date" value={date} onChange={e => setDate(e.target.value)}
-          className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-neon-cyan/40"/>
+          className="px-4 py-2 rounded-xl bg-[#111] border border-white/10 text-white text-sm focus:outline-none focus:border-neon-cyan/40"/>
       </div>
 
       {loading ? (

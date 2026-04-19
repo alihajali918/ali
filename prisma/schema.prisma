@@ -128,10 +128,12 @@ model AttOrganization {
   plan        AttPlan    @default(TRIAL)
   planExpires DateTime?
   adminSecret String                    // hashed password for org admin login
-  email       String?
-  phone       String?
-  address     String?
-  createdAt   DateTime   @default(now())
+  email                String?
+  phone                String?
+  address              String?
+  attendanceWindowMins Int        @default(10)   // ±minutes around shift start/end for check-in/out
+  lateToleranceMins    Int        @default(0)    // grace minutes before marking as late
+  createdAt            DateTime   @default(now())
 
   employees   AttEmployee[]
   shifts      AttShift[]

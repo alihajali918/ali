@@ -120,18 +120,18 @@ export default function ShiftsPage({ params }: { params: Promise<{ org: string }
               <label className="text-xs font-bold text-gray-400 mb-1 block">اسم الوردية</label>
               <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
                 placeholder="وردية صباحية"
-                className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-neon-cyan/40"/>
+                className="w-full px-4 py-2.5 rounded-xl bg-[#111] border border-white/10 text-white text-sm focus:outline-none focus:border-neon-cyan/40"/>
             </div>
             <div className="flex gap-3">
               <div className="flex-1">
                 <label className="text-xs font-bold text-gray-400 mb-1 block">وقت البداية</label>
                 <input type="time" value={form.startTime} onChange={e => setForm(f => ({ ...f, startTime: e.target.value }))}
-                  className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-neon-cyan/40"/>
+                  className="w-full px-4 py-2.5 rounded-xl bg-[#111] border border-white/10 text-white text-sm focus:outline-none focus:border-neon-cyan/40"/>
               </div>
               <div className="flex-1">
                 <label className="text-xs font-bold text-gray-400 mb-1 block">وقت النهاية</label>
                 <input type="time" value={form.endTime} onChange={e => setForm(f => ({ ...f, endTime: e.target.value }))}
-                  className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-neon-cyan/40"/>
+                  className="w-full px-4 py-2.5 rounded-xl bg-[#111] border border-white/10 text-white text-sm focus:outline-none focus:border-neon-cyan/40"/>
               </div>
             </div>
             <div>

@@ -91,7 +91,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ org
     const org_    = await prisma.attOrganization.findUnique({ where: { slug: org } });
     if (!org_) return NextResponse.json({ error: "المؤسسة غير موجودة" }, { status: 404 });
 
-    const WINDOW = 10; // minutes
+    const WINDOW    = org_.attendanceWindowMins;
+    const LATE_TOLE = org_.lateToleranceMins;
 
     // ── Shift time window validation ──────────────────────
     if (employee.shift) {
@@ -127,7 +128,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ org
         const [h, m]    = employee.shift.startTime.split(":").map(Number);
         const shiftStart = new Date(today);
         shiftStart.setHours(h, m, 0, 0);
-        lateMinutes = Math.max(0, Math.round((now.getTime() - shiftStart.getTime()) / 60000));
+        const rawLate = Math.round((now.getTime() - shiftStart.getTime()) / 60000);
+        lateMinutes = Math.max(0, rawLate - LATE_TOLE);
       }
       const status = lateMinutes > 0 ? "LATE" : "PRESENT";
 
