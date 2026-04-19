@@ -1,4 +1,7 @@
 {
+  "env": {
+    "TZ": "Asia/Qatar"
+  },
   "crons": [
     {
       "path": "/api/cron/weekly-reminder",
