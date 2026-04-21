@@ -21,31 +21,37 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ org:
     });
   }
 
-  // If screen is locked → block (423)
-  if (qrSession.displayLocked) {
-    return NextResponse.json({ error: "تم قفل الشاشة لأسباب أمنية" }, { status: 423 });
-  }
+  // Admin session bypasses all device restrictions (preview without affecting the display device)
+  const session    = await getAttSession("att_admin_token");
+  const isAdmin    = session?.orgSlug === org;
 
-  if (sid) {
-    const now          = new Date();
-    const leaseExpired = !qrSession.displayLastSeen ||
-      (now.getTime() - qrSession.displayLastSeen.getTime()) > LEASE_MS;
-    const ownedByOther = qrSession.displayDeviceId && qrSession.displayDeviceId !== sid;
-
-    if (ownedByOther && !leaseExpired) {
-      await prisma.attQrSession.update({
-        where: { organizationId: organization.id },
-        data:  { displayLocked: true },
-      });
-      const time = nowInQatar().toLocaleTimeString("ar-SA", { hour: "2-digit", minute: "2-digit" });
-      sendDisplayTamperAlert(org, time);
-      return NextResponse.json({ error: "الشاشة مفتوحة على جهاز آخر" }, { status: 409 });
+  if (!isAdmin) {
+    // If screen is locked → block (423)
+    if (qrSession.displayLocked) {
+      return NextResponse.json({ error: "تم قفل الشاشة لأسباب أمنية" }, { status: 423 });
     }
 
-    await prisma.attQrSession.update({
-      where: { organizationId: organization.id },
-      data:  { displayDeviceId: sid, displayLastSeen: now },
-    });
+    if (sid) {
+      const now          = new Date();
+      const leaseExpired = !qrSession.displayLastSeen ||
+        (now.getTime() - qrSession.displayLastSeen.getTime()) > LEASE_MS;
+      const ownedByOther = qrSession.displayDeviceId && qrSession.displayDeviceId !== sid;
+
+      if (ownedByOther && !leaseExpired) {
+        await prisma.attQrSession.update({
+          where: { organizationId: organization.id },
+          data:  { displayLocked: true },
+        });
+        const time = nowInQatar().toLocaleTimeString("ar-SA", { hour: "2-digit", minute: "2-digit" });
+        sendDisplayTamperAlert(org, time);
+        return NextResponse.json({ error: "الشاشة مفتوحة على جهاز آخر" }, { status: 409 });
+      }
+
+      await prisma.attQrSession.update({
+        where: { organizationId: organization.id },
+        data:  { displayDeviceId: sid, displayLastSeen: now },
+      });
+    }
   }
 
   const token     = await generate({ secret: qrSession.secret });
