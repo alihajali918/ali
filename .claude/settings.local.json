@@ -64,7 +64,18 @@
       "Bash(node --max-old-space-size=4096 node_modules/typescript/bin/tsc --noEmit)",
       "Bash(node_modules/.bin/next build *)",
       "Bash(node_modules/.bin/prisma generate *)",
-      "Bash(git commit -m 'Add Smart Attendance SaaS — schema, WebAuthn, QR, API routes, admin UI, employee PWA *)"
+      "Bash(git commit -m 'Add Smart Attendance SaaS — schema, WebAuthn, QR, API routes, admin UI, employee PWA *)",
+      "Bash(mkdir -p 'c:\\\\Users\\\\USER\\\\Desktop\\\\ali\\\\app\\\\attend\\\\[org]\\\\admin\\\\employees')",
+      "Bash(mkdir -p 'c:\\\\Users\\\\USER\\\\Desktop\\\\ali\\\\app\\\\attend\\\\[org]\\\\admin\\\\records')",
+      "Bash(mkdir -p 'c:\\\\Users\\\\USER\\\\Desktop\\\\ali\\\\app\\\\attend\\\\[org]\\\\admin\\\\shifts')",
+      "Bash(npx next *)",
+      "Bash(git commit -m ' *)",
+      "Bash(mkdir -p 'c:\\\\Users\\\\USER\\\\Desktop\\\\ali\\\\app\\\\attend\\\\[org]\\\\display')",
+      "Bash(mkdir -p 'c:\\\\Users\\\\USER\\\\Desktop\\\\ali\\\\app\\\\attend\\\\[org]\\\\scan')",
+      "Bash(mkdir -p 'c:\\\\Users\\\\USER\\\\Desktop\\\\ali\\\\app\\\\api\\\\attend\\\\[org]\\\\scan')",
+      "Bash(mkdir -p 'c:\\\\Users\\\\USER\\\\Desktop\\\\ali\\\\app\\\\attend\\\\[org]\\\\admin\\\\settings')",
+      "Bash(mkdir -p 'c:\\\\Users\\\\USER\\\\Desktop\\\\ali\\\\app\\\\api\\\\attend\\\\[org]\\\\settings')",
+      "Bash(git status *)"
     ]
   }
 }
