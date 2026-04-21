@@ -133,6 +133,12 @@ function ScanContent({ org }: { org: string }) {
       const data = await res.json();
       if (!res.ok) { setError(data.error); return; }
       setAttType(data.attType); setStage("done");
+      // Clear employee session so next person must login fresh
+      await fetch(`/api/attend/${org}/auth/logout`, { method: "POST" });
+      setTimeout(() => {
+        setName(""); setEmail(""); setPassword(""); setError("");
+        setPendingEmpId(null); setStage("login");
+      }, 4000);
     } finally { setLoading(false); }
   };
 

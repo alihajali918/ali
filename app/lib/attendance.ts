@@ -3,6 +3,13 @@ import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import bcrypt from "bcryptjs";
 
+// ── Fixed organisation schedule ──────────────────────────
+export const FIXED_SCHEDULE = {
+  checkInRef:  "08:00",   // late minutes measured from here
+  checkOutRef: "21:30",   // overtime measured from here
+  workDays:    ["0","1","2","3","4"] as string[], // Sun–Thu
+};
+
 // ── Qatar timezone helpers (UTC+3, no DST) ───────────────
 const TZ_OFFSET_MS = 3 * 60 * 60 * 1000; // +03:00
 

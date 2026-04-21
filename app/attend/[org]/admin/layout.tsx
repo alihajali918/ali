@@ -4,7 +4,7 @@ import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   LayoutDashboard, Users, ClipboardList,
-  Clock, QrCode, LogOut, Menu, X, Monitor, Settings, Archive,
+  LogOut, Menu, X, Monitor, Settings, Archive,
 } from "lucide-react";
 import { useState, use } from "react";
 
@@ -12,8 +12,6 @@ const navItems = (org: string) => [
   { href: `/attend/${org}/admin`,           label: "الرئيسية",   icon: LayoutDashboard },
   { href: `/attend/${org}/admin/employees`, label: "الموظفون",   icon: Users },
   { href: `/attend/${org}/admin/records`,   label: "السجلات",    icon: ClipboardList },
-  { href: `/attend/${org}/admin/shifts`,    label: "الورديات",   icon: Clock },
-  { href: `/attend/${org}/admin/qr`,        label: "QR (أدمن)",  icon: QrCode },
   { href: `/attend/${org}/display`,         label: "شاشة العرض", icon: Monitor },
   { href: `/attend/${org}/admin/archive`,   label: "الأرشيف",    icon: Archive },
   { href: `/attend/${org}/admin/settings`,  label: "الإعدادات",  icon: Settings },
@@ -30,6 +28,11 @@ export default function AdminLayout({
   const pathname   = usePathname();
   const router     = useRouter();
   const [open, setOpen] = useState(false);
+
+  // Login page must NOT show the admin sidebar
+  if (pathname.endsWith("/login")) {
+    return <div className="min-h-screen bg-[#0A0A0A]">{children}</div>;
+  }
 
   const logout = async () => {
     await fetch(`/api/attend/${org}/auth/logout`, { method: "POST" });

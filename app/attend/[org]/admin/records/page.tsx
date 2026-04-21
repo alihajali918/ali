@@ -120,8 +120,8 @@ export default function RecordsPage({ params }: { params: Promise<{ org: string 
                       </span>
                     )}
                   </td>
-                  <td className="px-5 py-4 text-yellow-400 text-xs">{r.lateMinutes > 0 ? `${r.lateMinutes} د` : "—"}</td>
-                  <td className="px-5 py-4 text-blue-400 text-xs">{r.overtimeMinutes > 0 ? `${r.overtimeMinutes} د` : "—"}</td>
+                  <td className="px-5 py-4 text-yellow-400 text-xs">{r.lateMinutes > 0 ? `${(r.lateMinutes / 60).toFixed(2)} س` : "—"}</td>
+                  <td className="px-5 py-4 text-blue-400 text-xs">{r.overtimeMinutes > 0 ? `${(r.overtimeMinutes / 60).toFixed(2)} س` : "—"}</td>
 
                   {/* Excuse column */}
                   <td className="px-5 py-4">

@@ -1,13 +1,8 @@
 "use client";
 
-import { use, useEffect, useState } from "react";
+import { use, useState } from "react";
 import { startAuthentication } from "@simplewebauthn/browser";
-import { Loader2, FileUp, CheckCircle2, XCircle, Clock, AlertCircle, Fingerprint } from "lucide-react";
-
-type AbsenceRecord = {
-  id: string; date: string;
-  excuseType: string | null; excuseNote: string | null; excuseApproved: boolean | null;
-};
+import { Loader2, FileUp, CheckCircle2, Fingerprint } from "lucide-react";
 
 const excuseLabels: Record<string, string> = {
   SICK:     "تقرير طبي",
@@ -16,38 +11,47 @@ const excuseLabels: Record<string, string> = {
   OTHER:    "سبب آخر",
 };
 
+type AbsenceRecord = { id: string; date: string };
+
 export default function ExcusePage({ params }: { params: Promise<{ org: string }> }) {
   const { org } = use(params);
-  const [stage, setStage] = useState<"login" | "webauthn" | "list" | "submit" | "done">("login");
-  const [email, setEmail] = useState("");
+  const [stage, setStage] = useState<"login" | "webauthn" | "form" | "done">("login");
+  const [email, setEmail]       = useState("");
   const [password, setPassword] = useState("");
   const [pendingEmpId, setPendingEmpId] = useState<number | null>(null);
   const [loginError, setLoginError] = useState("");
   const [loginLoading, setLoginLoading] = useState(false);
-  const [records, setRecords] = useState<AbsenceRecord[]>([]);
-  const [listLoading, setListLoading] = useState(false);
-  const [selected, setSelected] = useState<AbsenceRecord | null>(null);
-  const [form, setForm] = useState({ excuseType: "SICK", excuseNote: "", excuseFile: "" });
-  const [fileName, setFileName] = useState("");
+
+  const [absences, setAbsences]     = useState<AbsenceRecord[]>([]);
+  const [selectedId, setSelectedId] = useState("");
+  const [excuseType, setExcuseType] = useState("SICK");
+  const [excuseNote, setExcuseNote] = useState("");
+  const [excuseFile, setExcuseFile] = useState("");
+  const [fileName, setFileName]     = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
+
+  const loadAndShowForm = async () => {
+    const res  = await fetch(`/api/attend/${org}/excuse`);
+    const data = await res.json();
+    const list: AbsenceRecord[] = (data.records ?? []).filter((r: { excuseApproved: boolean | null }) => r.excuseApproved !== true);
+    setAbsences(list);
+    setSelectedId(list[0]?.id ?? "");
+    setStage("form");
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginLoading(true); setLoginError("");
     try {
-      const res = await fetch(`/api/attend/${org}/auth/employee-login`, {
+      const res  = await fetch(`/api/attend/${org}/auth/employee-login`, {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
       const data = await res.json();
       if (!res.ok) { setLoginError(data.error); return; }
-      if (data.needsWebAuthn) {
-        setPendingEmpId(data.employeeId);
-        setStage("webauthn");
-        return;
-      }
-      loadRecords();
+      if (data.needsWebAuthn) { setPendingEmpId(data.employeeId); setStage("webauthn"); return; }
+      await loadAndShowForm();
     } finally { setLoginLoading(false); }
   };
 
@@ -60,7 +64,6 @@ export default function ExcusePage({ params }: { params: Promise<{ org: string }
       });
       const opts = await optRes.json();
       if (!optRes.ok) { setLoginError(opts.error); return; }
-
       const response = await startAuthentication({ optionsJSON: opts });
       const verRes   = await fetch(`/api/attend/${org}/webauthn/auth-verify`, {
         method: "POST", headers: { "Content-Type": "application/json" },
@@ -68,18 +71,10 @@ export default function ExcusePage({ params }: { params: Promise<{ org: string }
       });
       const ver = await verRes.json();
       if (!verRes.ok) { setLoginError(ver.error); return; }
-      loadRecords();
+      await loadAndShowForm();
     } catch (e: unknown) {
       setLoginError(e instanceof Error ? e.message : "فشل التحقق بالبصمة");
     } finally { setLoginLoading(false); }
-  };
-
-  const loadRecords = async () => {
-    setStage("list"); setListLoading(true);
-    const res  = await fetch(`/api/attend/${org}/excuse`);
-    const data = await res.json();
-    setRecords(data.records ?? []);
-    setListLoading(false);
   };
 
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -88,23 +83,18 @@ export default function ExcusePage({ params }: { params: Promise<{ org: string }
     if (file.size > 2 * 1024 * 1024) { setSubmitError("الحجم الأقصى 2 ميغابايت"); return; }
     setFileName(file.name);
     const reader = new FileReader();
-    reader.onload = () => setForm(f => ({ ...f, excuseFile: reader.result as string }));
+    reader.onload = () => setExcuseFile(reader.result as string);
     reader.readAsDataURL(file);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selected) return;
+    if (!selectedId) return;
     setSubmitting(true); setSubmitError("");
     try {
       const res = await fetch(`/api/attend/${org}/excuse`, {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          recordId:   selected.id,
-          excuseType: form.excuseType,
-          excuseNote: form.excuseNote,
-          excuseFile: form.excuseFile || null,
-        }),
+        body: JSON.stringify({ recordId: selectedId, excuseType, excuseNote, excuseFile: excuseFile || null }),
       });
       const data = await res.json();
       if (!res.ok) { setSubmitError(data.error); return; }
@@ -112,10 +102,10 @@ export default function ExcusePage({ params }: { params: Promise<{ org: string }
     } finally { setSubmitting(false); }
   };
 
-  const inp = "w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-neon-cyan/40";
-
   const fmtDate = (iso: string) =>
     new Date(iso).toLocaleDateString("ar-SA", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
+
+  const inp = "w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-neon-cyan/40";
 
   return (
     <div className="min-h-screen bg-[#0A0A0A] flex items-center justify-center px-4 py-10" dir="rtl">
@@ -129,7 +119,6 @@ export default function ExcusePage({ params }: { params: Promise<{ org: string }
           <p className="text-gray-500 text-sm mt-1">تقديم عذر الغياب</p>
         </div>
 
-        {/* Login */}
         {stage === "login" && (
           <form onSubmit={handleLogin} className="glass-card rounded-2xl p-8 flex flex-col gap-4">
             <p className="text-white font-black text-lg text-center">سجّل دخولك</p>
@@ -145,7 +134,6 @@ export default function ExcusePage({ params }: { params: Promise<{ org: string }
           </form>
         )}
 
-        {/* WebAuthn step */}
         {stage === "webauthn" && (
           <div className="glass-card rounded-2xl p-8 flex flex-col items-center gap-5 text-center">
             <Fingerprint size={40} className="text-neon-cyan"/>
@@ -163,109 +151,67 @@ export default function ExcusePage({ params }: { params: Promise<{ org: string }
           </div>
         )}
 
+        {stage === "form" && (
+          absences.length === 0 ? (
+            <div className="glass-card rounded-2xl p-8 text-center text-gray-400">
+              <CheckCircle2 size={40} className="text-green-400 mx-auto mb-3"/>
+              <p className="font-black text-white">لا يوجد غياب مسجّل</p>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="glass-card rounded-2xl p-8 flex flex-col gap-4">
+              <p className="text-white font-black text-lg text-center">رفع عذر الغياب</p>
 
-        {/* Absence list */}
-        {stage === "list" && (
-          <div className="flex flex-col gap-3">
-            {listLoading ? (
-              <div className="glass-card rounded-2xl p-10 flex justify-center">
-                <Loader2 size={28} className="animate-spin text-neon-cyan"/>
+              <div>
+                <label className="text-xs font-bold text-gray-400 mb-1.5 block">يوم الغياب</label>
+                <select value={selectedId} onChange={e => setSelectedId(e.target.value)}
+                  className={inp} style={{ colorScheme: "dark" }}>
+                  {absences.map(r => (
+                    <option key={r.id} value={r.id}>{fmtDate(r.date)}</option>
+                  ))}
+                </select>
               </div>
-            ) : records.length === 0 ? (
-              <div className="glass-card rounded-2xl p-8 text-center text-gray-400">
-                <CheckCircle2 size={40} className="text-green-400 mx-auto mb-3"/>
-                <p className="font-black text-white">لا يوجد غياب مسجّل</p>
+
+              <div>
+                <label className="text-xs font-bold text-gray-400 mb-1.5 block">نوع العذر</label>
+                <select value={excuseType} onChange={e => setExcuseType(e.target.value)}
+                  className={inp} style={{ colorScheme: "dark" }}>
+                  {Object.entries(excuseLabels).map(([v, l]) => (
+                    <option key={v} value={v}>{l}</option>
+                  ))}
+                </select>
               </div>
-            ) : (
-              <>
-                <p className="text-gray-500 text-xs mb-1">اختر يوم الغياب لتقديم العذر</p>
-                {records.map(r => (
-                  <button key={r.id} onClick={() => {
-                    setSelected(r);
-                    setForm({ excuseType: r.excuseType ?? "SICK", excuseNote: r.excuseNote ?? "", excuseFile: "" });
-                    setFileName("");
-                    setSubmitError("");
-                    setStage("submit");
-                  }}
-                    className="glass-card rounded-2xl p-5 text-right flex items-start justify-between hover:border-neon-cyan/30 transition-colors">
-                    <div>
-                      <p className="text-white font-bold text-sm">{fmtDate(r.date)}</p>
-                      {r.excuseType && (
-                        <p className="text-xs text-gray-500 mt-1">{excuseLabels[r.excuseType] ?? r.excuseType}</p>
-                      )}
-                    </div>
-                    <div className="shrink-0 mt-0.5">
-                      {r.excuseApproved === true  && <CheckCircle2 size={18} className="text-green-400"/>}
-                      {r.excuseApproved === false && <XCircle size={18} className="text-red-400"/>}
-                      {r.excuseApproved === null  && r.excuseType && <Clock size={18} className="text-yellow-400"/>}
-                      {!r.excuseType             && <AlertCircle size={18} className="text-gray-500"/>}
-                    </div>
-                  </button>
-                ))}
-              </>
-            )}
-          </div>
-        )}
 
-        {/* Submit excuse */}
-        {stage === "submit" && selected && (
-          <form onSubmit={handleSubmit} className="glass-card rounded-2xl p-8 flex flex-col gap-4">
-            <div>
-              <p className="text-gray-500 text-xs">تقديم عذر ليوم</p>
-              <p className="text-white font-black">{fmtDate(selected.date)}</p>
-            </div>
+              <div>
+                <label className="text-xs font-bold text-gray-400 mb-1.5 block">ملاحظة (اختياري)</label>
+                <textarea value={excuseNote} onChange={e => setExcuseNote(e.target.value)}
+                  rows={3} placeholder="اكتب تفاصيل إضافية..."
+                  className={inp + " resize-none"}/>
+              </div>
 
-            <div>
-              <label className="text-xs font-bold text-gray-400 mb-1.5 block">نوع العذر</label>
-              <select value={form.excuseType} onChange={e => setForm(f => ({ ...f, excuseType: e.target.value }))}
-                className={inp} style={{ colorScheme: "dark" }}>
-                {Object.entries(excuseLabels).map(([v, l]) => (
-                  <option key={v} value={v}>{l}</option>
-                ))}
-              </select>
-            </div>
+              <div>
+                <label className="text-xs font-bold text-gray-400 mb-1.5 block">رفع المستند (اختياري — صورة أو PDF حتى 2MB)</label>
+                <label className="flex items-center gap-3 cursor-pointer px-4 py-3 rounded-xl border border-dashed border-white/15 hover:border-neon-cyan/40 transition-colors">
+                  <FileUp size={18} className="text-neon-cyan shrink-0"/>
+                  <span className="text-sm text-gray-400 truncate">{fileName || "اضغط لاختيار ملف"}</span>
+                  <input type="file" accept="image/*,.pdf" onChange={handleFile} className="hidden"/>
+                </label>
+              </div>
 
-            <div>
-              <label className="text-xs font-bold text-gray-400 mb-1.5 block">ملاحظة (اختياري)</label>
-              <textarea value={form.excuseNote} onChange={e => setForm(f => ({ ...f, excuseNote: e.target.value }))}
-                rows={3} placeholder="اكتب تفاصيل إضافية..."
-                className={inp + " resize-none"}/>
-            </div>
+              {submitError && <p className="text-red-400 text-sm bg-red-500/10 rounded-xl px-4 py-2">{submitError}</p>}
 
-            <div>
-              <label className="text-xs font-bold text-gray-400 mb-1.5 block">رفع المستند (اختياري — صورة أو PDF حتى 2MB)</label>
-              <label className="flex items-center gap-3 cursor-pointer px-4 py-3 rounded-xl border border-dashed border-white/15 hover:border-neon-cyan/40 transition-colors">
-                <FileUp size={18} className="text-neon-cyan shrink-0"/>
-                <span className="text-sm text-gray-400 truncate">{fileName || "اضغط لاختيار ملف"}</span>
-                <input type="file" accept="image/*,.pdf" onChange={handleFile} className="hidden"/>
-              </label>
-            </div>
-
-            {submitError && <p className="text-red-400 text-sm bg-red-500/10 rounded-xl px-4 py-2">{submitError}</p>}
-
-            <div className="flex gap-3">
               <button type="submit" disabled={submitting}
-                className="flex-1 py-3 bg-neon-cyan text-dark-bg font-black rounded-xl text-sm disabled:opacity-60">
+                className="py-3 bg-neon-cyan text-dark-bg font-black rounded-xl text-sm disabled:opacity-60">
                 {submitting ? <Loader2 size={16} className="animate-spin mx-auto"/> : "إرسال العذر"}
               </button>
-              <button type="button" onClick={() => setStage("list")}
-                className="flex-1 py-3 bg-white/10 text-gray-300 font-bold rounded-xl text-sm hover:bg-white/20">
-                رجوع
-              </button>
-            </div>
-          </form>
+            </form>
+          )
         )}
 
-        {/* Done */}
         {stage === "done" && (
           <div className="glass-card rounded-2xl p-8 flex flex-col items-center gap-4 text-center">
             <CheckCircle2 size={52} className="text-green-400"/>
             <p className="text-white font-black text-xl">تم إرسال العذر</p>
             <p className="text-gray-400 text-sm">سيراجعه المدير وتصلك النتيجة قريباً</p>
-            <button onClick={() => { setStage("list"); loadRecords(); }}
-              className="mt-2 px-6 py-2.5 bg-white/10 text-gray-300 font-bold rounded-xl text-sm hover:bg-white/20">
-              عرض الغيابات
-            </button>
           </div>
         )}
 

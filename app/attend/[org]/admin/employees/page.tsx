@@ -7,36 +7,27 @@ type Employee = {
   id: string; name: string; email: string; role: string;
   active: boolean; deviceBound: boolean;
   salary: number | null; overtimeRate: number | null;
-  shift?: { id: string; startTime: string; endTime: string; name: string } | null;
 };
-
-type Shift = { id: string; name: string; startTime: string; endTime: string };
 
 type MonthStats = { overtimeMinutes: number; lateMinutes: number };
 
 export default function EmployeesPage({ params }: { params: Promise<{ org: string }> }) {
   const { org } = use(params);
   const [employees, setEmployees] = useState<Employee[]>([]);
-  const [shifts, setShifts]       = useState<Shift[]>([]);
   const [loading, setLoading]     = useState(true);
   const [showForm, setShowForm]   = useState(false);
   const [editEmp, setEditEmp]     = useState<Employee | null>(null);
   const [expanded, setExpanded]   = useState<string | null>(null);
   const [empStats, setEmpStats]   = useState<Record<string, MonthStats>>({});
-  const [form, setForm] = useState({ name: "", email: "", password: "", role: "EMPLOYEE", salary: "", overtimeRate: "", shiftId: "" });
+  const [form, setForm] = useState({ name: "", email: "", password: "", role: "EMPLOYEE", salary: "", overtimeRate: "" });
   const [saving, setSaving] = useState(false);
   const [error, setError]   = useState("");
 
   const fetchEmployees = async () => {
     setLoading(true);
-    const [empRes, shiftRes] = await Promise.all([
-      fetch(`/api/attend/${org}/employees`),
-      fetch(`/api/attend/${org}/shifts`),
-    ]);
-    const empData   = await empRes.json();
-    const shiftData = await shiftRes.json();
-    setEmployees(empData.employees ?? []);
-    setShifts(shiftData.shifts ?? []);
+    const res  = await fetch(`/api/attend/${org}/employees`);
+    const data = await res.json();
+    setEmployees(data.employees ?? []);
     setLoading(false);
   };
 
@@ -63,15 +54,14 @@ export default function EmployeesPage({ params }: { params: Promise<{ org: strin
 
   const openAdd = () => {
     setEditEmp(null);
-    setForm({ name: "", email: "", password: "", role: "EMPLOYEE", salary: "", overtimeRate: "", shiftId: "" });
+    setForm({ name: "", email: "", password: "", role: "EMPLOYEE", salary: "", overtimeRate: "" });
     setShowForm(true); setError("");
   };
 
   const openEdit = (e: Employee) => {
     setEditEmp(e);
     setForm({ name: e.name, email: e.email, password: "", role: e.role,
-      salary: e.salary?.toString() ?? "", overtimeRate: e.overtimeRate?.toString() ?? "",
-      shiftId: e.shift?.id?.toString() ?? "" });
+      salary: e.salary?.toString() ?? "", overtimeRate: e.overtimeRate?.toString() ?? "" });
     setShowForm(true); setError("");
   };
 
@@ -82,7 +72,6 @@ export default function EmployeesPage({ params }: { params: Promise<{ org: strin
         name: form.name, email: form.email, role: form.role,
         salary:       form.salary      ? parseFloat(form.salary)      : null,
         overtimeRate: form.overtimeRate ? parseFloat(form.overtimeRate) : null,
-        shiftId:      form.shiftId     ? parseInt(form.shiftId)        : null,
       };
       if (form.password) body.password = form.password;
 
@@ -265,17 +254,6 @@ export default function EmployeesPage({ params }: { params: Promise<{ org: strin
                 <label className="text-xs font-bold text-gray-400 mb-1 block">سعر ساعة الأوفرتايم</label>
                 <input type="number" value={form.overtimeRate} onChange={e => setForm(f => ({ ...f, overtimeRate: e.target.value }))}
                   placeholder="تلقائي إن فارغ" className={inp}/>
-              </div>
-              <div className="col-span-2">
-                <label className="text-xs font-bold text-gray-400 mb-1 block">الوردية</label>
-                <select value={form.shiftId} onChange={e => setForm(f => ({ ...f, shiftId: e.target.value }))} className={inp} style={{ colorScheme: "dark" }}>
-                  <option value="">بدون وردية</option>
-                  {shifts.map(s => (
-                    <option key={s.id} value={s.id}>
-                      {s.name} ({s.startTime} – {s.endTime})
-                    </option>
-                  ))}
-                </select>
               </div>
               <div className="col-span-2">
                 <label className="text-xs font-bold text-gray-400 mb-1 block">الدور</label>
