@@ -6,7 +6,7 @@ import { Building2, Loader2, CheckCircle2 } from "lucide-react";
 
 export default function SetupPage() {
   const router = useRouter();
-  const [form, setForm]     = useState({ name: "", slug: "", password: "" });
+  const [form, setForm] = useState({ ownerEmail: "", ownerPassword: "", name: "", slug: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState("");
   const [done, setDone]       = useState(false);
@@ -35,6 +35,8 @@ export default function SetupPage() {
     }
   };
 
+  const inp = "w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-gray-600 focus:outline-none focus:border-neon-cyan/40 text-sm";
+
   return (
     <div className="min-h-screen flex items-center justify-center px-4" dir="rtl">
       <div className="w-full max-w-md">
@@ -55,59 +57,54 @@ export default function SetupPage() {
           </div>
         ) : (
           <form onSubmit={submit} className="glass-card rounded-2xl p-8 flex flex-col gap-5">
-            <div>
-              <label className="text-xs font-bold text-gray-400 mb-2 block">اسم المؤسسة</label>
-              <input
-                value={form.name}
-                onChange={e => {
-                  const name = e.target.value;
-                  setForm(f => ({ ...f, name, slug: slugify(name) }));
-                }}
-                placeholder="شركة النجاح"
-                required
-                className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-gray-600 focus:outline-none focus:border-neon-cyan/40 text-sm"
-              />
-            </div>
 
-            <div>
-              <label className="text-xs font-bold text-gray-400 mb-2 block">
-                الرابط الخاص <span className="text-gray-600">(slug)</span>
-              </label>
-              <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-white/5 border border-white/10 focus-within:border-neon-cyan/40">
-                <span className="text-gray-600 text-xs whitespace-nowrap">alihajali.com/attend/</span>
-                <input
-                  value={form.slug}
-                  onChange={e => setForm(f => ({ ...f, slug: slugify(e.target.value) }))}
-                  placeholder="company-name"
-                  required
-                  className="flex-1 bg-transparent text-white text-sm focus:outline-none"
-                  dir="ltr"
-                />
+            <div className="border-b border-white/8 pb-5 flex flex-col gap-4">
+              <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">تحقق من الهوية</p>
+              <div>
+                <label className="text-xs font-bold text-gray-400 mb-2 block">البريد الإلكتروني</label>
+                <input type="email" value={form.ownerEmail}
+                  onChange={e => setForm(f => ({ ...f, ownerEmail: e.target.value }))}
+                  placeholder="your@email.com" required dir="ltr" className={inp}/>
+              </div>
+              <div>
+                <label className="text-xs font-bold text-gray-400 mb-2 block">كلمة المرور</label>
+                <input type="password" value={form.ownerPassword}
+                  onChange={e => setForm(f => ({ ...f, ownerPassword: e.target.value }))}
+                  placeholder="••••••••" required className={inp}/>
               </div>
             </div>
 
-            <div>
-              <label className="text-xs font-bold text-gray-400 mb-2 block">كلمة مرور الأدمن</label>
-              <input
-                type="password"
-                value={form.password}
-                onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
-                placeholder="••••••••"
-                required
-                minLength={8}
-                className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-gray-600 focus:outline-none focus:border-neon-cyan/40 text-sm"
-              />
+            <div className="flex flex-col gap-4">
+              <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">بيانات المؤسسة</p>
+              <div>
+                <label className="text-xs font-bold text-gray-400 mb-2 block">اسم المؤسسة</label>
+                <input value={form.name}
+                  onChange={e => {
+                    const name = e.target.value;
+                    setForm(f => ({ ...f, name, slug: slugify(name) }));
+                  }}
+                  placeholder="شركة النجاح" required className={inp}/>
+              </div>
+              <div>
+                <label className="text-xs font-bold text-gray-400 mb-2 block">
+                  الرابط الخاص <span className="text-gray-600">(slug)</span>
+                </label>
+                <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-white/5 border border-white/10 focus-within:border-neon-cyan/40">
+                  <span className="text-gray-600 text-xs whitespace-nowrap">alihajali.com/attend/</span>
+                  <input value={form.slug}
+                    onChange={e => setForm(f => ({ ...f, slug: slugify(e.target.value) }))}
+                    placeholder="company-name" required dir="ltr"
+                    className="flex-1 bg-transparent text-white text-sm focus:outline-none"/>
+                </div>
+              </div>
             </div>
 
             {error && (
               <p className="text-red-400 text-sm text-center bg-red-500/10 rounded-xl px-4 py-2">{error}</p>
             )}
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="flex items-center justify-center gap-2 py-4 bg-neon-cyan text-dark-bg font-black rounded-2xl glow-cyan hover:scale-105 active:scale-95 transition-transform disabled:opacity-60 disabled:scale-100"
-            >
+            <button type="submit" disabled={loading}
+              className="flex items-center justify-center gap-2 py-4 bg-neon-cyan text-dark-bg font-black rounded-2xl glow-cyan hover:scale-105 active:scale-95 transition-transform disabled:opacity-60 disabled:scale-100">
               {loading ? <><Loader2 size={18} className="animate-spin"/> جارٍ الإنشاء...</> : "إنشاء المؤسسة"}
             </button>
           </form>

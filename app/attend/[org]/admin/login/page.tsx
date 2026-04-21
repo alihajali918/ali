@@ -7,6 +7,7 @@ import { Shield, Loader2 } from "lucide-react";
 export default function AdminLoginPage({ params }: { params: Promise<{ org: string }> }) {
   const { org }   = use(params);
   const router    = useRouter();
+  const [email, setEmail]       = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState("");
@@ -19,7 +20,7 @@ export default function AdminLoginPage({ params }: { params: Promise<{ org: stri
       const res = await fetch(`/api/attend/${org}/auth/admin-login`, {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ password }),
+        body:    JSON.stringify({ email, password }),
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error); return; }
@@ -30,6 +31,8 @@ export default function AdminLoginPage({ params }: { params: Promise<{ org: stri
       setLoading(false);
     }
   };
+
+  const inp = "w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-gray-600 focus:outline-none focus:border-neon-cyan/40 text-sm";
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4" dir="rtl">
@@ -45,6 +48,19 @@ export default function AdminLoginPage({ params }: { params: Promise<{ org: stri
 
         <form onSubmit={submit} className="glass-card rounded-2xl p-8 flex flex-col gap-4">
           <div>
+            <label className="text-xs font-bold text-gray-400 mb-2 block">البريد الإلكتروني</label>
+            <input
+              type="email"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              placeholder="your@email.com"
+              required
+              autoFocus
+              dir="ltr"
+              className={inp}
+            />
+          </div>
+          <div>
             <label className="text-xs font-bold text-gray-400 mb-2 block">كلمة المرور</label>
             <input
               type="password"
@@ -52,8 +68,7 @@ export default function AdminLoginPage({ params }: { params: Promise<{ org: stri
               onChange={e => setPassword(e.target.value)}
               placeholder="••••••••"
               required
-              autoFocus
-              className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-gray-600 focus:outline-none focus:border-neon-cyan/40 text-sm"
+              className={inp}
             />
           </div>
 
