@@ -114,6 +114,7 @@ CREATE TABLE IF NOT EXISTS "att_month_archives" (
 
 ALTER TABLE "att_qr_sessions" ADD COLUMN IF NOT EXISTS "displayDeviceId" TEXT;
 ALTER TABLE "att_qr_sessions" ADD COLUMN IF NOT EXISTS "displayLastSeen" TIMESTAMP(3);
+ALTER TABLE "att_qr_sessions" ADD COLUMN IF NOT EXISTS "displayLocked"   BOOLEAN NOT NULL DEFAULT false;
 
 -- RLS (block direct PostgREST access)
 ALTER TABLE "att_organizations" ENABLE ROW LEVEL SECURITY;

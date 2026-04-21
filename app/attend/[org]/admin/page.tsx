@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, use } from "react";
-import { Users, UserCheck, UserX, Clock, TrendingUp, Copy } from "lucide-react";
+import { Users, UserCheck, UserX, Clock, TrendingUp, Copy, LockOpen } from "lucide-react";
 
 type Stats = {
   totalEmployees: number;
@@ -13,11 +13,12 @@ type Stats = {
 
 export default function AdminDashboard({ params }: { params: Promise<{ org: string }> }) {
   const { org }  = use(params);
-  const [stats, setStats] = useState<Stats | null>(null);
-  const [copied, setCopied] = useState(false);
+  const [stats, setStats]           = useState<Stats | null>(null);
+  const [copied, setCopied]         = useState(false);
+  const [displayLocked, setDisplayLocked] = useState(false);
+  const [unlocking, setUnlocking]   = useState(false);
 
   useEffect(() => {
-    // Mark absences for past workdays, then load stats
     fetch(`/api/attend/${org}/mark-absences`, { method: "POST" })
       .catch(() => {})
       .finally(() => {
@@ -26,7 +27,19 @@ export default function AdminDashboard({ params }: { params: Promise<{ org: stri
           .then(d => { if (!d.error) setStats(d); })
           .catch(() => {});
       });
+    // Check display lock status
+    fetch(`/api/attend/${org}/qr/display/lock`)
+      .then(r => r.json())
+      .then(d => setDisplayLocked(d.locked ?? false))
+      .catch(() => {});
   }, [org]);
+
+  const unlockDisplay = async () => {
+    setUnlocking(true);
+    await fetch(`/api/attend/${org}/qr/display`, { method: "POST" });
+    setDisplayLocked(false);
+    setUnlocking(false);
+  };
 
   const copyLink = (path: string) => {
     navigator.clipboard.writeText(`${window.location.origin}${path}`);
@@ -51,6 +64,23 @@ export default function AdminDashboard({ params }: { params: Promise<{ org: stri
           <h1 className="text-2xl font-black text-white capitalize">{org}</h1>
         </div>
       </div>
+
+      {/* Security alert */}
+      {displayLocked && (
+        <div className="glass-card rounded-2xl p-5 mb-6 border border-red-500/30 flex items-center justify-between gap-4" dir="rtl">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">🔒</span>
+            <div>
+              <p className="text-red-400 font-black text-sm">شاشة العرض مقفلة</p>
+              <p className="text-gray-500 text-xs">تم رصد محاولة فتح غير مصرح من جهاز آخر</p>
+            </div>
+          </div>
+          <button onClick={unlockDisplay} disabled={unlocking}
+            className="flex items-center gap-2 px-4 py-2 bg-red-500/20 text-red-400 hover:bg-red-500/30 font-bold rounded-xl text-sm transition-colors disabled:opacity-60 shrink-0">
+            <LockOpen size={15}/> {unlocking ? "جارٍ الفك..." : "فك القفل"}
+          </button>
+        </div>
+      )}
 
       {/* روابط سريعة */}
       <div className="glass-card rounded-2xl p-5 mb-6 flex flex-col sm:flex-row gap-4">

@@ -244,6 +244,7 @@ model AttQrSession {
   updatedAt       DateTime        @updatedAt
   displayDeviceId String?         // UUID of the device currently showing the display screen
   displayLastSeen DateTime?       // last heartbeat from that device
+  displayLocked   Boolean         @default(false) // locked after tamper attempt
 
   @@unique([organizationId])
   @@map("att_qr_sessions")
