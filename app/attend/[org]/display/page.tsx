@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useEffect, useState, useCallback, Suspense } from "react";
+import { use, useEffect, useState, useCallback, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { QRCodeSVG } from "qrcode.react";
 import { Wifi, WifiOff } from "lucide-react";
@@ -9,18 +9,30 @@ function DisplayContent({ org }: { org: string }) {
   const searchParams = useSearchParams();
   const dk = searchParams.get("dk") ?? "";
 
-  const [url, setUrl]         = useState("");
+  // Stable device ID for this browser session — generated once on mount
+  const sidRef = useRef<string>("");
+  useEffect(() => {
+    sidRef.current = crypto.randomUUID();
+  }, []);
+
+  const [url, setUrl]           = useState("");
   const [remaining, setRemaining] = useState(30);
-  const [online, setOnline]   = useState(true);
-  const [time, setTime]       = useState("");
-  const [unauthorized, setUnauthorized] = useState(false);
+  const [online, setOnline]     = useState(true);
+  const [time, setTime]         = useState("");
+  const [unauthorized, setUnauthorized]   = useState(false);
+  const [takenOver, setTakenOver]         = useState(false);
 
   const fetchToken = useCallback(async () => {
     try {
-      const res  = await fetch(`/api/attend/${org}/qr/display${dk ? `?dk=${dk}` : ""}`);
+      const sid = sidRef.current;
+      const qs  = new URLSearchParams();
+      if (dk)  qs.set("dk",  dk);
+      if (sid) qs.set("sid", sid);
+      const res  = await fetch(`/api/attend/${org}/qr/display?${qs}`);
       if (res.status === 401) { setUnauthorized(true); return; }
+      if (res.status === 409) { setTakenOver(true); return; }
       const data = await res.json();
-      if (data.url) { setUrl(data.url); setOnline(true); setUnauthorized(false); }
+      if (data.url) { setUrl(data.url); setOnline(true); setTakenOver(false); setUnauthorized(false); }
     } catch { setOnline(false); }
   }, [org, dk]);
 
@@ -47,6 +59,17 @@ function DisplayContent({ org }: { org: string }) {
         <div className="text-center">
           <p className="text-red-400 text-xl font-black mb-2">غير مصرح</p>
           <p className="text-gray-500 text-sm">استخدم الرابط الكامل من إعدادات المؤسسة</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (takenOver) {
+    return (
+      <div className="min-h-screen bg-[#0A0A0A] flex items-center justify-center" dir="rtl">
+        <div className="text-center">
+          <p className="text-yellow-400 text-xl font-black mb-2">الشاشة مفتوحة على جهاز آخر</p>
+          <p className="text-gray-500 text-sm">لا يمكن فتح شاشة العرض على أكثر من جهاز واحد في نفس الوقت</p>
         </div>
       </div>
     );

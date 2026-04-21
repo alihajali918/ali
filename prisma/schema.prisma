@@ -236,12 +236,14 @@ model AttMonthArchive {
 }
 
 model AttQrSession {
-  id             Int             @id @default(autoincrement())
-  organizationId Int
-  org            AttOrganization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  secret         String          // TOTP secret for this org
-  active         Boolean         @default(true)
-  updatedAt      DateTime        @updatedAt
+  id              Int             @id @default(autoincrement())
+  organizationId  Int
+  org             AttOrganization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  secret          String          // TOTP secret for this org
+  active          Boolean         @default(true)
+  updatedAt       DateTime        @updatedAt
+  displayDeviceId String?         // UUID of the device currently showing the display screen
+  displayLastSeen DateTime?       // last heartbeat from that device
 
   @@unique([organizationId])
   @@map("att_qr_sessions")

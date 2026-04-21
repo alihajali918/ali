@@ -112,6 +112,9 @@ CREATE TABLE IF NOT EXISTS "att_month_archives" (
     UNIQUE("employeeId", "year", "month")
 );
 
+ALTER TABLE "att_qr_sessions" ADD COLUMN IF NOT EXISTS "displayDeviceId" TEXT;
+ALTER TABLE "att_qr_sessions" ADD COLUMN IF NOT EXISTS "displayLastSeen" TIMESTAMP(3);
+
 -- RLS (block direct PostgREST access)
 ALTER TABLE "att_organizations" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "att_employees"     ENABLE ROW LEVEL SECURITY;

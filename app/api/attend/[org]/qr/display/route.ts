@@ -3,10 +3,13 @@ import { db as prisma } from "@/app/lib/db";
 import { getAttSession } from "@/app/lib/attendance";
 import { generateSecret, generate } from "otplib";
 
+const LEASE_MS = 45_000; // device must re-poll within 45s or lease expires
+
 export async function GET(req: NextRequest, { params }: { params: Promise<{ org: string }> }) {
   const { org } = await params;
   const { searchParams } = new URL(req.url);
-  const dk = searchParams.get("dk"); // display key
+  const dk  = searchParams.get("dk");
+  const sid = searchParams.get("sid"); // unique device session ID
 
   const organization = await prisma.attOrganization.findUnique({ where: { slug: org } });
   if (!organization) return NextResponse.json({ error: "غير موجود" }, { status: 404 });
@@ -24,6 +27,24 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ org:
   if (!qrSession) {
     qrSession = await prisma.attQrSession.create({
       data: { organizationId: organization.id, secret: generateSecret() },
+    });
+  }
+
+  // Single-device enforcement: check if another device holds a valid lease
+  if (sid) {
+    const now = new Date();
+    const leaseExpired = !qrSession.displayLastSeen ||
+      (now.getTime() - qrSession.displayLastSeen.getTime()) > LEASE_MS;
+    const ownedByOther = qrSession.displayDeviceId && qrSession.displayDeviceId !== sid;
+
+    if (ownedByOther && !leaseExpired) {
+      return NextResponse.json({ error: "الشاشة مفتوحة على جهاز آخر" }, { status: 409 });
+    }
+
+    // Claim or renew the lease
+    await prisma.attQrSession.update({
+      where:  { organizationId: organization.id },
+      data:   { displayDeviceId: sid, displayLastSeen: now },
     });
   }
 
