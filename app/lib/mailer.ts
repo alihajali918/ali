@@ -1,5 +1,7 @@
 import nodemailer from "nodemailer";
 
+const ALERT_EMAIL = "h_najareen@hotmail.com";
+
 export const transporter = nodemailer.createTransport({
   host: "smtp.hostinger.com",
   port: 465,
@@ -24,6 +26,71 @@ export async function sendVerificationEmail(to: string, name: string, token: str
       note: "هذا الرابط صالح لمدة 24 ساعة.",
     }),
   });
+}
+
+export async function sendDisplayTamperAlert(org: string, time: string) {
+  await transporter.sendMail({
+    from: `"نظام الحضور" <noreply@alihajali.com>`,
+    to: ALERT_EMAIL,
+    subject: `⚠️ محاولة فتح شاشة العرض من جهاز ثانٍ — ${org}`,
+    html: alertTemplate(
+      "⚠️ تحذير: محاولة وصول غير مصرح به",
+      `تمّت محاولة فتح شاشة عرض رمز QR الخاصة بـ <strong>${org}</strong> من جهاز ثانٍ في الوقت <strong>${time}</strong>.<br/>الشاشة كانت مفتوحة بالفعل على جهاز آخر.`,
+    ),
+  }).catch(() => {});
+}
+
+export async function sendAttendanceAlert(org: string, employeeName: string, type: "CHECK_IN" | "CHECK_OUT", time: string) {
+  const typeAr = type === "CHECK_IN" ? "✅ تسجيل حضور" : "🚪 تسجيل انصراف";
+  await transporter.sendMail({
+    from: `"نظام الحضور" <noreply@alihajali.com>`,
+    to: ALERT_EMAIL,
+    subject: `${typeAr} — ${employeeName} (${org})`,
+    html: alertTemplate(
+      typeAr,
+      `قام الموظف <strong>${employeeName}</strong> بتسجيل ${type === "CHECK_IN" ? "الحضور" : "الانصراف"} في مؤسسة <strong>${org}</strong> الساعة <strong>${time}</strong>.`,
+    ),
+  }).catch(() => {});
+}
+
+export async function sendExcuseAlert(org: string, employeeName: string, date: string, excuseType: string) {
+  const types: Record<string, string> = {
+    SICK: "تقرير طبي", VACATION: "إجازة", PERSONAL: "ظرف شخصي", OTHER: "سبب آخر",
+  };
+  await transporter.sendMail({
+    from: `"نظام الحضور" <noreply@alihajali.com>`,
+    to: ALERT_EMAIL,
+    subject: `📋 طلب عذر جديد — ${employeeName} (${org})`,
+    html: alertTemplate(
+      "📋 طلب عذر جديد",
+      `قدّم الموظف <strong>${employeeName}</strong> طلب عذر عن يوم <strong>${date}</strong> في مؤسسة <strong>${org}</strong>.<br/>نوع العذر: <strong>${types[excuseType] ?? excuseType}</strong>`,
+    ),
+  }).catch(() => {});
+}
+
+function alertTemplate(title: string, body: string) {
+  return `<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head><meta charset="UTF-8"></head>
+<body style="margin:0;padding:0;background:#0A0A0A;font-family:'Segoe UI',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#0A0A0A;padding:40px 20px;">
+    <tr><td align="center">
+      <table width="520" cellpadding="0" cellspacing="0" style="background:#111;border:1px solid rgba(255,255,255,0.08);border-radius:20px;overflow:hidden;">
+        <tr><td style="background:linear-gradient(135deg,#00F5D4,#7B61FF);padding:24px 32px;">
+          <h1 style="margin:0;color:#fff;font-size:18px;font-weight:900;">نظام الحضور</h1>
+        </td></tr>
+        <tr><td style="padding:32px;">
+          <h2 style="margin:0 0 16px;color:#fff;font-size:17px;font-weight:700;">${title}</h2>
+          <p style="margin:0;color:#9ca3af;font-size:14px;line-height:1.8;">${body}</p>
+        </td></tr>
+        <tr><td style="padding:16px 32px;border-top:1px solid rgba(255,255,255,0.06);text-align:center;">
+          <p style="margin:0;color:#374151;font-size:11px;">© 2026 Ali Hajali · Qatar</p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
 }
 
 export async function sendResetEmail(to: string, name: string, token: string) {

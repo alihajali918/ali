@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db as prisma } from "@/app/lib/db";
 import { getAttSession } from "@/app/lib/attendance";
+import { sendExcuseAlert } from "@/app/lib/mailer";
 
 // GET — employee fetches their own absent records (for excuse submission)
 export async function GET(req: NextRequest, { params }: { params: Promise<{ org: string }> }) {
@@ -47,15 +48,23 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ org
     return NextResponse.json({ error: "حجم الملف كبير جداً (الحد 2 ميغابايت)" }, { status: 400 });
   }
 
+  const employee = await prisma.attEmployee.findUnique({
+    where: { id: session.employeeId as number },
+    select: { name: true },
+  });
+
   const updated = await prisma.attRecord.update({
     where: { id: Number(recordId) },
     data: {
       excuseType,
       excuseNote: excuseNote ?? null,
       excuseFile: excuseFile ?? null,
-      excuseApproved: null, // reset to pending
+      excuseApproved: null,
     },
   });
+
+  const dateStr = new Date(record.date).toLocaleDateString("ar-SA", { year: "numeric", month: "long", day: "numeric" });
+  sendExcuseAlert(org, employee?.name ?? "موظف", dateStr, excuseType);
 
   return NextResponse.json({ ok: true, id: updated.id });
 }

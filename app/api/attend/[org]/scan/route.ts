@@ -5,6 +5,7 @@ import {
   nowInQatar, todayInQatar, shiftTimeToday,
   FIXED_SCHEDULE,
 } from "@/app/lib/attendance";
+import { sendAttendanceAlert } from "@/app/lib/mailer";
 
 async function validateQrToken(org: string, token: string): Promise<boolean> {
   const qrSession = await prisma.attQrSession.findFirst({
@@ -126,6 +127,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ org
       });
     }
 
+    const timeStr = now.toLocaleTimeString("ar-SA", { hour: "2-digit", minute: "2-digit" });
+    sendAttendanceAlert(org, employee.name, attType, timeStr);
     return NextResponse.json({ ok: true, attType, name: employee.name });
   }
 

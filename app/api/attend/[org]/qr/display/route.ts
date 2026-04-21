@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db as prisma } from "@/app/lib/db";
-import { getAttSession } from "@/app/lib/attendance";
+import { getAttSession, nowInQatar } from "@/app/lib/attendance";
 import { generateSecret, generate } from "otplib";
+import { sendDisplayTamperAlert } from "@/app/lib/mailer";
 
 const LEASE_MS = 45_000; // device must re-poll within 45s or lease expires
 
@@ -38,6 +39,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ org:
     const ownedByOther = qrSession.displayDeviceId && qrSession.displayDeviceId !== sid;
 
     if (ownedByOther && !leaseExpired) {
+      const time = nowInQatar().toLocaleTimeString("ar-SA", { hour: "2-digit", minute: "2-digit" });
+      sendDisplayTamperAlert(org, time);
       return NextResponse.json({ error: "الشاشة مفتوحة على جهاز آخر" }, { status: 409 });
     }
 
