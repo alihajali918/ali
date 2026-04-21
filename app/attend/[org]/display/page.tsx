@@ -5,11 +5,14 @@ import { QRCodeSVG } from "qrcode.react";
 import { Wifi, WifiOff } from "lucide-react";
 
 function DisplayContent({ org }: { org: string }) {
-  // Stable device ID for this browser session — generated once on mount
+  // Stable device ID shared across all tabs in the same browser
   const sidRef = useRef<string>("");
   useEffect(() => {
-    sidRef.current = crypto.randomUUID();
-  }, []);
+    const key = `display_sid_${org}`;
+    let id = localStorage.getItem(key);
+    if (!id) { id = crypto.randomUUID(); localStorage.setItem(key, id); }
+    sidRef.current = id;
+  }, [org]);
 
   const [url, setUrl]             = useState("");
   const [remaining, setRemaining] = useState(30);
