@@ -9,19 +9,10 @@ const LEASE_MS = 45_000;
 export async function GET(req: NextRequest, { params }: { params: Promise<{ org: string }> }) {
   const { org } = await params;
   const { searchParams } = new URL(req.url);
-  const dk  = searchParams.get("dk");
   const sid = searchParams.get("sid");
 
   const organization = await prisma.attOrganization.findUnique({ where: { slug: org } });
   if (!organization) return NextResponse.json({ error: "غير موجود" }, { status: 404 });
-
-  const session    = await getAttSession("att_admin_token");
-  const validAdmin = session?.orgSlug === org;
-  const validKey   = dk && organization.displayKey === dk;
-
-  if (!validAdmin && !validKey) {
-    return NextResponse.json({ error: "غير مصرح" }, { status: 401 });
-  }
 
   let qrSession = await prisma.attQrSession.findUnique({ where: { organizationId: organization.id } });
   if (!qrSession) {
@@ -30,19 +21,18 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ org:
     });
   }
 
-  // If screen is locked → block immediately (423)
+  // If screen is locked → block (423)
   if (qrSession.displayLocked) {
     return NextResponse.json({ error: "تم قفل الشاشة لأسباب أمنية" }, { status: 423 });
   }
 
   if (sid) {
-    const now         = new Date();
+    const now          = new Date();
     const leaseExpired = !qrSession.displayLastSeen ||
       (now.getTime() - qrSession.displayLastSeen.getTime()) > LEASE_MS;
     const ownedByOther = qrSession.displayDeviceId && qrSession.displayDeviceId !== sid;
 
     if (ownedByOther && !leaseExpired) {
-      // Lock the screen and alert
       await prisma.attQrSession.update({
         where: { organizationId: organization.id },
         data:  { displayLocked: true },
