@@ -38,13 +38,17 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ org:
       const ownedByOther = qrSession.displayDeviceId && qrSession.displayDeviceId !== sid;
 
       if (ownedByOther && !leaseExpired) {
-        await prisma.attQrSession.update({
-          where: { organizationId: organization.id },
-          data:  { displayLocked: true },
-        });
+        // Alert only — original device keeps running unaffected
         const time = nowInQatar().toLocaleTimeString("ar-SA", { hour: "2-digit", minute: "2-digit" });
         sendDisplayTamperAlert(org, time);
         return NextResponse.json({ error: "الشاشة مفتوحة على جهاز آخر" }, { status: 409 });
+      }
+
+      // Different device claiming after lease expired → notify admin (possible takeover)
+      const deviceSwitched = leaseExpired && qrSession.displayDeviceId && qrSession.displayDeviceId !== sid;
+      if (deviceSwitched) {
+        const time = nowInQatar().toLocaleTimeString("ar-SA", { hour: "2-digit", minute: "2-digit" });
+        sendDisplayTamperAlert(org, time, "switched");
       }
 
       await prisma.attQrSession.update({

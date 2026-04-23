@@ -28,15 +28,18 @@ export async function sendVerificationEmail(to: string, name: string, token: str
   });
 }
 
-export async function sendDisplayTamperAlert(org: string, time: string) {
+export async function sendDisplayTamperAlert(org: string, time: string, type: "concurrent" | "switched" = "concurrent") {
+  const subject = type === "switched"
+    ? `⚠️ تغيّر جهاز شاشة العرض — ${org}`
+    : `⚠️ محاولة فتح شاشة العرض من جهاز ثانٍ — ${org}`;
+  const body = type === "switched"
+    ? `تم فتح شاشة عرض رمز QR الخاصة بـ <strong>${org}</strong> من جهاز مختلف الساعة <strong>${time}</strong>.<br/>الجهاز الأصلي كان مفعّلاً ثم أُغلق وتمّ الفتح من جهاز آخر.`
+    : `تمّت محاولة فتح شاشة عرض رمز QR الخاصة بـ <strong>${org}</strong> من جهاز ثانٍ في الوقت <strong>${time}</strong>.<br/>الشاشة كانت مفتوحة بالفعل على جهاز آخر وتم رفض الطلب.`;
   await transporter.sendMail({
     from: `"نظام الحضور" <noreply@alihajali.com>`,
     to: ALERT_EMAIL,
-    subject: `⚠️ محاولة فتح شاشة العرض من جهاز ثانٍ — ${org}`,
-    html: alertTemplate(
-      "⚠️ تحذير: محاولة وصول غير مصرح به",
-      `تمّت محاولة فتح شاشة عرض رمز QR الخاصة بـ <strong>${org}</strong> من جهاز ثانٍ في الوقت <strong>${time}</strong>.<br/>الشاشة كانت مفتوحة بالفعل على جهاز آخر.`,
-    ),
+    subject,
+    html: alertTemplate("⚠️ تنبيه أمني — شاشة العرض", body),
   }).catch(() => {});
 }
 
