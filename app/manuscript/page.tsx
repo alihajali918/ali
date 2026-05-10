@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 
 type Stage = "form" | "loading" | "done";
 
@@ -141,22 +140,23 @@ export default function ManuscriptPage() {
         {stage === "done" && (
           <div className="flex flex-col items-center gap-5">
 
-            {/* Manuscript image */}
+            {/* Manuscript image — Pollinations streams the image directly */}
             <div className="w-full bg-[#1f0d00] border border-amber-900/40 rounded-2xl p-3 shadow-xl">
-              <Image
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
                 src={imageUrl}
                 alt={`مخطوطة ${fullName}`}
-                width={600}
-                height={800}
                 className="w-full rounded-xl"
-                unoptimized
+                onLoad={e => (e.currentTarget.style.opacity = "1")}
+                style={{ opacity: 0, transition: "opacity 0.5s" }}
               />
             </div>
 
             {/* QR */}
             <div className="bg-[#1f0d00] border border-amber-900/40 rounded-2xl p-6 flex flex-col items-center gap-3 w-full shadow-xl">
               <p className="text-xs font-bold text-amber-700 uppercase tracking-wider">امسح الرمز للوصول للمخطوطة</p>
-              <Image src={qrDataUrl} alt="QR Code" width={180} height={180} className="rounded-lg" unoptimized />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={qrDataUrl} alt="QR Code" width={180} height={180} className="rounded-lg" />
             </div>
 
             <p className="text-green-500 text-sm text-center">
