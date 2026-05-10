@@ -18,7 +18,9 @@ Below the divider, smaller text: "إنسان" in same gold calligraphy style, wr
 No borders, no frames, no extra text, no repetition. Centered balanced composition. Simple luxurious elegant.
 `.trim();
 
-  const imageUrl = `https://pollinations.ai/p/${encodeURIComponent(prompt)}?width=1024&height=1024&seed=2026&model=flux&nologo=true`;
+  const seed     = Math.floor(Math.random() * 999999);
+  const token    = process.env.POLLINATIONS_TOKEN ?? "";
+  const imageUrl = `https://pollinations.ai/p/${encodeURIComponent(prompt)}?width=1024&height=1024&seed=${seed}&model=flux&nologo=true&token=${token}`;
 
   return NextResponse.json({ imageUrl });
 }
