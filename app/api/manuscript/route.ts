@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, Modality } from "@google/genai";
 import QRCode from "qrcode";
 import fs from "fs";
 import path from "path";
@@ -49,17 +49,17 @@ COMPOSITION:
 `.trim();
 
   try {
-    const response = await ai.models.generateImages({
-      model: "imagen-3.0-generate-002",
-      prompt,
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash-preview-image-generation",
+      contents: prompt,
       config: {
-        numberOfImages: 1,
-        aspectRatio: "1:1",
-        outputMimeType: "image/png",
+        responseModalities: [Modality.IMAGE],
       },
     });
 
-    const imageBytes = response.generatedImages?.[0]?.image?.imageBytes;
+    const parts = response.candidates?.[0]?.content?.parts ?? [];
+    const imgPart = parts.find((p: { inlineData?: { data?: string } }) => p.inlineData?.data);
+    const imageBytes = imgPart?.inlineData?.data;
     if (!imageBytes) return NextResponse.json({ error: "فشل توليد الصورة" }, { status: 500 });
 
     const id = randomUUID();
