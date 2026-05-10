@@ -1,12 +1,10 @@
 import { NextResponse } from "next/server";
-import { GoogleGenAI, Modality } from "@google/genai";
 import QRCode from "qrcode";
 import fs from "fs";
 import path from "path";
 import { randomUUID } from "crypto";
 import { transporter } from "@/app/lib/mailer";
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
 const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://alihajali.com";
 
 export async function POST(req: Request) {
@@ -49,17 +47,20 @@ COMPOSITION:
 `.trim();
 
   try {
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash-preview-image-generation",
-      contents: prompt,
-      config: {
-        responseModalities: [Modality.IMAGE],
-      },
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3:predict?key=${process.env.GEMINI_API_KEY}`;
+    const apiRes = await fetch(apiUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        instances:  [{ prompt }],
+        parameters: { sampleCount: 1, aspectRatio: "1:1" },
+      }),
     });
 
-    const parts = response.candidates?.[0]?.content?.parts ?? [];
-    const imgPart = parts.find((p: { inlineData?: { data?: string } }) => p.inlineData?.data);
-    const imageBytes = imgPart?.inlineData?.data;
+    const data = await apiRes.json();
+    if (!apiRes.ok) return NextResponse.json({ error: data.error?.message ?? "فشل توليد الصورة" }, { status: 500 });
+
+    const imageBytes: string | undefined = data.predictions?.[0]?.bytesBase64Encoded;
     if (!imageBytes) return NextResponse.json({ error: "فشل توليد الصورة" }, { status: 500 });
 
     const id = randomUUID();
