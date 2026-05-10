@@ -19,19 +19,33 @@ export async function POST(req: Request) {
   const fullName = nameParts.filter(Boolean).join(" ");
 
   const prompt = `
-Create a stunning, highly detailed traditional Arabic manuscript (مخطوطة عربية أصيلة).
+Create a square 512×512 digital artwork with absolutely no border or frame of any kind.
 
-Visual requirements:
-- Aged parchment or papyrus background with warm golden-brown and cream tones, with subtle texture and wear marks
-- Elaborate Islamic geometric border: interlocking stars, arabesque vines, and gilded ornamental frames layered on all sides
-- The full name "${fullName}" written prominently in the vertical center in beautiful large Arabic calligraphy (thuluth or diwani style), gold ink on a slightly darker patch
-- Decorative roundels, floral medallions, and marginal ornaments typical of Quranic manuscripts
-- Subtle color palette: deep burgundy, indigo, gold leaf, aged ivory — no modern colors
-- Faint horizontal ruling lines behind the text as in classic Islamic manuscripts
-- Aspect ratio approximately portrait (3:4)
-- Museum-quality rendering, warm raking light to reveal texture
+TEXT RULES — extremely strict:
+- The design contains EXACTLY TWO Arabic text elements, nothing else.
+- MAIN TEXT (upper area, larger): "${fullName}" — appears EXACTLY ONCE. Written in artistic Arabic graphic calligraphy (ornate, handcrafted style, NOT a regular printed font).
+- SECONDARY TEXT (lower area, smaller): "إنسان" — appears EXACTLY ONCE. Same artistic calligraphic graphic style but smaller than the main text.
+- NO other text, letters, words, numbers, or decorative writing anywhere in the image.
+- No repetition of any word. No extra characters.
+- Arabic text direction: right-to-left with proper natural letter connections.
 
-Do NOT include any Latin text, borders that look modern, photographic elements, or watermarks.
+DIVIDER:
+- One single plain horizontal straight line between the main text and the secondary text. Simple, thin, undecorated.
+
+FLOWER:
+- Integrate ONE flower naturally with the main text "${fullName}". The flower type should complement the calligraphic composition. It must be upright (not flipped or inverted), blended into the text composition as part of it — not floating separately.
+
+TYPOGRAPHY COLOR:
+- Both text elements: luxurious shiny gold with a soft, balanced metallic sheen. Not overly bright, not dull — elegant and clear.
+
+BACKGROUND:
+- Calm, light, clean, quiet tone. Subtle and unobtrusive.
+
+COMPOSITION:
+- Centered and balanced. Generous spacing. No crowding.
+- Both texts within comfortable safe margins.
+- Main text and secondary text clearly legible as the highest priority.
+- Simple, luxurious, balanced.
 `.trim();
 
   try {
@@ -40,7 +54,7 @@ Do NOT include any Latin text, borders that look modern, photographic elements, 
       prompt,
       config: {
         numberOfImages: 1,
-        aspectRatio: "3:4",
+        aspectRatio: "1:1",
         outputMimeType: "image/png",
       },
     });
