@@ -60,9 +60,9 @@ function WordReveal({ text, className, delay = 0 }: { text: string; className?: 
         <span key={i} style={{ overflow: "hidden", display: "inline-block", marginLeft: "0.22em" }}>
           <motion.span
             style={{ display: "inline-block" }}
-            initial={{ y: "110%", opacity: 0 }}
+            initial={{ y: "40%", opacity: 0.01 }}
             animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 0.6, ease: [0.33, 1, 0.68, 1], delay: delay + i * 0.07 }}
+            transition={{ duration: 0.5, ease: [0.33, 1, 0.68, 1], delay: delay + i * 0.05 }}
           >
             {word}
           </motion.span>
@@ -341,18 +341,13 @@ export default function Hero() {
               </span>
             </h1>
 
-            {/* sub */}
-            <motion.p
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.8, duration: 0.6 }}
-              className="text-gray-400 text-base md:text-lg max-w-md mb-10 leading-relaxed"
-            >
+            {/* sub — static so browser counts it as LCP immediately */}
+            <p className="text-gray-400 text-base md:text-lg max-w-md mb-10 leading-relaxed">
               أدوات مجانية تساعد{" "}
               <span className="text-white font-semibold">أصحاب الأعمال والموظفين</span>{" "}
               على إنجاز أكثر في وقت أقل — وحلول احترافية مخصصة{" "}
               <span className="text-white font-semibold">للمؤسسات والشركات</span>.
-            </motion.p>
+            </p>
 
             {/* CTAs */}
             <motion.div

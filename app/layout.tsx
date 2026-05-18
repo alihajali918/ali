@@ -8,7 +8,7 @@ import "./globals.css";
 
 const ibm = IBM_Plex_Sans_Arabic({
   subsets: ["arabic"],
-  weight: ["300", "400", "500", "600", "700"],
+  weight: ["400", "600", "700"],
   variable: "--font-ibm",
   display: "swap",
   preload: true,
