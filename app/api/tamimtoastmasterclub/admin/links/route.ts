@@ -1,0 +1,25 @@
+import { NextRequest, NextResponse } from "next/server";
+import { db } from "../../../../lib/db";
+import { isClubAdmin } from "../../../../lib/club-auth";
+
+export async function GET(req: NextRequest) {
+  if (!await isClubAdmin(req)) return NextResponse.json({ error: "غير مصرح" }, { status: 401 });
+  const links = await db.clubLink.findMany({ orderBy: { order: "asc" } });
+  return NextResponse.json(links);
+}
+
+export async function POST(req: NextRequest) {
+  if (!await isClubAdmin(req)) return NextResponse.json({ error: "غير مصرح" }, { status: 401 });
+  const { title, url } = await req.json();
+  if (!title || !url) return NextResponse.json({ error: "العنوان والرابط مطلوبان" }, { status: 400 });
+  const count = await db.clubLink.count();
+  const link = await db.clubLink.create({ data: { title, url, order: count } });
+  return NextResponse.json(link);
+}
+
+export async function DELETE(req: NextRequest) {
+  if (!await isClubAdmin(req)) return NextResponse.json({ error: "غير مصرح" }, { status: 401 });
+  const { id } = await req.json();
+  await db.clubLink.delete({ where: { id } });
+  return NextResponse.json({ ok: true });
+}

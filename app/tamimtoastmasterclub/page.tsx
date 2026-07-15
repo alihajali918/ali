@@ -1,0 +1,138 @@
+export const dynamic = "force-dynamic";
+
+import type { Metadata } from "next";
+import { cookies } from "next/headers";
+import { db } from "../lib/db";
+import { getSiteUrl } from "../lib/site-url";
+import VotingWidget from "./VotingWidget";
+import {
+  CalendarDays, BookOpen, UserPlus, Instagram, ChevronLeft,
+  Info, ArrowUpRight,
+} from "lucide-react";
+
+export const metadata: Metadata = {
+  title: "نادي تميم توستماسترز",
+  alternates: { canonical: `${getSiteUrl()}/tamimtoastmasterclub` },
+};
+
+type Category = "PREPARED" | "EVALUATION" | "IMPROMPTU";
+
+function linkStyle(title: string) {
+  const t = title.toLowerCase();
+  if (t.includes("ملخص") || t.includes("أجندة") || t.includes("اجندة")) {
+    return { bg: "#074466", icon: BookOpen };
+  }
+  if (t.includes("عضوية") || t.includes("طلب") || t.includes("انضمام")) {
+    return { bg: "#fcea84", text: "#1c2b39", icon: UserPlus };
+  }
+  if (t.includes("انستا") || t.includes("انستغرام") || t.includes("instagram") || t.includes("حساب")) {
+    return { bg: "linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)", icon: Instagram };
+  }
+  return { bg: "#ffffff", text: "#1c2b39", icon: CalendarDays };
+}
+
+export default async function TamimToastmastersClubPage() {
+  const [settings, links, speakers, cookieStore] = await Promise.all([
+    db.clubSettings.upsert({ where: { id: 1 }, update: {}, create: { id: 1 } }),
+    db.clubLink.findMany({ orderBy: { order: "asc" } }),
+    db.clubSpeaker.findMany({ orderBy: { createdAt: "asc" } }),
+    cookies(),
+  ]);
+
+  const speakersByCategory: Record<Category, string[]> = { PREPARED: [], EVALUATION: [], IMPROMPTU: [] };
+  for (const s of speakers) speakersByCategory[s.category as Category].push(s.name);
+
+  const alreadyVoted: Record<Category, boolean> = {
+    PREPARED: !!cookieStore.get("voted_PREPARED"),
+    EVALUATION: !!cookieStore.get("voted_EVALUATION"),
+    IMPROMPTU: !!cookieStore.get("voted_IMPROMPTU"),
+  };
+
+  return (
+    <div
+      dir="rtl"
+      className="min-h-screen text-white pt-0 pb-8 px-4 md:px-8 lg:px-16 flex flex-col justify-between"
+      style={{ background: settings.colorPrimary, fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif" }}
+    >
+      <div className="w-full max-w-7xl mx-auto transition-all duration-500">
+
+        {/* header */}
+        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 md:gap-6 mb-10 pb-6 border-b border-white/10">
+          <div className="flex items-center justify-between w-full md:w-auto md:contents">
+            <div className="w-40 h-40 flex items-center justify-center overflow-hidden md:order-1">
+              {settings.logoAltUrl && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={settings.logoAltUrl} alt="الشعار" className="max-w-full max-h-full object-contain brightness-0 invert" />
+              )}
+            </div>
+            <div
+              className="w-20 h-20 md:w-[6.5rem] md:h-[6.5rem] border-[3px] md:border-[4px] rounded-full bg-white flex items-center justify-center shadow-lg overflow-hidden p-2 md:p-3 md:order-3"
+              style={{ borderColor: settings.colorSecondary, borderStyle: "solid" }}
+            >
+              {settings.logoUrl && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={settings.logoUrl} alt="شعار النادي" className="max-w-full max-h-full object-contain" />
+              )}
+            </div>
+          </div>
+
+          <div className="text-center md:order-2 flex-1 px-4 mt-0">
+            <h1 className="text-3xl md:text-5xl font-bold text-white tracking-wide">{settings.clubName}</h1>
+            <p className="text-xs md:text-sm font-semibold mt-1.5 max-w-xl mx-auto" style={{ color: settings.colorAccent }}>
+              {settings.description}
+            </p>
+          </div>
+        </div>
+
+        <div className="space-y-8">
+          {/* dynamic links */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {links.map(link => {
+              const style = linkStyle(link.title);
+              const Icon = style.icon;
+              return (
+                <div
+                  key={link.id}
+                  className="rounded-2xl p-5 border border-white/10 shadow-md text-right flex flex-col justify-center min-h-[80px]"
+                  style={{ background: style.bg, color: style.text ?? "#ffffff" }}
+                >
+                  <a href={link.url} target="_blank" rel="noreferrer" className="flex items-center justify-between w-full font-bold text-base md:text-lg">
+                    <span className="flex items-center gap-3">
+                      <Icon size={22} />
+                      <span>{link.title}</span>
+                    </span>
+                    <ChevronLeft size={14} className="opacity-50" />
+                  </a>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            <VotingWidget speakers={speakersByCategory} alreadyVoted={alreadyVoted} />
+
+            {/* about */}
+            <div className="lg:col-span-5">
+              <a
+                href="https://www.toastmasters.org/"
+                target="_blank"
+                rel="noreferrer"
+                className="block bg-[#567997] hover:bg-[#486782] active:scale-[0.99] rounded-2xl p-6 text-right border border-white/5 transition duration-300 cursor-pointer shadow-lg h-full"
+              >
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                    <Info size={18} /> {settings.aboutTitle}
+                  </h3>
+                  <ArrowUpRight size={13} className="text-white/70" />
+                </div>
+                <p className="text-sm text-gray-100 leading-relaxed">{settings.aboutText}</p>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-12 text-center text-xs text-gray-400">{settings.clubName} © {new Date().getFullYear()}</div>
+    </div>
+  );
+}

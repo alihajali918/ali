@@ -11,6 +11,7 @@ const paths: {
   { path: "/portfolio", changeFrequency: "weekly", priority: 0.9 },
   { path: "/pricing", changeFrequency: "monthly", priority: 0.9 },
   { path: "/contact", changeFrequency: "monthly", priority: 0.95 },
+  { path: "/tamimtoastmasterclub", changeFrequency: "weekly", priority: 0.6 },
 ];
 
 export default function sitemap(): MetadataRoute.Sitemap {

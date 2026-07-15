@@ -56,3 +56,56 @@ model Contact {
   @@map("contacts")
 }
 
+// ══════════════════════════════════════════
+//  TAMIM TOASTMASTERS CLUB
+// ══════════════════════════════════════════
+
+enum ClubSpeechCategory {
+  PREPARED
+  EVALUATION
+  IMPROMPTU
+}
+
+model ClubSettings {
+  id             Int    @id @default(1)
+  clubName       String @default("نادي تميم توستماسترز")
+  description    String @default("أين تصنع القيادة ممارستها اليومية")
+  logoUrl        String @default("")
+  logoAltUrl     String @default("")
+  aboutTitle     String @default("ما هي التوستماسترز؟")
+  aboutText      String @default("منظمة عالمية غير ربحية تساعد الأفراد على تطوير مهارات التواصل والخطابة والقيادة. يوفر نادي تميم لك بيئة إيجابية ومحفزة لتصبح خطيباً وقائداً متمكناً.")
+  colorPrimary   String @default("#1c2b39")
+  colorSecondary String @default("#7a222c")
+  colorAccent    String @default("#00a3e0")
+
+  @@map("club_settings")
+}
+
+model ClubLink {
+  id        Int      @id @default(autoincrement())
+  title     String
+  url       String
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@map("club_links")
+}
+
+model ClubSpeaker {
+  id        Int                @id @default(autoincrement())
+  category  ClubSpeechCategory
+  name      String
+  createdAt DateTime           @default(now())
+
+  @@map("club_speakers")
+}
+
+model ClubVote {
+  id        Int                @id @default(autoincrement())
+  category  ClubSpeechCategory
+  candidate String
+  createdAt DateTime           @default(now())
+
+  @@map("club_votes")
+}
+
