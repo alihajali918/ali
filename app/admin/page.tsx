@@ -4,10 +4,11 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  Users, Eye, QrCode, Award, FileText, Mail,
+  Eye, Mail,
   TrendingUp, Monitor, Smartphone, Tablet, Chrome,
-  LogOut, RefreshCw, Loader2, Trash2, UserPlus, ShieldCheck, X,
+  LogOut, RefreshCw, Loader2, X,
   LayoutDashboard, MessageSquare, DatabaseZap, Download, Menu, ExternalLink,
+  Users,
 } from "lucide-react";
 import * as XLSX from "xlsx";
 
@@ -18,13 +19,8 @@ interface Stats {
   devices:        { device: string; count: number }[];
   browsers:       { browser: string; count: number }[];
   recentVisitors: { ip: string; page: string; device: string; browser: string; os: string; createdAt: string }[];
-  tools:          { qr: { total: number; today: number }; cert: { total: number; today: number }; report: { total: number; today: number } };
   contacts:       { unread: number; total: number };
   dailyViews:     { date: string; views: number }[];
-}
-
-interface UserRow {
-  id: number; name: string; email: string; role: string; emailVerified: boolean; createdAt: string;
 }
 
 // ─── Helpers ───
@@ -60,7 +56,7 @@ function DeviceIcon({ d }: { d: string }) {
 
 function formatPage(p: string) {
   if (p === "/") return "الرئيسية";
-  return p.replace("/tools/", "أداة: ").replace("/admin", "الأدمن").replace("/products", "المنتجات").replace("/portfolio", "الأعمال").replace("/pricing", "التسعير");
+  return p.replace("/admin", "الأدمن").replace("/services", "الخدمات").replace("/portfolio", "الأعمال").replace("/pricing", "التسعير");
 }
 
 // ─── Sections ───
@@ -159,139 +155,6 @@ function OverviewSection({ s }: { s: Stats }) {
   );
 }
 
-function ToolsSection({ s }: { s: Stats }) {
-  return (
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-      <StatCard label="QR Code"   value={s.tools.qr.total}     sub={`اليوم: ${s.tools.qr.today}`}     icon={<QrCode size={16}/>}   color="#00F5D4" />
-      <StatCard label="الشهادات" value={s.tools.cert.total}   sub={`اليوم: ${s.tools.cert.today}`}   icon={<Award size={16}/>}    color="#F59E0B" />
-      <StatCard label="التقارير" value={s.tools.report.total} sub={`اليوم: ${s.tools.report.today}`} icon={<FileText size={16}/>} color="#7B61FF" />
-    </div>
-  );
-}
-
-function UsersSection() {
-  const [users,   setUsers]   = useState<UserRow[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [showAdd, setShowAdd] = useState(false);
-  const [form,    setForm]    = useState({ name: "", email: "", password: "", role: "user" });
-  const [saving,  setSaving]  = useState(false);
-  const [err,     setErr]     = useState("");
-
-  const load = () => {
-    setLoading(true);
-    fetch("/api/admin/users")
-      .then(r => r.ok ? r.json() : [])
-      .then(data => { setUsers(Array.isArray(data) ? data : []); setLoading(false); })
-      .catch(() => setLoading(false));
-  };
-
-  useEffect(() => { load(); }, []);
-
-  const addUser = async (e: React.FormEvent) => {
-    e.preventDefault(); setSaving(true); setErr("");
-    const res = await fetch("/api/admin/users", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
-    const data = await res.json();
-    if (!res.ok) { setErr(data.error || "خطأ"); setSaving(false); return; }
-    setShowAdd(false); setForm({ name: "", email: "", password: "", role: "user" }); load(); setSaving(false);
-  };
-
-  const deleteUser = async (id: number, name: string) => {
-    if (!confirm(`حذف "${name}"؟`)) return;
-    await fetch("/api/admin/users", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) });
-    load();
-  };
-
-  return (
-    <div className="glass-card rounded-2xl overflow-hidden">
-      <div className="px-5 py-4 border-b border-glass-border flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Users size={16} className="text-neon-cyan" />
-          <p className="text-sm font-black text-white">المستخدمون</p>
-          <span className="text-xs text-gray-600">({users.length})</span>
-        </div>
-        <button onClick={() => setShowAdd(v => !v)}
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-neon-cyan text-dark-bg text-xs font-black rounded-xl hover:scale-105 transition-transform">
-          {showAdd ? <X size={13} /> : <UserPlus size={13} />}
-          {showAdd ? "إلغاء" : "إضافة"}
-        </button>
-      </div>
-
-      {showAdd && (
-        <form onSubmit={addUser} className="px-5 py-4 border-b border-glass-border bg-glass flex flex-wrap gap-3 items-end">
-          {[
-            { label: "الاسم", key: "name", type: "text" },
-            { label: "البريد", key: "email", type: "email" },
-            { label: "كلمة المرور", key: "password", type: "password" },
-          ].map(f => (
-            <div key={f.key} className="flex flex-col gap-1 flex-1 min-w-32">
-              <label className="text-[10px] text-gray-500 font-bold">{f.label}</label>
-              <input type={f.type} value={(form as any)[f.key]} onChange={e => setForm(p => ({...p, [f.key]: e.target.value}))} required dir="ltr"
-                className="bg-dark-bg border border-glass-border rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-neon-cyan/40" />
-            </div>
-          ))}
-          <div className="flex flex-col gap-1">
-            <label className="text-[10px] text-gray-500 font-bold">الدور</label>
-            <select value={form.role} onChange={e => setForm(p => ({...p, role: e.target.value}))}
-              className="bg-dark-bg border border-glass-border rounded-lg px-3 py-2 text-xs text-white outline-none">
-              <option value="user">مستخدم</option>
-              <option value="admin">أدمن</option>
-            </select>
-          </div>
-          <button type="submit" disabled={saving}
-            className="px-4 py-2 bg-neon-cyan text-dark-bg text-xs font-black rounded-lg disabled:opacity-60">
-            {saving ? <Loader2 size={13} className="animate-spin" /> : "حفظ"}
-          </button>
-          {err && <p className="w-full text-red-400 text-xs">{err}</p>}
-        </form>
-      )}
-
-      <div className="overflow-x-auto">
-        {loading ? (
-          <div className="flex items-center justify-center py-8"><Loader2 size={20} className="text-neon-cyan animate-spin" /></div>
-        ) : (
-          <table className="w-full text-xs">
-            <thead><tr className="border-b border-glass-border">
-              {["الاسم","البريد","الدور","البريد مؤكد","تاريخ التسجيل","إجراءات"].map(h => (
-                <th key={h} className="px-4 py-2.5 text-right text-gray-600 font-bold">{h}</th>
-              ))}
-            </tr></thead>
-            <tbody>
-              {users.map(u => (
-                <tr key={u.id} className="border-b border-glass-border/40 hover:bg-glass">
-                  <td className="px-4 py-2.5 text-white font-bold">{u.name}</td>
-                  <td className="px-4 py-2.5 text-gray-400" dir="ltr">{u.email}</td>
-                  <td className="px-4 py-2.5">
-                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${u.role === "admin" ? "bg-neon-purple/20 text-neon-purple" : "bg-neon-cyan/10 text-neon-cyan"}`}>
-                      {u.role === "admin" ? "أدمن" : "مستخدم"}
-                    </span>
-                  </td>
-                  <td className="px-4 py-2.5">
-                    {u.emailVerified ? <ShieldCheck size={14} className="text-neon-cyan" /> : <span className="text-yellow-600 text-[10px]">غير مؤكد</span>}
-                  </td>
-                  <td className="px-4 py-2.5 text-gray-600" dir="ltr">{new Date(u.createdAt).toLocaleDateString("ar-QA")}</td>
-                  <td className="px-4 py-2.5">
-                    {u.role !== "admin" && (
-                      <button
-                        type="button"
-                        onClick={() => deleteUser(u.id, u.name)}
-                        className="p-1.5 rounded-lg text-gray-700 hover:text-red-400 hover:bg-red-500/10 transition-all"
-                        aria-label={`حذف المستخدم ${u.name}`}
-                      >
-                        <Trash2 size={13} />
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ))}
-              {users.length === 0 && <tr><td colSpan={6} className="px-4 py-8 text-center text-gray-700">لا يوجد مستخدمون</td></tr>}
-            </tbody>
-          </table>
-        )}
-      </div>
-    </div>
-  );
-}
-
 function ContactsSection({ s }: { s: Stats }) {
   const [contacts, setContacts] = useState<any[]>([]);
   const [loading,  setLoading]  = useState(true);
@@ -352,8 +215,6 @@ function ContactsSection({ s }: { s: Stats }) {
 // ─── Sidebar nav ───
 const NAV = [
   { id: "overview",  label: "الإحصاءات",    icon: LayoutDashboard },
-  { id: "tools",     label: "الأدوات",       icon: QrCode },
-  { id: "users",     label: "المستخدمون",    icon: Users },
   { id: "contacts",  label: "الرسائل",       icon: MessageSquare },
 ];
 
@@ -386,7 +247,6 @@ export default function AdminPage() {
 
   const logout = async () => {
     await fetch("/api/auth/logout", { method: "POST" });
-    window.dispatchEvent(new CustomEvent("auth-change"));
     router.push("/admin/login");
   };
 
@@ -395,7 +255,7 @@ export default function AdminPage() {
     try {
       const res = await fetch("/api/admin/export");
       if (!res.ok) return;
-      const { visitors, pageViews, qrHistory, certHistory, reportHistory } = await res.json();
+      const { visitors, pageViews } = await res.json();
 
       const wb = XLSX.utils.book_new();
 
@@ -416,32 +276,6 @@ export default function AdminPage() {
         "المشاهدات": p.views,
       }))), "مشاهدات الصفحات");
 
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(qrHistory.map((q: any) => ({
-        "النوع": q.type,
-        "القيمة": q.value,
-        "الصيغة": q.format,
-        "IP": q.ip,
-        "التاريخ": new Date(q.createdAt).toLocaleString("ar-QA"),
-      }))), "QR Code");
-
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(certHistory.map((c: any) => ({
-        "اسم المستلم": c.recipientName,
-        "اسم الدورة": c.courseName,
-        "المركز": c.centerName || "",
-        "القالب": c.template,
-        "IP": c.ip,
-        "التاريخ": new Date(c.createdAt).toLocaleString("ar-QA"),
-      }))), "الشهادات");
-
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(reportHistory.map((r: any) => ({
-        "عنوان التقرير": r.reportTitle,
-        "نوع التقرير": r.reportType,
-        "الشركة": r.companyName || "",
-        "عدد الصفوف": r.rowCount,
-        "IP": r.ip,
-        "التاريخ": new Date(r.createdAt).toLocaleString("ar-QA"),
-      }))), "التقارير");
-
       const date = new Date().toISOString().split("T")[0];
       XLSX.writeFile(wb, `stats-${date}.xlsx`);
     } finally {
@@ -450,7 +284,7 @@ export default function AdminPage() {
   };
 
   const clearStats = async () => {
-    if (!confirm("هل أنت متأكد من مسح جميع الإحصاءات؟\n(الزيارات، مشاهدات الصفحات، سجل الأدوات)\n\nلا يمكن التراجع عن هذا الإجراء.")) return;
+    if (!confirm("هل أنت متأكد من مسح جميع الإحصاءات؟\n(الزيارات ومشاهدات الصفحات)\n\nلا يمكن التراجع عن هذا الإجراء.")) return;
     setClearingStats(true);
     try {
       const res = await fetch("/api/admin/clear-stats", { method: "DELETE" });
@@ -613,8 +447,6 @@ export default function AdminPage() {
           </div>
 
           {active === "overview"  && <OverviewSection s={s} />}
-          {active === "tools"     && <ToolsSection s={s} />}
-          {active === "users"     && <UsersSection />}
           {active === "contacts"  && <ContactsSection s={s} />}
         </div>
       </main>

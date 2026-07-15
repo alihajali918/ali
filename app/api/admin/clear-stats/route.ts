@@ -16,9 +16,6 @@ export async function DELETE(req: NextRequest) {
   await Promise.all([
     db.visitor.deleteMany(),
     db.pageView.deleteMany(),
-    db.qrHistory.deleteMany(),
-    db.certHistory.deleteMany(),
-    db.reportHistory.deleteMany(),
   ]);
 
   return NextResponse.json({ ok: true });

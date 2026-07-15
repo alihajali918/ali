@@ -3,34 +3,34 @@
 import { motion, useMotionValue, useMotionTemplate, useSpring, useInView } from "framer-motion";
 import Link from "next/link";
 import {
-  Wrench, Building2, Code2, BarChart3,
+  Globe, ShoppingBag, Code2, BarChart3,
   ArrowLeft, CheckCircle2,
 } from "lucide-react";
 import { useRef } from "react";
 
 const services = [
   {
-    icon: Wrench,
-    title: "أدوات تقنية مجانية",
-    desc: "QR Code، ضغط الملفات، تحويل الصور — أدوات يومية جاهزة بدون تسجيل.",
+    icon: Globe,
+    title: "مواقع تعريفية للشركات",
+    desc: "موقع احترافي يعكس هوية شركتك ويحوّل الزوار لعملاء — سريع ومتجاوب مع كل الأجهزة.",
     color: "#00F5D4",
-    badge: "مجاني 100%",
-    points: ["مولّد QR Code متكامل", "ضاغط صور وPDF", "صور إلى PDF في ثانية"],
-    href: "/tools/qrcode",
+    badge: "الأكثر طلباً",
+    points: ["تصميم UI/UX مخصص", "SEO أساسي مدمج", "تسليم خلال أسابيع"],
+    href: "/services",
   },
   {
-    icon: Building2,
-    title: "حلول مؤسسية متكاملة",
-    desc: "شهادات احترافية وتقارير تلقائية بهوية مؤسستك — استثمر مرة واستفد للأبد.",
+    icon: ShoppingBag,
+    title: "متاجر إلكترونية",
+    desc: "متجر يبيع فعلاً — من عرض المنتجات للدفع الإلكتروني، بتجربة مستخدم سلسة.",
     color: "#F59E0B",
-    badge: "قريباً",
-    points: ["شهادات جماعية من Excel", "تقارير بشعار مؤسستك", "روابط تحقق ذكية"],
-    href: "/products",
+    badge: "E-commerce",
+    points: ["إدارة منتجات وطلبات", "بوابات دفع محلية", "لوحة تحكم كاملة"],
+    href: "/services",
   },
   {
     icon: Code2,
-    title: "تطوير أدوات مخصصة",
-    desc: "عندك عملية متكررة تستهلك وقت فريقك؟ نبنيها لك كأداة ويب تشتغل 24/7.",
+    title: "تطبيقات ويب مخصصة",
+    desc: "عندك فكرة أو عملية متكررة تستهلك وقت فريقك؟ نبنيها كتطبيق ويب يشتغل 24/7.",
     color: "#7B61FF",
     badge: "مخصص",
     points: ["تحليل المشكلة وتصميم الحل", "بناء وتطوير كامل", "دعم وتحديث مستمر"],
@@ -160,7 +160,7 @@ export default function ServicesSection() {
               animate={isInView ? { y: 0 } : {}}
               transition={{ duration: 0.7, ease: [0.33, 1, 0.68, 1], delay: 0.1 }}
             >
-              تقنية تخدم <span className="text-gradient">الجميع</span>
+              خدمات تناسب <span className="text-gradient">مشروعك</span>
             </motion.h2>
           </div>
 
@@ -170,7 +170,7 @@ export default function ServicesSection() {
             animate={isInView ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.6, delay: 0.25 }}
           >
-            أدوات مجانية لأصحاب الأعمال — وحلول احترافية للمؤسسات والشركات
+            من موقع بسيط لشركتك إلى نظام إدارة متكامل — أبنيه لك باحترافية
           </motion.p>
         </div>
 
@@ -192,9 +192,9 @@ export default function ServicesSection() {
             className="inline-flex items-center justify-center gap-2 px-7 py-3.5 bg-neon-cyan text-dark-bg font-black text-sm rounded-2xl glow-cyan hover:scale-105 active:scale-95 transition-transform">
             استكشف جميع الخدمات <ArrowLeft size={15}/>
           </Link>
-          <Link href="/tools/qrcode"
+          <Link href="/portfolio"
             className="inline-flex items-center justify-center gap-2 px-7 py-3.5 glass-card text-white font-bold text-sm rounded-2xl hover:border-white/15 transition-all">
-            جرّب الأدوات مجاناً
+            شوف أعمالي السابقة
           </Link>
         </motion.div>
       </div>

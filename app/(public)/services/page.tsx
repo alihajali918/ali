@@ -4,64 +4,64 @@ import { getSiteUrl } from "../../lib/site-url";
 import Link from "next/link";
 import {
   Zap, TrendingUp, Clock, Shield,
-  Wrench, Building2, Code2, BarChart3,
+  Globe, ShoppingBag, Code2, BarChart3,
   ArrowLeft, CheckCircle2, Sparkles,
 } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "الخدمات",
-  description: "أدوات تقنية مبتكرة وحلول مؤسسية مخصصة تسرّع عملك وترفع كفاءة فريقك — استثمر في التقنية مرة واستفد منها للأبد.",
+  description: "برمجة مواقع Next.js، متاجر إلكترونية، وتطبيقات ويب مخصصة تسرّع عملك وترفع كفاءة فريقك.",
   alternates: { canonical: `${getSiteUrl()}/services` },
 };
 
 const painPoints = [
-  { icon: Clock,     text: "فريقك يضيع ساعات في مهام يدوية يمكن أتمتتها" },
-  { icon: TrendingUp, text: "منافسوك يتقدمون لأنهم يستخدمون أدوات أذكى" },
-  { icon: Shield,    text: "أخطاء بشرية في التقارير والوثائق تكلّفك غالياً" },
+  { icon: Clock,     text: "موقعك الحالي بطيء ويخسّرك عملاء كل يوم" },
+  { icon: TrendingUp, text: "منافسوك يتقدمون بواجهات أحدث وتجربة أفضل" },
+  { icon: Shield,    text: "لا يوجد نظام واضح لإدارة بيانات عملك" },
 ];
 
 const services = [
   {
-    icon: <Wrench size={28} />,
+    icon: <Globe size={28} />,
     color: "#00F5D4",
-    title: "أدوات تقنية جاهزة",
-    hook: "ابدأ اليوم — مجاناً",
-    desc: "مجموعة أدوات مجانية تحل مشاكل يومية حقيقية. لا تسجيل، لا تعقيد — فتحها وتشتغل.",
+    title: "مواقع تعريفية للشركات",
+    hook: "أول انطباع يبقى",
+    desc: "موقع احترافي سريع يعكس هوية شركتك ويحوّل الزوار لعملاء فعليين — بتصميم مخصص لا قوالب جاهزة.",
     outcomes: [
-      "توليد QR Code للمنتجات والروابط",
-      "ضغط الصور وملفات PDF للحين",
-      "تحويل صور إلى PDF جاهز للطباعة",
-      "دمج ملفات PDF في ثوانٍ",
+      "تصميم UI/UX مخصص بالكامل",
+      "أداء وسرعة تحميل عالية",
+      "SEO أساسي مدمج من أول يوم",
+      "متجاوب مع كل الأجهزة",
     ],
-    cta: { label: "جرّب الأدوات", href: "/tools/qrcode" },
-    badge: "مجاني",
+    cta: { label: "ابدأ مشروعك", href: "/contact" },
+    badge: "الأكثر طلباً",
     badgeColor: "bg-neon-cyan/10 text-neon-cyan border-neon-cyan/20",
   },
   {
-    icon: <Building2 size={28} />,
+    icon: <ShoppingBag size={28} />,
     color: "#F59E0B",
-    title: "حلول مؤسسية متكاملة",
-    hook: "استثمر مرة — استفد للأبد",
-    desc: "حلول مخصصة للشركات ومراكز التدريب. من الشهادات الاحترافية إلى التقارير التلقائية — كل شيء يحمل هوية مؤسستك.",
+    title: "متاجر إلكترونية",
+    hook: "متجر يبيع فعلاً",
+    desc: "من عرض المنتجات إلى الدفع الإلكتروني — متجر متكامل بلوحة تحكم لإدارة المنتجات والطلبات.",
     outcomes: [
-      "شهادات احترافية بالذكاء الاصطناعي (حتى 500 دفعة)",
-      "تقارير تلقائية بشعار شركتك",
-      "روابط تحقق ذكية لا تُزوَّر",
-      "تخصيص كامل للألوان والخطوط",
+      "سلة شراء وبوابة دفع محلية",
+      "إدارة منتجات وطلبات",
+      "لوحة تحكم كاملة للمتجر",
+      "تجربة شراء سلسة على الجوال",
     ],
     cta: { label: "تواصل معنا", href: "/contact" },
-    badge: "قريباً",
+    badge: "E-commerce",
     badgeColor: "bg-amber-500/10 text-amber-400 border-amber-500/20",
   },
   {
     icon: <Code2 size={28} />,
     color: "#7B61FF",
-    title: "تطوير أدوات مخصصة",
+    title: "تطبيقات ويب مخصصة",
     hook: "أداتك = ميزتك التنافسية",
-    desc: "عندك فكرة أو عملية متكررة تستهلك وقت فريقك؟ نبنيها لك كأداة ويب جاهزة تشتغل 24/7 بدون تدخل بشري.",
+    desc: "عندك فكرة أو عملية متكررة تستهلك وقت فريقك؟ نبنيها لك كتطبيق ويب جاهز يشتغل 24/7.",
     outcomes: [
       "تحليل المشكلة وتصميم الحل",
-      "بناء وتطوير الأداة كاملاً",
+      "بناء وتطوير التطبيق كاملاً",
       "واجهة سهلة لكل فريقك",
       "دعم وتطوير مستمر",
     ],
@@ -101,15 +101,15 @@ export default function ServicesPage() {
       {/* ── hero ── */}
       <section className="pt-40 pb-24 px-4 md:px-8 max-w-5xl mx-auto text-center">
         <span className="section-badge mb-6 inline-flex">
-          <Sparkles size={11}/> ما الذي تخسره كل يوم بدون أدوات ذكية؟
+          <Sparkles size={11}/> موقعك هو أول انطباع عن عملك
         </span>
         <h1 className="text-4xl md:text-6xl font-black leading-tight mb-6">
-          فريقك يستحق أدوات{" "}
-          <span className="text-gradient">تشتغل بدله</span>
+          مشروعك يستحق موقعاً{" "}
+          <span className="text-gradient">يشتغل بجد</span>
         </h1>
         <p className="text-gray-400 text-lg max-w-2xl mx-auto mb-10 leading-relaxed">
-          كل ساعة يقضيها موظفك في مهام يدوية متكررة هي ساعة مسروقة من النمو.
-          التقنية الصح لا تكلّفك — <span className="text-white font-semibold">هي توفّر لك</span>.
+          موقع بطيء أو تصميم قديم يخسّرك عملاء كل يوم دون أن تشعر.
+          التقنية الصح لا تكلّفك — <span className="text-white font-semibold">هي تستثمر لك</span>.
         </p>
         <Link href="/contact"
           className="inline-flex items-center gap-2 px-8 py-4 bg-neon-cyan text-dark-bg font-black text-sm rounded-2xl glow-cyan hover:scale-105 active:scale-95 transition-transform">
@@ -234,9 +234,9 @@ export default function ServicesPage() {
             className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-neon-cyan text-dark-bg font-black text-sm rounded-2xl glow-cyan hover:scale-105 active:scale-95 transition-transform">
             احجز استشارة مجانية <ArrowLeft size={16}/>
           </Link>
-          <Link href="/tools/qrcode"
+          <Link href="/portfolio"
             className="inline-flex items-center justify-center gap-2 px-8 py-4 glass-card text-white font-bold text-sm rounded-2xl hover:border-white/15 transition-all">
-            جرّب الأدوات أولاً
+            شوف أعمالي أولاً
           </Link>
         </div>
       </section>

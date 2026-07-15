@@ -88,20 +88,6 @@ const subscriptions = [
       "إصلاح الأخطاء",
     ],
   },
-  {
-    name: "صانع الشهادات",
-    price: "200",
-    desc: "منصة SaaS لمراكز التدريب لإصدار شهادات احترافية بالذكاء الاصطناعي.",
-    color: "#7B61FF",
-    badge: "قريباً",
-    features: [
-      "توليد بالذكاء الاصطناعي",
-      "تخصيص كامل للألوان",
-      "إصدار لا محدود",
-      "تصدير PDF",
-      "دعم فني",
-    ],
-  },
 ];
 
 export default function PricingPage() {
@@ -222,14 +208,9 @@ export default function PricingPage() {
         </div>
 
         {/* باقات الاشتراك */}
-        <div className="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto">
+        <div className="grid gap-6 max-w-md mx-auto">
           {subscriptions.map((sub, i) => (
             <div key={i} className="glass-card-hover relative rounded-3xl p-8">
-              {sub.badge && (
-                <span className="absolute top-5 left-5 px-2.5 py-1 text-[10px] font-black bg-neon-purple/15 text-neon-purple border border-neon-purple/20 rounded-full tracking-widest uppercase">
-                  {sub.badge}
-                </span>
-              )}
               <h3 className="text-xl font-black text-white mb-2">{sub.name}</h3>
               <p className="text-gray-500 text-sm mb-6 leading-relaxed">{sub.desc}</p>
 

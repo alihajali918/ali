@@ -1,140 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { useState, useEffect, useRef, type ElementType } from "react";
-import {
-  Menu, X, LogOut, LayoutDashboard,
-  QrCode, ImageDown, FileImage, FilePlus2, Scissors,
-  Award, FileText, ChevronDown, Wrench, Building2, Lock, Fingerprint, ShoppingBag,
-} from "lucide-react";
+import { usePathname } from "next/navigation";
+import { useState, useEffect } from "react";
+import { Menu, X } from "lucide-react";
 
-type ToolNavItem = { href: string; label: string; icon: ElementType; desc: string };
-type ProductNavItem = { id: string; label: string; icon: ElementType; desc: string; href?: string; live?: boolean };
-type NavItem = ToolNavItem | ProductNavItem;
-
-/* ─── dropdown data ─────────────────────────────────── */
-const TOOLS: ToolNavItem[] = [
-  { href: "/tools/qrcode",    label: "مولّد QR Code",  icon: QrCode,     desc: "روابط ونصوص وبزنس كارد" },
-  { href: "/tools/compress",  label: "ضاغط الملفات",   icon: ImageDown,  desc: "صور وPDF · JPEG · WebP · PNG" },
-  { href: "/tools/img2pdf",   label: "صور إلى PDF",    icon: FileImage,  desc: "مقاسات مخصصة · تحميل مباشر" },
-  { href: "/tools/pdf-merge",  label: "دمج PDF",           icon: FilePlus2, desc: "حتى 50 صفحة · PDF + صور" },
-  { href: "/tools/remove-bg", label: "إزالة الخلفية",    icon: Scissors,  desc: "PNG شفاف · بدون خادم" },
-];
-
-const PRODUCTS: ProductNavItem[] = [
-  { id: "attendance", label: "نظام الحضور", icon: Fingerprint, desc: "QR + بصمة الجهاز · متأخر · أوفرتايم", href: "/attend", live: true },
-  { id: "certs", label: "صانع الشهادات", icon: Award, desc: "6 قوالب · ذكاء اصطناعي · PDF" },
-  { id: "reports", label: "صانع التقارير", icon: FileText, desc: "تقارير Excel/PDF احترافية" },
-];
-
-/* ─── reusable dropdown ─────────────────────────────── */
-function NavDropdown({
-  label, icon: Icon, items, active,
-}: {
-  label: string;
-  icon: ElementType;
-  items: NavItem[];
-  active: boolean;
-}) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const close = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener("mousedown", close);
-    return () => document.removeEventListener("mousedown", close);
-  }, []);
-
-  return (
-    <div ref={ref} className="relative">
-      <button
-        onClick={() => setOpen(v => !v)}
-        className={`flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl transition-all duration-300 ${
-          active || open ? "text-neon-cyan bg-neon-cyan/8" : "text-gray-400 hover:text-white hover:bg-white/5"
-        }`}
-      >
-        <Icon size={14}/>
-        {label}
-        <ChevronDown size={12} className={`transition-transform duration-200 ${open ? "rotate-180" : ""}`}/>
-      </button>
-
-      {open && (
-        <div className="absolute top-full mt-2 right-0 w-64 rounded-2xl border border-white/8 bg-[#111]/95 backdrop-blur-xl shadow-2xl overflow-hidden z-50 py-1.5">
-          {items.map(item => {
-            const ItemIcon = item.icon;
-            const isProduct = "id" in item;
-            const isLive    = isProduct && (item as ProductNavItem).live;
-            const isLocked  = isProduct && !isLive;
-            const rowClass =
-              "flex items-center gap-3 px-4 py-3 transition-all group w-full text-right " +
-              (isLocked ? "opacity-70 cursor-default" : "hover:bg-white/4");
-            const inner = (
-              <>
-                <div className="w-8 h-8 rounded-xl bg-white/5 flex items-center justify-center shrink-0 group-hover:bg-neon-cyan/8 transition-colors">
-                  <ItemIcon size={15} className={isLocked ? "text-gray-500" : "text-neon-cyan"}/>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-bold text-white truncate">{item.label}</span>
-                    {isLocked && (
-                      <span className="flex items-center gap-1 text-[9px] font-black px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 shrink-0">
-                        <Lock size={8}/> قريباً
-                      </span>
-                    )}
-                    {isLive && (
-                      <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full bg-neon-cyan/10 text-neon-cyan border border-neon-cyan/20 shrink-0">
-                        متاح
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-[11px] text-gray-600 truncate">{item.desc}</p>
-                </div>
-              </>
-            );
-            if (isLocked) {
-              return (
-                <button key={(item as ProductNavItem).id} type="button"
-                  title="هذه الميزة قيد التطوير" onClick={() => setOpen(false)} className={rowClass}>
-                  {inner}
-                </button>
-              );
-            }
-            const href = isLive ? (item as ProductNavItem).href! : (item as ToolNavItem).href;
-            return (
-              <Link key={href} href={href} onClick={() => setOpen(false)} className={rowClass}>
-                {inner}
-              </Link>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-}
-
-/* ─── static links ──────────────────────────────────── */
 const STATIC_LINKS = [
-  { href: "/products",  label: "المنتجات" },
-  { href: "/portfolio", label: "الأعمال" },
+  { href: "/services",  label: "الخدمات" },
+  { href: "/portfolio",  label: "الأعمال" },
   { href: "/pricing",   label: "التسعير" },
+  { href: "/contact",   label: "تواصل" },
 ];
 
-/* ─── main Navbar ───────────────────────────────────── */
-interface NavUser { name: string; role: string; }
-
-export default function Navbar({ initialUser }: { initialUser: NavUser | null }) {
+export default function Navbar() {
   const pathname = usePathname();
-  const router   = useRouter();
-  const [scrolled,  setScrolled]  = useState(false);
-  const [menuOpen,  setMenuOpen]  = useState(false);
-  const [user,      setUser]      = useState<NavUser | null>(initialUser);
-
-  useEffect(() => {
-    setUser(initialUser);
-  }, [initialUser]);
+  const [scrolled, setScrolled] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -158,33 +39,6 @@ export default function Navbar({ initialUser }: { initialUser: NavUser | null })
     };
   }, [menuOpen]);
 
-  useEffect(() => {
-    if (initialUser) return;
-    fetch("/api/auth/me")
-      .then(r => r.json())
-      .then(d => setUser(d.user ? { name: d.user.name, role: d.user.role } : null))
-      .catch(() => {});
-    const refresh = () => {
-      fetch("/api/auth/me")
-        .then(r => r.json())
-        .then(d => setUser(d.user ? { name: d.user.name, role: d.user.role } : null))
-        .catch(() => {});
-    };
-    window.addEventListener("auth-change", refresh);
-    return () => window.removeEventListener("auth-change", refresh);
-  }, [initialUser]);
-
-  const logout = async () => {
-    await fetch("/api/auth/user-logout", { method: "POST" });
-    setUser(null);
-    window.dispatchEvent(new CustomEvent("auth-change"));
-    router.push("/");
-    router.refresh();
-  };
-
-  const isToolPath    = pathname.startsWith("/tools");
-  const isProductPath = pathname === "/products";
-
   return (
     <>
       <nav className={`fixed top-0 w-full z-50 px-4 md:px-8 transition-all duration-500 ${scrolled ? "pt-3" : "pt-5"}`}>
@@ -202,23 +56,6 @@ export default function Navbar({ initialUser }: { initialUser: NavUser | null })
 
           {/* desktop nav */}
           <div className="hidden md:flex items-center gap-1">
-            {/* الأدوات dropdown */}
-            <NavDropdown
-              label="الأدوات"
-              icon={Wrench}
-              items={TOOLS}
-              active={isToolPath}
-            />
-
-            {/* للمؤسسات dropdown */}
-            <NavDropdown
-              label="للمؤسسات"
-              icon={Building2}
-              items={PRODUCTS}
-              active={isProductPath}
-            />
-
-            {/* static links */}
             {STATIC_LINKS.map(({ href, label }) => {
               const active = pathname === href;
               return (
@@ -232,31 +69,12 @@ export default function Navbar({ initialUser }: { initialUser: NavUser | null })
             })}
           </div>
 
-          {/* auth buttons */}
+          {/* CTA */}
           <div className="hidden md:flex items-center gap-2">
-            {user ? (
-              <>
-                <Link href={user.role === "admin" ? "/admin" : "/dashboard"}
-                  className="flex items-center gap-1.5 px-3 py-2 text-sm font-bold text-gray-300 hover:text-white hover:bg-white/5 rounded-xl transition-all">
-                  <LayoutDashboard size={14}/>
-                  {user.name.split(" ")[0]}
-                </Link>
-                <button onClick={logout}
-                  className="flex items-center gap-1.5 px-3 py-2 text-sm font-bold text-gray-500 hover:text-red-400 hover:bg-red-500/8 rounded-xl transition-all">
-                  <LogOut size={14}/> خروج
-                </button>
-              </>
-            ) : (
-              <>
-                <Link href="/login" className="px-4 py-2 text-sm font-semibold text-gray-400 hover:text-white transition-colors">
-                  دخول
-                </Link>
-                <Link href="/register"
-                  className="btn-shimmer px-5 py-2 bg-neon-cyan text-dark-bg text-sm font-black rounded-xl glow-cyan-sm hover:scale-105 active:scale-95 transition-transform duration-200">
-                  إنشاء حساب
-                </Link>
-              </>
-            )}
+            <Link href="/contact"
+              className="btn-shimmer px-5 py-2 bg-neon-cyan text-dark-bg text-sm font-black rounded-xl glow-cyan-sm hover:scale-105 active:scale-95 transition-transform duration-200">
+              ابدأ مشروعك
+            </Link>
           </div>
 
           {/* mobile hamburger */}
@@ -280,53 +98,6 @@ export default function Navbar({ initialUser }: { initialUser: NavUser | null })
           <div className="relative z-10 pt-24 px-4 max-h-full overflow-y-auto pointer-events-none">
             <div className="pointer-events-auto flex flex-col gap-1.5 pb-8">
 
-            {/* الأدوات section */}
-            <p className="px-4 pt-2 pb-1 text-[10px] font-black text-gray-600 uppercase tracking-widest flex items-center gap-1.5">
-              <Wrench size={10}/> الأدوات
-            </p>
-            {TOOLS.map(item => {
-              const Icon = item.icon;
-              return (
-                <Link key={item.href} href={item.href}
-                  className="flex items-center gap-3 px-4 py-3 rounded-2xl text-gray-300 hover:text-white hover:bg-white/5 transition-all">
-                  <Icon size={16} className="text-neon-cyan shrink-0"/>
-                  <span className="text-sm font-bold">{item.label}</span>
-                </Link>
-              );
-            })}
-
-            {/* للمؤسسات section */}
-            <p className="px-4 pt-4 pb-1 text-[10px] font-black text-gray-600 uppercase tracking-widest flex items-center gap-1.5">
-              <Building2 size={10}/> للمؤسسات
-            </p>
-            {PRODUCTS.map(item => {
-              const Icon = item.icon;
-              if (item.live && item.href) {
-                return (
-                  <Link key={item.id} href={item.href}
-                    className="flex items-center gap-3 px-4 py-3 rounded-2xl text-gray-300 hover:text-white hover:bg-white/5 transition-all">
-                    <Icon size={16} className="text-neon-cyan shrink-0"/>
-                    <span className="text-sm font-bold">{item.label}</span>
-                    <span className="mr-auto text-[9px] font-black px-1.5 py-0.5 rounded-full bg-neon-cyan/10 text-neon-cyan border border-neon-cyan/20">متاح</span>
-                  </Link>
-                );
-              }
-              return (
-                <button key={item.id} type="button" title="قيد التطوير"
-                  className="flex items-center gap-3 px-4 py-3 rounded-2xl text-gray-500 opacity-60 w-full text-right cursor-default">
-                  <Icon size={16} className="text-amber-400 shrink-0"/>
-                  <span className="text-sm font-bold">{item.label}</span>
-                  <span className="mr-auto text-[9px] font-black px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center gap-1">
-                    <Lock size={8}/> قريباً
-                  </span>
-                </button>
-              );
-            })}
-
-            {/* divider */}
-            <div className="my-3 border-t border-white/5"/>
-
-            {/* static links */}
             {STATIC_LINKS.map(({ href, label }) => (
               <Link key={href} href={href}
                 className={`px-5 py-4 text-base font-bold rounded-2xl transition-all ${
@@ -336,32 +107,10 @@ export default function Navbar({ initialUser }: { initialUser: NavUser | null })
               </Link>
             ))}
 
-            {/* auth */}
-            <div className="mt-4 flex flex-col gap-3">
-              {user ? (
-                <>
-                  <Link href={user.role === "admin" ? "/admin" : "/dashboard"}
-                    className="text-center px-5 py-3.5 text-sm font-bold text-neon-cyan border border-neon-cyan/20 rounded-2xl">
-                    لوحة التحكم — {user.name.split(" ")[0]}
-                  </Link>
-                  <button onClick={logout}
-                    className="text-center px-5 py-3.5 text-sm font-bold text-red-400 border border-red-500/20 rounded-2xl">
-                    خروج
-                  </button>
-                </>
-              ) : (
-                <>
-                  <Link href="/login"
-                    className="text-center px-5 py-3.5 text-sm font-semibold text-gray-400 border border-glass-border rounded-2xl hover:border-white/20 transition-colors">
-                    دخول
-                  </Link>
-                  <Link href="/register"
-                    className="text-center px-5 py-3.5 text-base font-black bg-neon-cyan text-dark-bg rounded-2xl">
-                    إنشاء حساب
-                  </Link>
-                </>
-              )}
-            </div>
+            <Link href="/contact"
+              className="mt-4 text-center px-5 py-3.5 text-base font-black bg-neon-cyan text-dark-bg rounded-2xl">
+              ابدأ مشروعك
+            </Link>
             </div>
           </div>
         </div>

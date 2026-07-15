@@ -13,13 +13,10 @@ async function isAdmin(req: NextRequest) {
 export async function GET(req: NextRequest) {
   if (!await isAdmin(req)) return NextResponse.json({ error: "غير مصرح" }, { status: 401 });
 
-  const [visitors, pageViews, qrHistory, certHistory, reportHistory] = await Promise.all([
+  const [visitors, pageViews] = await Promise.all([
     db.visitor.findMany({ orderBy: { createdAt: "desc" } }),
     db.pageView.findMany({ orderBy: { date: "desc" } }),
-    db.qrHistory.findMany({ orderBy: { createdAt: "desc" } }),
-    db.certHistory.findMany({ orderBy: { createdAt: "desc" } }),
-    db.reportHistory.findMany({ orderBy: { createdAt: "desc" } }),
   ]);
 
-  return NextResponse.json({ visitors, pageViews, qrHistory, certHistory, reportHistory });
+  return NextResponse.json({ visitors, pageViews });
 }

@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
   try {
     const { email, password } = await req.json();
     const user = await db.user.findUnique({ where: { email } });
-    if (!user) return NextResponse.json({ error: "البريد أو كلمة المرور غير صحيحة" }, { status: 401 });
+    if (!user || user.role !== "admin") return NextResponse.json({ error: "البريد أو كلمة المرور غير صحيحة" }, { status: 401 });
 
     const valid = await bcrypt.compare(password, user.password);
     if (!valid) return NextResponse.json({ error: "البريد أو كلمة المرور غير صحيحة" }, { status: 401 });
@@ -21,9 +21,7 @@ export async function POST(req: NextRequest) {
 
     const res = NextResponse.json({ ok: true, name: user.name, role: user.role });
     const cookieOpts = { httpOnly: true, maxAge: 60 * 60 * 24 * 7, path: "/", sameSite: "lax" as const };
-
-    if (user.role === "admin") res.cookies.set("admin_token", token, cookieOpts);
-    res.cookies.set("user_token", token, cookieOpts);
+    res.cookies.set("admin_token", token, cookieOpts);
     return res;
   } catch (e) {
     console.error(e);
