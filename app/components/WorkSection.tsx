@@ -2,35 +2,38 @@
 
 import { motion, useScroll, useTransform, useInView } from "framer-motion";
 import Link from "next/link";
-import { Building2, ShoppingBag, LayoutDashboard, ArrowLeft, Briefcase } from "lucide-react";
+import { DoorOpen, ShoppingBag, Mic, ArrowLeft, Briefcase } from "lucide-react";
 import { useRef } from "react";
 
 const projects = [
   {
-    icon: Building2,
-    title: "موقع شركة عقارية",
-    category: "موقع تعريفي",
-    description: "موقع تعريفي فاخر لشركة عقارات — عرض مشاريع، طلب معاينة، وتصميم يعكس هوية الشركة.",
+    icon: DoorOpen,
+    title: "Door Technology Qatar",
+    category: "موقع مؤسسي",
+    description: "موقع تعريفي لشركة أنظمة أبواب وبوابات أوتوماتيكية ذكية — عرض خدمات وطلب صيانة مباشر.",
     accent: "#00F5D4",
-    tags: ["Next.js", "Tailwind", "SEO"],
+    tags: ["قطر", "موقع مؤسسي"],
+    url: "https://door-technology.com/",
     num: "01",
   },
   {
     icon: ShoppingBag,
-    title: "متجر إلكتروني",
+    title: "Nasamat Al Doha",
     category: "E-commerce",
-    description: "متجر كامل لبيع المنتجات أونلاين — سلة شراء، دفع إلكتروني، ولوحة تحكم لإدارة الطلبات.",
+    description: "متجر إلكتروني لهدايا ومنتجات مخصصة حسب الطلب بجانب تشكيلة عامة من المنتجات.",
     accent: "#F59E0B",
-    tags: ["Next.js", "Stripe", "لوحة تحكم"],
+    tags: ["قطر", "E-commerce"],
+    url: "https://nasamataldoha.com/",
     num: "02",
   },
   {
-    icon: LayoutDashboard,
-    title: "لوحة تحكم SaaS",
+    icon: Mic,
+    title: "نادي تميم توستماسترز",
     category: "تطبيق ويب",
-    description: "نظام إدارة داخلي مخصص — تتبع البيانات، صلاحيات متعددة، وتقارير لحظية.",
+    description: "صفحة نادٍ مستقلة مع لوحة تحكم خاصة من الصفر — إدارة محتوى وتصويت مباشر على الخطباء.",
     accent: "#7B61FF",
-    tags: ["Next.js", "PostgreSQL", "Auth"],
+    tags: ["Next.js", "PostgreSQL"],
+    url: "https://alihajali.com/tamimtoastmasterclub",
     num: "03",
   },
 ];
@@ -71,7 +74,7 @@ function ProjectCard({ p, i }: { p: typeof projects[0]; i: number }) {
         transition={{ duration: 0.5 }}
       />
 
-      <Link href="/portfolio" className="relative z-10 p-8 flex flex-col h-full" style={{ minHeight: "340px" }}>
+      <a href={p.url} target="_blank" rel="noreferrer" className="relative z-10 p-8 flex flex-col h-full" style={{ minHeight: "340px" }}>
         <div className="flex items-start justify-between mb-auto">
           {/* parallax number */}
           <motion.span
@@ -116,7 +119,7 @@ function ProjectCard({ p, i }: { p: typeof projects[0]; i: number }) {
           initial={{ opacity: 0.4 }}
           whileHover={{ opacity: 1 }}
         >
-          <span>شوف التفاصيل</span>
+          <span>زيارة الموقع</span>
           <motion.span
             animate={{ x: [0, -4, 0] }}
             transition={{ repeat: Infinity, duration: 1.6, ease: "easeInOut" }}
@@ -124,7 +127,7 @@ function ProjectCard({ p, i }: { p: typeof projects[0]; i: number }) {
             <ArrowLeft size={14} />
           </motion.span>
         </motion.div>
-      </Link>
+      </a>
     </motion.div>
   );
 }

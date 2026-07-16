@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:www.postquran.com)",
+      "WebFetch(domain:www.thebusinessclock.com)",
+      "WebFetch(domain:www.loidabritish.com)",
+      "Bash(node -e ' *)",
+      "Bash(git commit -m ' *)"
+    ]
+  }
+}

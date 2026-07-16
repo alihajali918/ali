@@ -3,48 +3,98 @@ export const dynamic = "force-static";
 import type { Metadata } from "next";
 import Footer from "../../components/Footer";
 import { getSiteUrl } from "../../lib/site-url";
-import Link from "next/link";
-import { Building2, ShoppingBag, LayoutDashboard, ArrowLeft, Briefcase } from "lucide-react";
+import {
+  DoorOpen, Building2, Briefcase, ShoppingBag, HeartHandshake,
+  BookOpen, Gauge, GraduationCap, Mic, ArrowUpRight, Briefcase as BriefcaseIcon,
+} from "lucide-react";
 
 export const metadata: Metadata = {
   title: "الأعمال",
-  description: "معرض أعمال ومشاريع ويب: مواقع شركات، متاجر إلكترونية، ولوحات تحكم مخصصة.",
+  description: "معرض مشاريع ويب حقيقية أنجزتها لعملاء في قطر ولندن — مواقع مؤسسية، متاجر إلكترونية، ومنصات تعليمية.",
   alternates: { canonical: `${getSiteUrl()}/portfolio` },
 };
 
 const projects = [
   {
-    icon: Building2,
-    title: "موقع شركة عقارية",
-    category: "موقع تعريفي · نموذج مشروع",
-    description:
-      "موقع تعريفي فاخر لشركة عقارات — عرض مشاريع سكنية وتجارية، نموذج طلب معاينة، وتصميم يعكس هوية الشركة بالكامل.",
-    gradient: "from-cyan-500/25 via-teal-400/10 to-transparent",
+    icon: DoorOpen,
+    title: "Door Technology Qatar",
+    url: "https://door-technology.com/",
+    category: "موقع مؤسسي · قطر",
+    description: "موقع تعريفي لشركة متخصصة بأنظمة الأبواب والبوابات الأوتوماتيكية الذكية — عرض الخدمات والعلامات العالمية وطلب صيانة مباشر.",
     accent: "#00F5D4",
-    tags: ["Next.js 15", "Tailwind CSS", "SEO", "متجاوب بالكامل"],
-    num: "01",
+    tags: ["قطر", "خدمات هندسية"],
   },
   {
     icon: ShoppingBag,
-    title: "متجر إلكتروني",
-    category: "E-commerce · نموذج مشروع",
-    description:
-      "متجر كامل لبيع المنتجات أونلاين — سلة شراء، بوابة دفع، وإدارة مخزون وطلبات من لوحة تحكم مخصصة.",
-    gradient: "from-amber-500/25 via-orange-400/10 to-transparent",
+    title: "Nasamat Al Doha",
+    url: "https://nasamataldoha.com/",
+    category: "متجر إلكتروني · قطر",
+    description: "متجر إلكتروني لهدايا ومنتجات مخصصة حسب الطلب بجانب تشكيلة عامة من الإلكترونيات والأزياء.",
     accent: "#F59E0B",
-    tags: ["Next.js 15", "بوابة دفع", "لوحة تحكم", "قاعدة بيانات"],
-    num: "02",
+    tags: ["قطر", "E-commerce"],
   },
   {
-    icon: LayoutDashboard,
-    title: "لوحة تحكم SaaS",
-    category: "تطبيق ويب · نموذج مشروع",
-    description:
-      "نظام إدارة داخلي مخصص لتتبع البيانات والعمليات — صلاحيات متعددة المستويات وتقارير لحظية قابلة للتصدير.",
-    gradient: "from-purple-500/25 via-violet-400/10 to-transparent",
+    icon: BookOpen,
+    title: "Post Quran",
+    url: "https://www.postquran.com/",
+    category: "متجر إلكتروني · قطر",
+    description: "متجر متخصص باستيراد وتوزيع المصاحف وكتب التفسير بإصدارات ومقاسات متعددة، معتمد من الجهات الدينية بقطر.",
     accent: "#7B61FF",
-    tags: ["Next.js 15", "PostgreSQL", "مصادقة", "تقارير"],
-    num: "03",
+    tags: ["قطر", "E-commerce"],
+  },
+  {
+    icon: Building2,
+    title: "Ajnee",
+    url: "https://ajnee.com/",
+    category: "علامة أم · لندن وقطر",
+    description: "الموقع الرئيسي لمجموعة Ajnee — شركة استثمار معرفي تجمع ثلاث منصات فرعية تحت هوية واحدة.",
+    accent: "#00F5D4",
+    tags: ["لندن · قطر", "تطوير مهني"],
+  },
+  {
+    icon: BriefcaseIcon,
+    title: "Career For Everyone",
+    url: "https://careerforeveryone.com/",
+    category: "منصة تطوير مهني",
+    description: "منصة تساعد الأفراد يكتشفوا اهتماماتهم ونقاط قوتهم المهنية عبر مراحل حياتهم — ورش عمل وتقييمات معتمدة.",
+    accent: "#F59E0B",
+    tags: ["منصة تعليمية", "Ajnee"],
+  },
+  {
+    icon: HeartHandshake,
+    title: "Harmony",
+    url: "https://harmonymold.com/",
+    category: "تطوير شخصي · Ajnee",
+    description: "أحد مسارات مجموعة Ajnee الثلاثة، مخصص للتوازن والتناغم الشخصي والمهني ضمن منظومة التطوير المتكاملة.",
+    accent: "#7B61FF",
+    tags: ["Ajnee", "تطوير شخصي"],
+  },
+  {
+    icon: Gauge,
+    title: "The Business Clock",
+    url: "https://www.thebusinessclock.com/",
+    category: "منصة إدارة أعمال · Ajnee",
+    description: "نظام إدارة متكامل من ابتكار Ajnee بالشراكة مع Loida British — تدريب واستشارات ودعم لرفع كفاءة الشركات ونموها.",
+    accent: "#00F5D4",
+    tags: ["Ajnee", "استشارات أعمال"],
+  },
+  {
+    icon: GraduationCap,
+    title: "Loida British",
+    url: "https://www.loidabritish.com/",
+    category: "تدريب وتطوير مهني · لندن",
+    description: "شركة بريطانية بخبرة تفوق 30 عاماً بمجال التدريب — دورات لغة، مهارات حياتية، وإرشاد أعمال.",
+    accent: "#F59E0B",
+    tags: ["لندن", "تدريب مهني"],
+  },
+  {
+    icon: Mic,
+    title: "نادي تميم توستماسترز",
+    url: "https://alihajali.com/tamimtoastmasterclub",
+    category: "تطبيق ويب · قطر",
+    description: "صفحة نادٍ مستقلة مع لوحة تحكم خاصة مبنية بالكامل من الصفر — إدارة محتوى، روابط ديناميكية، وتصويت مباشر على الخطباء.",
+    accent: "#7B61FF",
+    tags: ["Next.js", "PostgreSQL", "لوحة تحكم"],
   },
 ];
 
@@ -54,80 +104,55 @@ export default function PortfolioPage() {
       <div className="pt-40 pb-20 px-4 md:px-8 max-w-7xl mx-auto">
 
         {/* رأس الصفحة */}
-        <div className="text-center mb-20">
-          <span className="section-badge mb-6 inline-flex">
-            <Briefcase size={11} />
-            PORTFOLIO
-          </span>
+        <div className="text-center mb-16">
+          <span className="section-badge mb-6 inline-flex">PORTFOLIO</span>
           <h1 className="text-5xl md:text-7xl font-black leading-tight mb-6">
             أعمال <span className="text-gradient">تحكي عني</span>
           </h1>
           <p className="text-gray-500 text-lg max-w-2xl mx-auto">
-            نماذج من نوعية المشاريع التي أبنيها — كل مشروع مصمم ليخدم هدف عمل حقيقي
+            مشاريع حقيقية لعملاء في قطر ولندن — والقائمة بتزيد قريباً
           </p>
         </div>
 
-        {/* الكروت */}
-        <div className="flex flex-col gap-8">
+        {/* الشبكة */}
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {projects.map((p, i) => {
             const Icon = p.icon;
             return (
-              <div key={i}
-                className="group relative rounded-3xl overflow-hidden border border-glass-border hover:border-white/12 transition-all duration-500"
+              <a
+                key={i}
+                href={p.url}
+                target="_blank"
+                rel="noreferrer"
+                className="group relative rounded-3xl border border-glass-border bg-dark-card overflow-hidden flex flex-col hover:border-white/15 transition-all duration-300"
               >
-                {/* خلفية */}
-                <div className={`absolute inset-0 bg-gradient-to-br ${p.gradient}`} />
-                <div className="absolute inset-0 bg-dark-card" style={{ zIndex: -1 }} />
-                <div aria-hidden className="absolute inset-0 opacity-[0.03] pointer-events-none"
-                  style={{ backgroundImage: "radial-gradient(circle, #ffffff 1px, transparent 1px)", backgroundSize: "40px 40px" }} />
+                <div className="absolute top-0 left-0 right-0 h-[2px]"
+                  style={{ background: `linear-gradient(90deg, transparent, ${p.accent}60, transparent)` }} />
 
-                {/* خط علوي */}
-                <div className="absolute top-0 left-0 right-0 h-[1px] opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-                  style={{ background: `linear-gradient(90deg, transparent, ${p.accent}50, transparent)` }} />
+                <div className="p-6 flex flex-col flex-1">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="w-11 h-11 rounded-2xl flex items-center justify-center"
+                      style={{ background: `${p.accent}12`, color: p.accent }}>
+                      <Icon size={20} />
+                    </div>
+                    <ArrowUpRight size={15} className="text-gray-600 group-hover:text-white group-hover:-translate-y-0.5 group-hover:translate-x-0.5 transition-all" />
+                  </div>
 
-                {/* محتوى */}
-                <div className="relative z-10 p-8 md:p-12 flex flex-col md:flex-row items-start gap-10">
-                  {/* رقم كبير */}
-                  <span className="text-8xl md:text-[10rem] font-black leading-none opacity-[0.08] select-none flex-shrink-0"
-                    style={{ color: p.accent }}>
-                    {p.num}
-                  </span>
+                  <p className="text-[11px] font-black tracking-widest uppercase mb-1.5" style={{ color: p.accent }}>
+                    {p.category}
+                  </p>
+                  <h2 className="text-lg font-black text-white mb-2">{p.title}</h2>
+                  <p className="text-gray-500 text-sm leading-relaxed mb-5 flex-1">{p.description}</p>
 
-                  {/* تفاصيل */}
-                  <div className="flex-1">
-                    <div className="flex flex-wrap items-center gap-3 mb-4">
-                      <div className="w-10 h-10 rounded-xl flex items-center justify-center"
-                        style={{ background: `${p.accent}15`, color: p.accent }}>
-                        <Icon size={20} />
-                      </div>
-                      <span className="text-xs font-black tracking-widest uppercase" style={{ color: p.accent }}>
-                        {p.category}
+                  <div className="flex flex-wrap gap-2">
+                    {p.tags.map(tag => (
+                      <span key={tag} className="px-2.5 py-1 text-[11px] font-semibold text-gray-400 bg-glass border border-glass-border rounded-lg">
+                        {tag}
                       </span>
-                    </div>
-
-                    <h2 className="text-3xl md:text-5xl font-black text-white mb-4">{p.title}</h2>
-                    <p className="text-gray-400 text-base leading-relaxed mb-8 max-w-xl">{p.description}</p>
-
-                    {/* تاجات */}
-                    <div className="flex flex-wrap gap-2 mb-8">
-                      {p.tags.map((tag) => (
-                        <span key={tag}
-                          className="px-3 py-1.5 text-xs font-semibold text-gray-400 bg-glass border border-glass-border rounded-xl">
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-
-                    {/* رابط */}
-                    <Link href="/contact"
-                      className="inline-flex items-center gap-2 text-sm font-black px-6 py-3 rounded-2xl transition-all duration-300 hover:scale-105"
-                      style={{ background: `${p.accent}15`, color: p.accent, border: `1px solid ${p.accent}30` }}>
-                      أريد مشروعاً مشابهاً
-                      <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" />
-                    </Link>
+                    ))}
                   </div>
                 </div>
-              </div>
+              </a>
             );
           })}
         </div>
