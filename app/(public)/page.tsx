@@ -6,7 +6,6 @@ import Hero from "../components/Hero";
 import FreeGiftBanner from "../components/FreeGiftBanner";
 import ServicesSection from "../components/ServicesSection";
 import WorkSection from "../components/WorkSection";
-import Testimonials from "../components/Testimonials";
 import Footer from "../components/Footer";
 
 export const metadata: Metadata = {
@@ -20,7 +19,6 @@ export default function Home() {
       <FreeGiftBanner />
       <ServicesSection />
       <WorkSection />
-      <Testimonials />
       <Footer />
     </main>
   );
