@@ -77,6 +77,8 @@ model ClubSettings {
   colorPrimary   String @default("#1c2b39")
   colorSecondary String @default("#7a222c")
   colorAccent    String @default("#00a3e0")
+  titleFontSize  Int    @default(48)
+  bodyFontScale  Int    @default(100)
 
   @@map("club_settings")
 }

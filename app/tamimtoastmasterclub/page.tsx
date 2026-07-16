@@ -54,7 +54,7 @@ export default async function TamimToastmastersClubPage() {
       className="min-h-screen text-white pt-0 pb-8 px-4 md:px-8 lg:px-16 flex flex-col justify-between"
       style={{ background: settings.colorPrimary }}
     >
-      <div className="w-full max-w-7xl mx-auto transition-all duration-500">
+      <div className="w-full max-w-7xl mx-auto transition-all duration-500" style={{ fontSize: `${settings.bodyFontScale}%` }}>
 
         {/* header */}
         <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 md:gap-6 mb-10 pb-6 border-b border-white/10">
@@ -79,12 +79,22 @@ export default async function TamimToastmastersClubPage() {
           <div className="text-center md:order-2 flex-1 px-4 mt-0">
             <h1 className="font-bold text-white tracking-wide">
               {settings.clubName.split(" — ").map((line, i) => (
-                <span key={i} className={i === 0 ? "block text-3xl md:text-5xl" : "block text-lg md:text-2xl text-white/70 mt-1"}>
+                <span
+                  key={i}
+                  className="block"
+                  style={{
+                    fontSize: i === 0
+                      ? `clamp(1.75rem, 6vw, ${settings.titleFontSize}px)`
+                      : `clamp(1.1rem, 3vw, ${Math.round(settings.titleFontSize * 0.45)}px)`,
+                    color: i === 0 ? undefined : "rgba(255,255,255,0.7)",
+                    marginTop: i === 0 ? undefined : "0.25rem",
+                  }}
+                >
                   {line}
                 </span>
               ))}
             </h1>
-            <p className="text-xs md:text-sm font-semibold mt-1.5 max-w-xl mx-auto" style={{ color: settings.colorAccent }}>
+            <p className="text-[0.75em] md:text-[0.875em] font-semibold mt-1.5 max-w-xl mx-auto" style={{ color: settings.colorAccent }}>
               {settings.description}
             </p>
           </div>
@@ -96,13 +106,18 @@ export default async function TamimToastmastersClubPage() {
             {links.map(link => {
               const style = linkStyle(link.title);
               const Icon = style.icon;
+              const isFile = link.url.startsWith("data:");
               return (
                 <div
                   key={link.id}
                   className="rounded-2xl p-5 border border-white/10 shadow-md text-right flex flex-col justify-center min-h-[80px]"
                   style={{ background: style.bg, color: style.text ?? "#ffffff" }}
                 >
-                  <a href={link.url} target="_blank" rel="noreferrer" className="flex items-center justify-between w-full font-bold text-base md:text-lg">
+                  <a
+                    href={link.url}
+                    {...(isFile ? { download: link.title } : { target: "_blank", rel: "noreferrer" })}
+                    className="flex items-center justify-between w-full font-bold text-[1em] md:text-[1.125em]"
+                  >
                     <span className="flex items-center gap-3">
                       <Icon size={22} />
                       <span>{link.title}</span>
@@ -126,12 +141,12 @@ export default async function TamimToastmastersClubPage() {
                 className="block bg-[#567997] hover:bg-[#486782] active:scale-[0.99] rounded-2xl p-6 text-right border border-white/5 transition duration-300 cursor-pointer shadow-lg h-full"
               >
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                  <h3 className="text-[1.125em] font-bold text-white flex items-center gap-2">
                     <Info size={18} /> {settings.aboutTitle}
                   </h3>
                   <ArrowUpRight size={13} className="text-white/70" />
                 </div>
-                <p className="text-sm text-gray-100 leading-relaxed">{settings.aboutText}</p>
+                <p className="text-[0.875em] text-gray-100 leading-relaxed">{settings.aboutText}</p>
               </a>
             </div>
           </div>

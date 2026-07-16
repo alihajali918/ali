@@ -10,6 +10,7 @@ interface Settings {
   clubName: string; description: string; logoUrl: string; logoAltUrl: string;
   aboutTitle: string; aboutText: string;
   colorPrimary: string; colorSecondary: string; colorAccent: string;
+  titleFontSize: number; bodyFontScale: number;
 }
 interface LinkRow { id: number; title: string; url: string; order: number; }
 interface SpeakerRow { id: number; category: "PREPARED" | "EVALUATION" | "IMPROMPTU"; name: string; }
@@ -36,8 +37,8 @@ export default function ClubAdminPage() {
   const [speakers, setSpeakers] = useState<SpeakerRow[]>([]);
   const [votes, setVotes] = useState<{ total: number; tally: VoteTally[] }>({ total: 0, tally: [] });
 
-  const loadAll = useCallback(async () => {
-    setLoading(true);
+  // silent refresh — used after add/edit/delete/reorder so the UI doesn't flash back to the spinner
+  const refresh = useCallback(async () => {
     const [s, l, sp, v] = await Promise.all([
       fetch("/api/tamimtoastmasterclub/admin/settings"),
       fetch("/api/tamimtoastmasterclub/admin/links"),
@@ -49,10 +50,9 @@ export default function ClubAdminPage() {
     setLinks(await l.json());
     setSpeakers(await sp.json());
     setVotes(await v.json());
-    setLoading(false);
   }, [router]);
 
-  useEffect(() => { loadAll(); }, [loadAll]);
+  useEffect(() => { refresh().finally(() => setLoading(false)); }, [refresh]);
 
   const logout = async () => {
     await fetch("/api/tamimtoastmasterclub/auth/logout", { method: "POST" });
@@ -150,10 +150,10 @@ export default function ClubAdminPage() {
 
       {/* content */}
       <main className="flex-1 min-w-0 p-4 sm:p-6 md:p-8 max-w-4xl">
-        {active === "settings" && <SettingsTab settings={settings} onSaved={loadAll} />}
-        {active === "links"    && <LinksTab links={links} onChanged={loadAll} />}
-        {active === "speakers" && <SpeakersTab speakers={speakers} onChanged={loadAll} />}
-        {active === "votes"    && <VotesTab votes={votes} onChanged={loadAll} />}
+        {active === "settings" && <SettingsTab settings={settings} onSaved={refresh} />}
+        {active === "links"    && <LinksTab links={links} onChanged={refresh} />}
+        {active === "speakers" && <SpeakersTab speakers={speakers} onChanged={refresh} />}
+        {active === "votes"    && <VotesTab votes={votes} onChanged={refresh} />}
       </main>
     </div>
   );
@@ -175,6 +175,7 @@ function SettingsTab({ settings, onSaved }: { settings: Settings; onSaved: () =>
   const [form, setForm] = useState(settings);
   const [saving, setSaving] = useState(false);
   const set = (k: keyof Settings) => (v: string) => setForm(f => ({ ...f, [k]: v }));
+  const setNum = (k: keyof Settings) => (v: string) => setForm(f => ({ ...f, [k]: Number(v) }));
 
   const save = async () => {
     setSaving(true);
@@ -199,6 +200,18 @@ function SettingsTab({ settings, onSaved }: { settings: Settings; onSaved: () =>
         <Field label="اللون الثانوي" value={form.colorSecondary} onChange={set("colorSecondary")} />
         <Field label="لون التمييز" value={form.colorAccent} onChange={set("colorAccent")} />
       </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-bold text-gray-300">حجم عنوان النادي ({form.titleFontSize}px)</label>
+          <input type="range" min={24} max={72} value={form.titleFontSize}
+            onChange={e => setNum("titleFontSize")(e.target.value)} className="accent-[#00a3e0]" />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-bold text-gray-300">حجم خط المحتوى ({form.bodyFontScale}%)</label>
+          <input type="range" min={70} max={150} value={form.bodyFontScale}
+            onChange={e => setNum("bodyFontScale")(e.target.value)} className="accent-[#00a3e0]" />
+        </div>
+      </div>
       <button onClick={save} disabled={saving}
         className="self-start mt-2 flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#00a3e0] text-[#1c2b39] font-black text-sm disabled:opacity-60">
         {saving ? <Loader2 size={14} className="animate-spin" /> : null} حفظ التغييرات
@@ -208,18 +221,35 @@ function SettingsTab({ settings, onSaved }: { settings: Settings; onSaved: () =>
 }
 
 function LinksTab({ links, onChanged }: { links: LinkRow[]; onChanged: () => void }) {
+  const [mode, setMode] = useState<"url" | "file">("url");
   const [title, setTitle] = useState("");
   const [url, setUrl] = useState("");
+  const [file, setFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
+
+  const fileToDataUrl = (f: File) => new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(f);
+  });
 
   const add = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title || !url) return;
+    if (!title) return;
+    let finalUrl = url;
+    if (mode === "file") {
+      if (!file) return;
+      if (file.size > 4 * 1024 * 1024) { alert("الملف أكبر من 4 ميغا، اختاري ملف أصغر."); return; }
+      finalUrl = await fileToDataUrl(file);
+    } else if (!url) {
+      return;
+    }
     setSaving(true);
     await fetch("/api/tamimtoastmasterclub/admin/links", {
-      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ title, url }),
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ title, url: finalUrl }),
     });
-    setTitle(""); setUrl(""); setSaving(false);
+    setTitle(""); setUrl(""); setFile(null); setSaving(false);
     onChanged();
   };
 
@@ -246,15 +276,33 @@ function LinksTab({ links, onChanged }: { links: LinkRow[]; onChanged: () => voi
   return (
     <div className="flex flex-col gap-4 max-w-xl">
       <h2 className="text-lg font-black mb-2">الروابط الديناميكية</h2>
-      <form onSubmit={add} className="flex flex-col sm:flex-row gap-2 bg-white/5 border border-white/10 rounded-xl p-3">
-        <input value={title} onChange={e => setTitle(e.target.value)} placeholder="اسم الزر"
-          className="flex-1 bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#00a3e0]/50" />
-        <input value={url} onChange={e => setUrl(e.target.value)} placeholder="الرابط" dir="ltr"
-          className="flex-1 bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#00a3e0]/50" />
-        <button type="submit" disabled={saving}
-          className="flex items-center justify-center gap-1.5 px-4 py-2 bg-[#00a3e0] text-[#1c2b39] font-black text-xs rounded-lg disabled:opacity-60">
-          <Plus size={14} /> إضافة
-        </button>
+      <form onSubmit={add} className="flex flex-col gap-2 bg-white/5 border border-white/10 rounded-xl p-3">
+        <div className="flex gap-2">
+          <button type="button" onClick={() => setMode("url")}
+            className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all ${mode === "url" ? "bg-[#00a3e0]/15 text-[#00a3e0]" : "text-gray-500 hover:text-white"}`}>
+            رابط خارجي
+          </button>
+          <button type="button" onClick={() => setMode("file")}
+            className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all ${mode === "file" ? "bg-[#00a3e0]/15 text-[#00a3e0]" : "text-gray-500 hover:text-white"}`}>
+            رفع ملف (PDF / صورة)
+          </button>
+        </div>
+        <div className="flex flex-col sm:flex-row gap-2">
+          <input value={title} onChange={e => setTitle(e.target.value)} placeholder="اسم الزر"
+            className="flex-1 bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#00a3e0]/50" />
+          {mode === "url" ? (
+            <input value={url} onChange={e => setUrl(e.target.value)} placeholder="الرابط" dir="ltr"
+              className="flex-1 bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#00a3e0]/50" />
+          ) : (
+            <input type="file" accept="application/pdf,image/*" onChange={e => setFile(e.target.files?.[0] ?? null)}
+              className="flex-1 bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-xs text-gray-300 outline-none file:ml-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:bg-[#00a3e0]/20 file:text-[#00a3e0] file:text-xs file:font-bold" />
+          )}
+          <button type="submit" disabled={saving}
+            className="flex items-center justify-center gap-1.5 px-4 py-2 bg-[#00a3e0] text-[#1c2b39] font-black text-xs rounded-lg disabled:opacity-60 shrink-0">
+            <Plus size={14} /> إضافة
+          </button>
+        </div>
+        {mode === "file" && <p className="text-[11px] text-gray-500">الملف بينحفظ مباشرة بقاعدة البيانات — يفضّل ملفات أصغر من 4 ميغا.</p>}
       </form>
       <div className="flex flex-col gap-2">
         {links.map((l, i) => (
