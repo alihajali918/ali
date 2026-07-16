@@ -8,7 +8,7 @@ type Category = "PREPARED" | "EVALUATION" | "IMPROMPTU";
 const CATEGORY_META: Record<Category, { label: string; icon: typeof Mic; color: string }> = {
   PREPARED:   { label: "أفضل خطبة معدة",              icon: Mic,         color: "#7a222c" },
   EVALUATION: { label: "أفضل مقيّم خطبة",             icon: SquareCheck, color: "#074466" },
-  IMPROMPTU:  { label: "أفضل خطبة ارتجالية (الساحة)", icon: Zap,         color: "#b45309" },
+  IMPROMPTU:  { label: "أفضل خطبة ارتجالية",           icon: Zap,         color: "#b45309" },
 };
 
 export default function VotingWidget({

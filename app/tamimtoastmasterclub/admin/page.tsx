@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  LayoutDashboard, Link2, Mic, Vote, LogOut, Loader2, Trash2, Plus, X, ExternalLink, ChevronUp, ChevronDown,
+  LayoutDashboard, Link2, Mic, Vote, LogOut, Loader2, Trash2, Plus, X, ExternalLink, ChevronUp, ChevronDown, Menu,
 } from "lucide-react";
 
 interface Settings {
@@ -29,6 +29,7 @@ const NAV = [
 export default function ClubAdminPage() {
   const router = useRouter();
   const [active, setActive] = useState("settings");
+  const [mobileSidebar, setMobileSidebar] = useState(false);
   const [loading, setLoading] = useState(true);
   const [settings, setSettings] = useState<Settings | null>(null);
   const [links, setLinks] = useState<LinkRow[]>([]);
@@ -66,23 +67,71 @@ export default function ClubAdminPage() {
     );
   }
 
+  const activeNav = NAV.find(n => n.id === active)!;
+  const selectNav = (id: string) => { setActive(id); setMobileSidebar(false); };
+
   return (
     <div dir="rtl" className="min-h-screen bg-[#1c2b39] flex flex-col md:flex-row text-white">
+
+      {/* شريط علوي — جوال */}
+      <header className="md:hidden sticky top-0 z-30 flex items-center justify-between gap-3 px-4 py-3 border-b border-white/10 bg-[#1c2b39]/95 backdrop-blur-xl">
+        <button
+          type="button"
+          onClick={() => setMobileSidebar(true)}
+          className="p-2 rounded-xl text-gray-300 hover:bg-white/5"
+          aria-expanded={mobileSidebar}
+          aria-controls="club-admin-sidebar"
+          aria-label="فتح القائمة"
+        >
+          <Menu size={20} />
+        </button>
+        <p className="text-sm font-black text-white truncate flex-1 text-center">{activeNav.label}</p>
+        <a href="/tamimtoastmasterclub" target="_blank" rel="noreferrer"
+          className="p-2 rounded-xl text-gray-400 hover:text-[#00a3e0] hover:bg-white/5 shrink-0"
+          aria-label="عرض صفحة النادي">
+          <ExternalLink size={18} />
+        </a>
+      </header>
+
+      {mobileSidebar && (
+        <button
+          type="button"
+          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden"
+          aria-label="إغلاق القائمة"
+          onClick={() => setMobileSidebar(false)}
+        />
+      )}
+
       {/* sidebar */}
-      <aside className="w-full md:w-56 shrink-0 border-b md:border-b-0 md:border-l border-white/10 flex flex-col">
+      <aside
+        id="club-admin-sidebar"
+        className={`max-md:fixed max-md:z-50 max-md:inset-y-0 max-md:right-0 max-md:w-[min(17rem,88vw)] w-56 shrink-0 border-l border-white/10 flex flex-col bg-[#1c2b39] transition-transform duration-200 ease-out md:sticky md:top-0 md:h-screen md:translate-x-0 ${
+          mobileSidebar ? "translate-x-0" : "translate-x-full md:translate-x-0"
+        }`}
+      >
         <div className="px-5 py-5 border-b border-white/10">
-          <p className="text-sm font-black">لوحة تحكم النادي</p>
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-sm font-black">لوحة تحكم النادي</p>
+            <button
+              type="button"
+              className="md:hidden p-2 rounded-xl text-gray-500 hover:text-white hover:bg-white/5"
+              onClick={() => setMobileSidebar(false)}
+              aria-label="إغلاق القائمة"
+            >
+              <X size={18} />
+            </button>
+          </div>
           <a href="/tamimtoastmasterclub" target="_blank" rel="noreferrer"
             className="mt-3 flex items-center justify-center gap-1.5 w-full py-2 rounded-xl text-[11px] font-bold text-gray-400 border border-white/10 hover:text-[#00a3e0] hover:border-[#00a3e0]/30 transition-colors">
             <ExternalLink size={12} /> عرض صفحة النادي
           </a>
         </div>
-        <nav className="flex-1 px-3 py-4 flex md:flex-col gap-1 overflow-x-auto">
+        <nav className="flex-1 px-3 py-4 flex flex-col gap-1 overflow-y-auto">
           {NAV.map(item => {
             const Icon = item.icon;
             const isActive = active === item.id;
             return (
-              <button key={item.id} onClick={() => setActive(item.id)}
+              <button key={item.id} onClick={() => selectNav(item.id)}
                 className={`shrink-0 flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all text-right ${
                   isActive ? "bg-[#00a3e0]/15 text-[#00a3e0]" : "text-gray-400 hover:text-white hover:bg-white/5"
                 }`}>
@@ -100,7 +149,7 @@ export default function ClubAdminPage() {
       </aside>
 
       {/* content */}
-      <main className="flex-1 p-6 md:p-8 max-w-4xl">
+      <main className="flex-1 min-w-0 p-4 sm:p-6 md:p-8 max-w-4xl">
         {active === "settings" && <SettingsTab settings={settings} onSaved={loadAll} />}
         {active === "links"    && <LinksTab links={links} onChanged={loadAll} />}
         {active === "speakers" && <SpeakersTab speakers={speakers} onChanged={loadAll} />}
@@ -145,7 +194,7 @@ function SettingsTab({ settings, onSaved }: { settings: Settings; onSaved: () =>
       <Field label="رابط شعار النادي المستدير (اليسار)" value={form.logoUrl} onChange={set("logoUrl")} />
       <Field label="عنوان النبذة" value={form.aboutTitle} onChange={set("aboutTitle")} />
       <Field label="نص النبذة" value={form.aboutText} onChange={set("aboutText")} textarea />
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <Field label="اللون الأساسي" value={form.colorPrimary} onChange={set("colorPrimary")} />
         <Field label="اللون الثانوي" value={form.colorSecondary} onChange={set("colorSecondary")} />
         <Field label="لون التمييز" value={form.colorAccent} onChange={set("colorAccent")} />
