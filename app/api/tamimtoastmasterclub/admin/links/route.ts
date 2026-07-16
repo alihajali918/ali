@@ -23,3 +23,13 @@ export async function DELETE(req: NextRequest) {
   await db.clubLink.delete({ where: { id } });
   return NextResponse.json({ ok: true });
 }
+
+export async function PATCH(req: NextRequest) {
+  if (!await isClubAdmin(req)) return NextResponse.json({ error: "غير مصرح" }, { status: 401 });
+  const { orderedIds } = await req.json();
+  if (!Array.isArray(orderedIds)) return NextResponse.json({ error: "بيانات غير صحيحة" }, { status: 400 });
+  await db.$transaction(
+    orderedIds.map((id: number, index: number) => db.clubLink.update({ where: { id }, data: { order: index } }))
+  );
+  return NextResponse.json({ ok: true });
+}

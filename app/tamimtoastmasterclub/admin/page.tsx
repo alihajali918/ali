@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  LayoutDashboard, Link2, Mic, Vote, LogOut, Loader2, Trash2, Plus, X, ExternalLink,
+  LayoutDashboard, Link2, Mic, Vote, LogOut, Loader2, Trash2, Plus, X, ExternalLink, ChevronUp, ChevronDown,
 } from "lucide-react";
 
 interface Settings {
@@ -182,6 +182,18 @@ function LinksTab({ links, onChanged }: { links: LinkRow[]; onChanged: () => voi
     onChanged();
   };
 
+  const move = async (index: number, direction: -1 | 1) => {
+    const target = index + direction;
+    if (target < 0 || target >= links.length) return;
+    const reordered = [...links];
+    [reordered[index], reordered[target]] = [reordered[target], reordered[index]];
+    await fetch("/api/tamimtoastmasterclub/admin/links", {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ orderedIds: reordered.map(l => l.id) }),
+    });
+    onChanged();
+  };
+
   return (
     <div className="flex flex-col gap-4 max-w-xl">
       <h2 className="text-lg font-black mb-2">الروابط الديناميكية</h2>
@@ -196,9 +208,19 @@ function LinksTab({ links, onChanged }: { links: LinkRow[]; onChanged: () => voi
         </button>
       </form>
       <div className="flex flex-col gap-2">
-        {links.map(l => (
+        {links.map((l, i) => (
           <div key={l.id} className="flex items-center justify-between gap-3 bg-white/5 border border-white/10 rounded-xl px-4 py-3">
-            <div className="min-w-0">
+            <div className="flex flex-col shrink-0">
+              <button onClick={() => move(i, -1)} disabled={i === 0}
+                className="p-0.5 rounded text-gray-500 hover:text-white disabled:opacity-20 disabled:hover:text-gray-500">
+                <ChevronUp size={14} />
+              </button>
+              <button onClick={() => move(i, 1)} disabled={i === links.length - 1}
+                className="p-0.5 rounded text-gray-500 hover:text-white disabled:opacity-20 disabled:hover:text-gray-500">
+                <ChevronDown size={14} />
+              </button>
+            </div>
+            <div className="min-w-0 flex-1">
               <p className="text-sm font-bold truncate">{l.title}</p>
               <p className="text-xs text-gray-500 truncate" dir="ltr">{l.url}</p>
             </div>

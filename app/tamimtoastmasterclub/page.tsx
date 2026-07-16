@@ -77,7 +77,13 @@ export default async function TamimToastmastersClubPage() {
           </div>
 
           <div className="text-center md:order-2 flex-1 px-4 mt-0">
-            <h1 className="text-3xl md:text-5xl font-bold text-white tracking-wide">{settings.clubName}</h1>
+            <h1 className="font-bold text-white tracking-wide">
+              {settings.clubName.split(" — ").map((line, i) => (
+                <span key={i} className={i === 0 ? "block text-3xl md:text-5xl" : "block text-lg md:text-2xl text-white/70 mt-1"}>
+                  {line}
+                </span>
+              ))}
+            </h1>
             <p className="text-xs md:text-sm font-semibold mt-1.5 max-w-xl mx-auto" style={{ color: settings.colorAccent }}>
               {settings.description}
             </p>
