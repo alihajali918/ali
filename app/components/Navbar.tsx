@@ -6,6 +6,7 @@ import { useState, useEffect } from "react";
 import { Menu, X } from "lucide-react";
 
 const STATIC_LINKS = [
+  { href: "/#hadaya",   label: "هدايا" },
   { href: "/services",  label: "الخدمات" },
   { href: "/portfolio",  label: "الأعمال" },
   { href: "/pricing",   label: "التسعير" },
