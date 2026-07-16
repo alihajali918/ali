@@ -52,7 +52,7 @@ export default async function TamimToastmastersClubPage() {
     <div
       dir="rtl"
       className="min-h-screen text-white pt-0 pb-8 px-4 md:px-8 lg:px-16 flex flex-col justify-between"
-      style={{ background: settings.colorPrimary, fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif" }}
+      style={{ background: settings.colorPrimary }}
     >
       <div className="w-full max-w-7xl mx-auto transition-all duration-500">
 
