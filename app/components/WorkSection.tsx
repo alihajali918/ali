@@ -32,7 +32,7 @@ const projects = [
     category: "تطبيق ويب",
     description: "صفحة نادٍ مستقلة مع لوحة تحكم خاصة من الصفر — إدارة محتوى وتصويت مباشر على الخطباء.",
     accent: "#7B61FF",
-    tags: ["Next.js", "PostgreSQL"],
+    tags: ["قطر", "تطبيق ويب مخصص"],
     url: "https://alihajali.com/tamimtoastmasterclub",
     num: "03",
   },
