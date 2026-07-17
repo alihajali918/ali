@@ -6,7 +6,20 @@ import {
 } from "framer-motion";
 import Link from "next/link";
 import { ArrowLeft, Code2, Layers, Rocket, Zap } from "lucide-react";
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+
+/* ─── skip heavy 3D animation on mobile — no mouse to track anyway, and it's the priciest part of the hero to paint ─── */
+function useIsDesktop() {
+  const [isDesktop, setIsDesktop] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 1024px)");
+    setIsDesktop(mq.matches);
+    const onChange = (e: MediaQueryListEvent) => setIsDesktop(e.matches);
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
+  return isDesktop;
+}
 
 /* ─── magnetic button ─── */
 function MagneticLink({ href, children, className }: { href: string; children: React.ReactNode; className: string }) {
@@ -196,10 +209,12 @@ function Hero3D() {
 
 export default function Hero() {
   const heroRef = useRef<HTMLElement>(null);
-  const { scrollY } = useScroll();
+  const isDesktop = useIsDesktop();
+  const { scrollY, scrollYProgress } = useScroll();
   const orbY1 = useTransform(scrollY, [0, 600], [0,  80]);
   const orbY2 = useTransform(scrollY, [0, 600], [0, -60]);
   const orbOpacity = useTransform(scrollY, [0, 400], [1, 0]);
+  const progressScaleX = useSpring(scrollYProgress, { stiffness: 200, damping: 30 });
 
   return (
     <>
@@ -207,27 +222,27 @@ export default function Hero() {
       <motion.div
         className="fixed top-0 left-0 right-0 h-[2px] z-[999] pointer-events-none origin-left"
         style={{
-          scaleX: useSpring(useScroll().scrollYProgress, { stiffness: 200, damping: 30 }),
+          scaleX: progressScaleX,
           background: "linear-gradient(90deg,#00F5D4,#7B61FF)",
         }}
       />
 
       <section ref={heroRef} className="relative min-h-screen flex items-center justify-center overflow-hidden px-4 pt-24 pb-16">
 
-        {/* ── parallax orbs ── */}
+        {/* ── parallax orbs — smaller/cheaper blur on mobile, full size on desktop ── */}
         <div aria-hidden className="absolute inset-0 pointer-events-none">
           <motion.div style={{ y: orbY1, opacity: orbOpacity }}
-            className="absolute top-[5%] right-[0%] w-[700px] h-[700px] rounded-full bg-neon-cyan/5 blur-[160px]" />
+            className="absolute top-[5%] right-[0%] w-[280px] h-[280px] md:w-[700px] md:h-[700px] rounded-full bg-neon-cyan/5 blur-[60px] md:blur-[160px]" />
           <motion.div style={{ y: orbY2, opacity: orbOpacity }}
-            className="absolute bottom-[0%] left-[0%] w-[600px] h-[600px] rounded-full bg-neon-purple/5 blur-[140px]" />
+            className="absolute bottom-[0%] left-[0%] w-[240px] h-[240px] md:w-[600px] md:h-[600px] rounded-full bg-neon-purple/5 blur-[50px] md:blur-[140px]" />
           <div className="absolute inset-0"
             style={{ backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.022) 1px, transparent 1px)", backgroundSize: "44px 44px" }} />
           <div className="absolute inset-0"
             style={{ background: "radial-gradient(ellipse at center, transparent 30%, #0A0A0A 95%)" }} />
         </div>
 
-        {/* ── floating dots ── */}
-        {[...Array(8)].map((_, i) => (
+        {/* ── floating dots — desktop only, purely decorative ── */}
+        {isDesktop && [...Array(8)].map((_, i) => (
           <motion.div key={i} aria-hidden
             className="absolute w-1 h-1 rounded-full pointer-events-none"
             style={{ background: i % 2 === 0 ? "#00F5D4" : "#7B61FF", left: `${10 + i * 11}%`, top: `${15 + (i % 4) * 18}%` }}
@@ -320,10 +335,12 @@ export default function Hero() {
             </motion.div>
           </div>
 
-          {/* ── 3D ── */}
-          <div className="order-first lg:order-last flex items-center justify-center">
-            <Hero3D />
-          </div>
+          {/* ── 3D — desktop only; mouse-tracking is pointless on touch and it's the priciest thing to paint ── */}
+          {isDesktop && (
+            <div className="order-first lg:order-last flex items-center justify-center">
+              <Hero3D />
+            </div>
+          )}
 
         </div>
       </section>
