@@ -79,11 +79,13 @@ model ClubSettings {
 }
 
 model ClubLink {
-  id        Int      @id @default(autoincrement())
+  id        Int       @id @default(autoincrement())
   title     String
-  url       String
-  order     Int      @default(0)
-  createdAt DateTime @default(now())
+  url       String    @default("")
+  formId    Int?
+  form      ClubForm? @relation(fields: [formId], references: [id], onDelete: Cascade)
+  order     Int       @default(0)
+  createdAt DateTime  @default(now())
 
   @@map("club_links")
 }
@@ -146,6 +148,7 @@ model ClubForm {
 
   fields      ClubFormField[]
   submissions ClubFormSubmission[]
+  links       ClubLink[]
 
   @@map("club_forms")
 }

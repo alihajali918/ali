@@ -4,16 +4,21 @@ import { isClubAdmin } from "../../../../lib/club-auth";
 
 export async function GET(req: NextRequest) {
   if (!await isClubAdmin(req)) return NextResponse.json({ error: "غير مصرح" }, { status: 401 });
-  const links = await db.clubLink.findMany({ orderBy: { order: "asc" } });
+  const links = await db.clubLink.findMany({
+    orderBy: { order: "asc" },
+    include: { form: { select: { id: true, title: true, icon: true, color: true } } },
+  });
   return NextResponse.json(links);
 }
 
 export async function POST(req: NextRequest) {
   if (!await isClubAdmin(req)) return NextResponse.json({ error: "غير مصرح" }, { status: 401 });
-  const { title, url } = await req.json();
-  if (!title || !url) return NextResponse.json({ error: "العنوان والرابط مطلوبان" }, { status: 400 });
+  const { title, url, formId } = await req.json();
+  if (!title || (!url && !formId)) return NextResponse.json({ error: "العنوان مطلوب مع رابط أو نموذج" }, { status: 400 });
   const count = await db.clubLink.count();
-  const link = await db.clubLink.create({ data: { title, url, order: count } });
+  const link = await db.clubLink.create({
+    data: { title, url: formId ? "" : url, formId: formId || null, order: count },
+  });
   return NextResponse.json(link);
 }
 

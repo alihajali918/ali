@@ -16,7 +16,8 @@ interface Settings {
   colorPrimary: string; colorSecondary: string; colorAccent: string;
   titleFontSize: number; bodyFontScale: number;
 }
-interface LinkRow { id: number; title: string; url: string; order: number; }
+interface LinkRow { id: number; title: string; url: string; formId: number | null; form?: { id: number; title: string; icon: string; color: string } | null; order: number; }
+interface FormOption { id: number; title: string; }
 interface CategoryRow { id: number; label: string; icon: string; order: number; }
 interface SpeakerRow { id: number; categoryId: number; name: string; }
 interface VoteTally { categoryId: number; candidate: string; votes: number; }
@@ -229,11 +230,19 @@ function SettingsTab({ settings, onSaved }: { settings: Settings; onSaved: () =>
 }
 
 function LinksTab({ links, onChanged }: { links: LinkRow[]; onChanged: () => void }) {
-  const [mode, setMode] = useState<"url" | "file">("url");
+  const [mode, setMode] = useState<"url" | "file" | "form">("url");
   const [title, setTitle] = useState("");
   const [url, setUrl] = useState("");
   const [file, setFile] = useState<File | null>(null);
+  const [formOptions, setFormOptions] = useState<FormOption[]>([]);
+  const [formId, setFormId] = useState<number | "">("");
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/tamimtoastmasterclub/admin/forms")
+      .then(r => r.json())
+      .then((data: FormOption[]) => { setFormOptions(data); if (data[0]) setFormId(data[0].id); });
+  }, []);
 
   const fileToDataUrl = (f: File) => new Promise<string>((resolve, reject) => {
     const reader = new FileReader();
@@ -245,17 +254,21 @@ function LinksTab({ links, onChanged }: { links: LinkRow[]; onChanged: () => voi
   const add = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title) return;
-    let finalUrl = url;
+    const body: { title: string; url?: string; formId?: number } = { title };
     if (mode === "file") {
       if (!file) return;
       if (file.size > 4 * 1024 * 1024) { alert("الملف أكبر من 4 ميغا، اختاري ملف أصغر."); return; }
-      finalUrl = await fileToDataUrl(file);
-    } else if (!url) {
-      return;
+      body.url = await fileToDataUrl(file);
+    } else if (mode === "form") {
+      if (!formId) return;
+      body.formId = formId;
+    } else {
+      if (!url) return;
+      body.url = url;
     }
     setSaving(true);
     await fetch("/api/tamimtoastmasterclub/admin/links", {
-      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ title, url: finalUrl }),
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
     });
     setTitle(""); setUrl(""); setFile(null); setSaving(false);
     onChanged();
@@ -292,25 +305,41 @@ function LinksTab({ links, onChanged }: { links: LinkRow[]; onChanged: () => voi
           </button>
           <button type="button" onClick={() => setMode("file")}
             className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all ${mode === "file" ? "bg-[#00a3e0]/15 text-[#00a3e0]" : "text-gray-500 hover:text-white"}`}>
-            رفع ملف (PDF / صورة)
+            رفع ملف
+          </button>
+          <button type="button" onClick={() => setMode("form")}
+            className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all ${mode === "form" ? "bg-[#00a3e0]/15 text-[#00a3e0]" : "text-gray-500 hover:text-white"}`}>
+            نموذج
           </button>
         </div>
         <div className="flex flex-col sm:flex-row gap-2">
           <input value={title} onChange={e => setTitle(e.target.value)} placeholder="اسم الزر"
             className="flex-1 bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#00a3e0]/50" />
-          {mode === "url" ? (
+          {mode === "url" && (
             <input value={url} onChange={e => setUrl(e.target.value)} placeholder="الرابط" dir="ltr"
               className="flex-1 bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#00a3e0]/50" />
-          ) : (
+          )}
+          {mode === "file" && (
             <input type="file" accept="application/pdf,image/*" onChange={e => setFile(e.target.files?.[0] ?? null)}
               className="flex-1 bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-xs text-gray-300 outline-none file:ml-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:bg-[#00a3e0]/20 file:text-[#00a3e0] file:text-xs file:font-bold" />
           )}
-          <button type="submit" disabled={saving}
+          {mode === "form" && (
+            formOptions.length === 0 ? (
+              <p className="flex-1 text-xs text-gray-500 self-center">أنشئ نموذجاً من تبويب "النماذج" أولاً</p>
+            ) : (
+              <select value={formId} onChange={e => setFormId(Number(e.target.value))}
+                className="flex-1 bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm outline-none">
+                {formOptions.map(f => <option key={f.id} value={f.id}>{f.title}</option>)}
+              </select>
+            )
+          )}
+          <button type="submit" disabled={saving || (mode === "form" && formOptions.length === 0)}
             className="flex items-center justify-center gap-1.5 px-4 py-2 bg-[#00a3e0] text-[#1c2b39] font-black text-xs rounded-lg disabled:opacity-60 shrink-0">
             <Plus size={14} /> إضافة
           </button>
         </div>
         {mode === "file" && <p className="text-[11px] text-gray-500">الملف بينحفظ مباشرة بقاعدة البيانات — يفضّل ملفات أصغر من 4 ميغا.</p>}
+        {mode === "form" && <p className="text-[11px] text-gray-500">بيظهر بمكانه بالضبط بين الروابط، ويفتح ضمن نفس البطاقة عند الضغط عليها.</p>}
       </form>
       <div className="flex flex-col gap-2">
         {links.map((l, i) => (
@@ -327,7 +356,11 @@ function LinksTab({ links, onChanged }: { links: LinkRow[]; onChanged: () => voi
             </div>
             <div className="min-w-0 flex-1">
               <p className="text-sm font-bold truncate">{l.title}</p>
-              <p className="text-xs text-gray-500 truncate" dir="ltr">{l.url}</p>
+              {l.form ? (
+                <p className="text-xs text-[#00a3e0] truncate">نموذج: {l.form.title}</p>
+              ) : (
+                <p className="text-xs text-gray-500 truncate" dir="ltr">{l.url}</p>
+              )}
             </div>
             <button onClick={() => remove(l.id)} className="p-1.5 rounded-lg text-gray-500 hover:text-red-400 hover:bg-red-500/10 shrink-0">
               <Trash2 size={14} />

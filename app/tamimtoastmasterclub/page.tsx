@@ -31,11 +31,13 @@ function linkStyle(title: string) {
 }
 
 export default async function TamimToastmastersClubPage() {
-  const [settings, links, categories, forms, cookieStore] = await Promise.all([
+  const [settings, links, categories, cookieStore] = await Promise.all([
     db.clubSettings.upsert({ where: { id: 1 }, update: {}, create: { id: 1 } }),
-    db.clubLink.findMany({ orderBy: { order: "asc" } }),
+    db.clubLink.findMany({
+      orderBy: { order: "asc" },
+      include: { form: { include: { fields: { orderBy: { order: "asc" } } } } },
+    }),
     db.clubVoteCategory.findMany({ orderBy: { order: "asc" }, include: { speakers: { orderBy: { createdAt: "asc" } } } }),
-    db.clubForm.findMany({ where: { active: true }, orderBy: { order: "asc" }, include: { fields: { orderBy: { order: "asc" } } } }),
     cookies(),
   ]);
 
@@ -104,9 +106,17 @@ export default async function TamimToastmastersClubPage() {
         </div>
 
         <div className="space-y-8">
-          {/* dynamic links */}
+          {/* dynamic links + forms */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {links.map(link => {
+              if (link.form) {
+                if (!link.form.active) return null;
+                return (
+                  <div key={link.id} className="md:col-span-2">
+                    <FormSection form={link.form as any} />
+                  </div>
+                );
+              }
               const style = linkStyle(link.title);
               const Icon = style.icon;
               const isFile = link.url.startsWith("data:");
@@ -153,11 +163,6 @@ export default async function TamimToastmastersClubPage() {
               </a>
             </div>
           </div>
-
-          {/* استمارات مخصصة */}
-          {forms.map(form => (
-            <FormSection key={form.id} form={form as any} />
-          ))}
         </div>
       </div>
 
