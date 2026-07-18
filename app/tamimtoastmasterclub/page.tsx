@@ -7,6 +7,7 @@ import { getSiteUrl } from "../lib/site-url";
 import VotingWidget from "./VotingWidget";
 import FormSection from "./FormSection";
 import { getContrastText } from "../lib/contrast";
+import { getClubIcon } from "../lib/club-icons";
 import {
   CalendarDays, BookOpen, UserPlus, Instagram, ChevronLeft,
   Info, ArrowUpRight,
@@ -17,8 +18,9 @@ export const metadata: Metadata = {
   alternates: { canonical: `${getSiteUrl()}/tamimtoastmasterclub` },
 };
 
-function linkStyle(title: string, color: string | null, textColor: string | null) {
+function linkStyle(title: string, color: string | null, textColor: string | null, icon: string | null) {
   const t = title.toLowerCase();
+  if (icon) return { bg: color || "#ffffff", text: textColor || (color ? getContrastText(color) : "#1c2b39"), icon: getClubIcon(icon) };
   if (color) return { bg: color, text: textColor || getContrastText(color), icon: CalendarDays };
   if (t.includes("ملخص") || t.includes("أجندة") || t.includes("اجندة")) {
     return { bg: "#074466", text: "#ffffff", icon: BookOpen };
@@ -119,7 +121,7 @@ export default async function TamimToastmastersClubPage() {
                   </div>
                 );
               }
-              const style = linkStyle(link.title, link.color, link.textColor);
+              const style = linkStyle(link.title, link.color, link.textColor, link.icon);
               const Icon = style.icon;
               const isFile = link.url.startsWith("data:");
               return (

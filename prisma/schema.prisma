@@ -83,6 +83,7 @@ model ClubLink {
   url       String    @default("")
   color     String?
   textColor String?
+  icon      String?
   formId    Int?
   form      ClubForm? @relation(fields: [formId], references: [id], onDelete: Cascade)
   order     Int       @default(0)

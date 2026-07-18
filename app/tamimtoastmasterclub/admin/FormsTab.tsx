@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import IconPicker from "./IconPicker";
 import ColorPicker from "./ColorPicker";
+import { useNotifications } from "./Notifications";
 import { getClubIcon } from "../../lib/club-icons";
 
 type FieldType =
@@ -122,6 +123,7 @@ function FieldConfigEditor({ type, config, onChange }: { type: FieldType; config
 }
 
 function FieldsEditor({ form, onBack }: { form: FormRow; onBack: () => void }) {
+  const { confirmDialog } = useNotifications();
   const [fields, setFields] = useState<FieldRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingFieldId, setEditingFieldId] = useState<number | null>(null);
@@ -172,7 +174,7 @@ function FieldsEditor({ form, onBack }: { form: FormRow; onBack: () => void }) {
   };
 
   const remove = async (id: number) => {
-    if (!confirm("حذف هذا الحقل؟")) return;
+    if (!await confirmDialog("حذف هذا الحقل؟")) return;
     await fetch(`/api/tamimtoastmasterclub/admin/forms/${form.id}/fields`, {
       method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }),
     });
@@ -204,9 +206,9 @@ function FieldsEditor({ form, onBack }: { form: FormRow; onBack: () => void }) {
         )}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <select value={type} onChange={e => { setType(e.target.value as FieldType); setConfig({}); }}
-            className="bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm outline-none">
+            className="bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm text-white outline-none">
             {(Object.keys(FIELD_TYPE_LABEL) as FieldType[]).map(t => (
-              <option key={t} value={t}>{FIELD_TYPE_LABEL[t]}</option>
+              <option key={t} value={t} style={{ background: "#0a1520", color: "#fff" }}>{FIELD_TYPE_LABEL[t]}</option>
             ))}
           </select>
           <input value={label} onChange={e => setLabel(e.target.value)} placeholder="عنوان الحقل / السؤال"
@@ -270,6 +272,7 @@ function FieldsEditor({ form, onBack }: { form: FormRow; onBack: () => void }) {
 }
 
 export default function FormsTab() {
+  const { confirmDialog } = useNotifications();
   const [forms, setForms] = useState<FormRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -326,7 +329,7 @@ export default function FormsTab() {
   };
 
   const remove = async (id: number) => {
-    if (!confirm("حذف هذا النموذج مع كل حقوله وردوده؟ لا يمكن التراجع.")) return;
+    if (!await confirmDialog("حذف هذا النموذج مع كل حقوله وردوده؟ لا يمكن التراجع.")) return;
     await fetch("/api/tamimtoastmasterclub/admin/forms", {
       method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }),
     });
@@ -346,7 +349,7 @@ export default function FormsTab() {
   };
 
   const wipe = async (id: number) => {
-    if (!confirm("مسح كل ردود هذا النموذج نهائياً؟ يفضّل تصدّرها لإكسل أول.")) return;
+    if (!await confirmDialog("مسح كل ردود هذا النموذج نهائياً؟ يفضّل تصدّرها لإكسل أول.")) return;
     await fetch(`/api/tamimtoastmasterclub/admin/forms/${id}/submissions`, { method: "DELETE" });
     load();
   };

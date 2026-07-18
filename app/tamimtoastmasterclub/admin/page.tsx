@@ -8,6 +8,7 @@ import {
 import IconPicker from "./IconPicker";
 import ColorPicker from "./ColorPicker";
 import FormsTab from "./FormsTab";
+import { NotificationsProvider, useNotifications } from "./Notifications";
 import { getClubIcon } from "../../lib/club-icons";
 
 interface Settings {
@@ -16,7 +17,7 @@ interface Settings {
   colorPrimary: string; colorSecondary: string; colorAccent: string;
   titleFontSize: number; bodyFontScale: number;
 }
-interface LinkRow { id: number; title: string; url: string; color: string | null; textColor: string | null; formId: number | null; form?: { id: number; title: string; icon: string; color: string } | null; order: number; }
+interface LinkRow { id: number; title: string; url: string; color: string | null; textColor: string | null; icon: string | null; formId: number | null; form?: { id: number; title: string; icon: string; color: string } | null; order: number; }
 interface FormOption { id: number; title: string; }
 interface CategoryRow { id: number; label: string; icon: string; order: number; }
 interface SpeakerRow { id: number; categoryId: number; name: string; }
@@ -32,6 +33,14 @@ const NAV = [
 ];
 
 export default function ClubAdminPage() {
+  return (
+    <NotificationsProvider>
+      <ClubAdminContent />
+    </NotificationsProvider>
+  );
+}
+
+function ClubAdminContent() {
   const router = useRouter();
   const [active, setActive] = useState("settings");
   const [mobileSidebar, setMobileSidebar] = useState(false);
@@ -230,6 +239,7 @@ function SettingsTab({ settings, onSaved }: { settings: Settings; onSaved: () =>
 }
 
 function LinksTab({ links, onChanged }: { links: LinkRow[]; onChanged: () => void }) {
+  const { toast, confirmDialog } = useNotifications();
   const [mode, setMode] = useState<"url" | "file" | "form">("url");
   const [title, setTitle] = useState("");
   const [url, setUrl] = useState("");
@@ -238,12 +248,14 @@ function LinksTab({ links, onChanged }: { links: LinkRow[]; onChanged: () => voi
   const [formId, setFormId] = useState<number | "">("");
   const [color, setColor] = useState("#ffffff");
   const [textColor, setTextColor] = useState("#1c2b39");
+  const [icon, setIcon] = useState("");
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [editUrl, setEditUrl] = useState("");
   const [editColor, setEditColor] = useState("#ffffff");
   const [editTextColor, setEditTextColor] = useState("#1c2b39");
+  const [editIcon, setEditIcon] = useState("");
 
   useEffect(() => {
     fetch("/api/tamimtoastmasterclub/admin/forms")
@@ -261,30 +273,30 @@ function LinksTab({ links, onChanged }: { links: LinkRow[]; onChanged: () => voi
   const add = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title) return;
-    const body: { title: string; url?: string; formId?: number; color?: string; textColor?: string } = { title };
+    const body: { title: string; url?: string; formId?: number; color?: string; textColor?: string; icon?: string } = { title };
     if (mode === "file") {
       if (!file) return;
-      if (file.size > 4 * 1024 * 1024) { alert("الملف أكبر من 4 ميغا، اختاري ملف أصغر."); return; }
+      if (file.size > 4 * 1024 * 1024) { toast("الملف أكبر من 4 ميغا، اختاري ملف أصغر.", "error"); return; }
       body.url = await fileToDataUrl(file);
-      body.color = color; body.textColor = textColor;
+      body.color = color; body.textColor = textColor; body.icon = icon;
     } else if (mode === "form") {
       if (!formId) return;
       body.formId = formId;
     } else {
       if (!url) return;
       body.url = url;
-      body.color = color; body.textColor = textColor;
+      body.color = color; body.textColor = textColor; body.icon = icon;
     }
     setSaving(true);
     await fetch("/api/tamimtoastmasterclub/admin/links", {
       method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
     });
-    setTitle(""); setUrl(""); setFile(null); setColor("#ffffff"); setTextColor("#1c2b39"); setSaving(false);
+    setTitle(""); setUrl(""); setFile(null); setColor("#ffffff"); setTextColor("#1c2b39"); setIcon(""); setSaving(false);
     onChanged();
   };
 
   const remove = async (id: number) => {
-    if (!confirm("حذف هذا الرابط؟")) return;
+    if (!await confirmDialog("حذف هذا الرابط؟")) return;
     await fetch("/api/tamimtoastmasterclub/admin/links", {
       method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }),
     });
@@ -309,16 +321,18 @@ function LinksTab({ links, onChanged }: { links: LinkRow[]; onChanged: () => voi
     setEditUrl(l.url.startsWith("data:") ? "" : l.url);
     setEditColor(l.color || "#ffffff");
     setEditTextColor(l.textColor || "#1c2b39");
+    setEditIcon(l.icon || "");
   };
 
   const saveEdit = async () => {
     if (!editingId || !editTitle) return;
     const link = links.find(l => l.id === editingId);
-    const data: { title: string; url?: string; color?: string; textColor?: string } = { title: editTitle };
+    const data: { title: string; url?: string; color?: string; textColor?: string; icon?: string } = { title: editTitle };
     if (!link?.form) {
       if (editUrl) data.url = editUrl;
       data.color = editColor;
       data.textColor = editTextColor;
+      data.icon = editIcon;
     }
     await fetch("/api/tamimtoastmasterclub/admin/links", {
       method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: editingId, ...data }),
@@ -362,17 +376,23 @@ function LinksTab({ links, onChanged }: { links: LinkRow[]; onChanged: () => voi
             <p className="text-xs text-gray-500">أنشئ نموذجاً من تبويب "النماذج" أولاً</p>
           ) : (
             <select value={formId} onChange={e => setFormId(Number(e.target.value))}
-              className="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm outline-none">
-              {formOptions.map(f => <option key={f.id} value={f.id}>{f.title}</option>)}
+              className="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm text-white outline-none">
+              {formOptions.map(f => <option key={f.id} value={f.id} style={{ background: "#0a1520", color: "#fff" }}>{f.title}</option>)}
             </select>
           )
         )}
 
         {mode !== "form" && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <ColorPicker label="لون البوكس" value={color} onChange={setColor} />
-            <ColorPicker label="لون الخط" value={textColor} onChange={setTextColor} />
-          </div>
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <ColorPicker label="لون البوكس" value={color} onChange={setColor} />
+              <ColorPicker label="لون الخط" value={textColor} onChange={setTextColor} />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-[11px] text-gray-500">الأيقونة (اختياري)</label>
+              <IconPicker value={icon} onChange={setIcon} />
+            </div>
+          </>
         )}
 
         <button type="submit" disabled={saving || (mode === "form" && formOptions.length === 0)}
@@ -395,6 +415,10 @@ function LinksTab({ links, onChanged }: { links: LinkRow[]; onChanged: () => voi
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <ColorPicker label="لون البوكس" value={editColor} onChange={setEditColor} />
                   <ColorPicker label="لون الخط" value={editTextColor} onChange={setEditTextColor} />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-[11px] text-gray-500">الأيقونة (اختياري)</label>
+                  <IconPicker value={editIcon} onChange={setEditIcon} />
                 </div>
               </>
             )}
@@ -441,6 +465,7 @@ function LinksTab({ links, onChanged }: { links: LinkRow[]; onChanged: () => voi
 }
 
 function CategoriesTab({ categories, onChanged }: { categories: CategoryRow[]; onChanged: () => void }) {
+  const { confirmDialog } = useNotifications();
   const [label, setLabel] = useState("");
   const [icon, setIcon] = useState("Vote");
   const [saving, setSaving] = useState(false);
@@ -457,7 +482,7 @@ function CategoriesTab({ categories, onChanged }: { categories: CategoryRow[]; o
   };
 
   const remove = async (id: number) => {
-    if (!confirm("حذف هذه الفئة؟ رح ينحذف كل الخطباء والأصوات المرتبطين فيها.")) return;
+    if (!await confirmDialog("حذف هذه الفئة؟ رح ينحذف كل الخطباء والأصوات المرتبطين فيها.")) return;
     await fetch("/api/tamimtoastmasterclub/admin/categories", {
       method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }),
     });
@@ -518,6 +543,7 @@ function CategoriesTab({ categories, onChanged }: { categories: CategoryRow[]; o
 }
 
 function SpeakersTab({ speakers, categories, onChanged }: { speakers: SpeakerRow[]; categories: CategoryRow[]; onChanged: () => void }) {
+  const { confirmDialog } = useNotifications();
   const [categoryId, setCategoryId] = useState<number | "">(categories[0]?.id ?? "");
   const [name, setName] = useState("");
   const [saving, setSaving] = useState(false);
@@ -536,7 +562,7 @@ function SpeakersTab({ speakers, categories, onChanged }: { speakers: SpeakerRow
   };
 
   const remove = async (id: number) => {
-    if (!confirm("حذف هذا الخطيب؟ رح يمسح أي أصوات مرتبطة بفئته.")) return;
+    if (!await confirmDialog("حذف هذا الخطيب؟ رح يمسح أي أصوات مرتبطة بفئته.")) return;
     await fetch("/api/tamimtoastmasterclub/admin/speakers", {
       method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }),
     });
@@ -564,8 +590,8 @@ function SpeakersTab({ speakers, categories, onChanged }: { speakers: SpeakerRow
       <p className="text-[11px] text-gray-500 -mt-2">تعديل اسم (تصحيح خطأ إملائي مثلاً) بيحافظ على أصوات الفئة. إضافة أو حذف خطيب بيصفّرها ويسمح بالتصويت من جديد.</p>
       <form onSubmit={add} className="flex flex-col sm:flex-row gap-2 bg-white/5 border border-white/10 rounded-xl p-3">
         <select value={categoryId} onChange={e => setCategoryId(Number(e.target.value))}
-          className="bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm outline-none">
-          {categories.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
+          className="bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm text-white outline-none">
+          {categories.map(c => <option key={c.id} value={c.id} style={{ background: "#0a1520", color: "#fff" }}>{c.label}</option>)}
         </select>
         <input value={name} onChange={e => setName(e.target.value)} placeholder="الاسم"
           className="flex-1 bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#00a3e0]/50" />
@@ -616,8 +642,9 @@ function SpeakersTab({ speakers, categories, onChanged }: { speakers: SpeakerRow
 }
 
 function VotesTab({ votes, categories, onChanged }: { votes: { total: number; tally: VoteTally[] }; categories: CategoryRow[]; onChanged: () => void }) {
+  const { confirmDialog } = useNotifications();
   const clear = async () => {
-    if (!confirm("مسح كل نتائج التصويت وبدء جولة جديدة؟ الكل رح يقدر يصوّت من جديد فوراً.")) return;
+    if (!await confirmDialog("مسح كل نتائج التصويت وبدء جولة جديدة؟ الكل رح يقدر يصوّت من جديد فوراً.")) return;
     await fetch("/api/tamimtoastmasterclub/admin/votes", { method: "DELETE" });
     onChanged();
   };

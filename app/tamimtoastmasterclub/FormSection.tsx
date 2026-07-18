@@ -276,7 +276,7 @@ export default function FormSection({ form }: { form: FormDef }) {
                       onChange={async e => {
                         const f = e.target.files?.[0];
                         if (!f) return;
-                        if (f.size > 4 * 1024 * 1024) { alert("الملف أكبر من 4 ميغا، اختر ملف أصغر."); e.target.value = ""; return; }
+                        if (f.size > 4 * 1024 * 1024) { setError("الملف أكبر من 4 ميغا، اختر ملف أصغر."); e.target.value = ""; return; }
                         set(field.id, await fileToDataUrl(f));
                       }}
                       className="text-xs text-gray-600 file:ml-2 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:bg-[#00a3e0]/15 file:text-[#00a3e0] file:text-xs file:font-bold" />
