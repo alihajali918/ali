@@ -144,7 +144,7 @@ export default function WorkSection() {
       {/* parallax bg glow */}
       <motion.div aria-hidden style={{ y: bgY }}
         className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-neon-cyan/3 blur-[160px] rounded-full" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[320px] h-[200px] md:w-[800px] md:h-[400px] bg-neon-cyan/3 blur-[60px] md:blur-[160px] rounded-full" />
       </motion.div>
 
       <div className="max-w-7xl mx-auto relative z-10">

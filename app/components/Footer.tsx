@@ -28,7 +28,7 @@ export default function Footer() {
       {/* توهج خلفي */}
       <div
         aria-hidden
-        className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[600px] h-[200px] bg-neon-cyan/4 blur-[80px] rounded-full pointer-events-none"
+        className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[280px] h-[120px] md:w-[600px] md:h-[200px] bg-neon-cyan/4 blur-[40px] md:blur-[80px] rounded-full pointer-events-none"
       />
 
       <div className="max-w-7xl mx-auto relative z-10">

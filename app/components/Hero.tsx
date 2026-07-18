@@ -6,20 +6,8 @@ import {
 } from "framer-motion";
 import Link from "next/link";
 import { ArrowLeft, Code2, Layers, Rocket, Zap } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
-
-/* ─── skip heavy 3D animation on mobile — no mouse to track anyway, and it's the priciest part of the hero to paint ─── */
-function useIsDesktop() {
-  const [isDesktop, setIsDesktop] = useState(false);
-  useEffect(() => {
-    const mq = window.matchMedia("(min-width: 1024px)");
-    setIsDesktop(mq.matches);
-    const onChange = (e: MediaQueryListEvent) => setIsDesktop(e.matches);
-    mq.addEventListener("change", onChange);
-    return () => mq.removeEventListener("change", onChange);
-  }, []);
-  return isDesktop;
-}
+import { useRef } from "react";
+import { useIsDesktop } from "../lib/useIsDesktop";
 
 /* ─── magnetic button ─── */
 function MagneticLink({ href, children, className }: { href: string; children: React.ReactNode; className: string }) {

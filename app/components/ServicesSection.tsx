@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, useMotionValue, useMotionTemplate, useSpring, useInView } from "framer-motion";
+import { motion, useMotionValue, useMotionTemplate, useInView } from "framer-motion";
 import Link from "next/link";
 import {
   Globe, ShoppingBag, Code2, BarChart3,
@@ -52,8 +52,6 @@ function ServiceCard({ s, i }: { s: typeof services[0]; i: number }) {
   const mx   = useMotionValue(0);
   const my   = useMotionValue(0);
   const glow = useMotionTemplate`radial-gradient(220px circle at ${mx}px ${my}px, ${s.color}18, transparent 80%)`;
-  const rx   = useSpring(useMotionValue(0), { stiffness: 300, damping: 28 });
-  const ry   = useSpring(useMotionValue(0), { stiffness: 300, damping: 28 });
 
   const onMove = (e: React.MouseEvent<HTMLDivElement>) => {
     const r = ref.current?.getBoundingClientRect();
@@ -69,7 +67,6 @@ function ServiceCard({ s, i }: { s: typeof services[0]; i: number }) {
       ref={ref}
       onMouseMove={onMove}
       onMouseLeave={() => { mx.set(-999); my.set(-999); }}
-      style={{ rotateX: rx, rotateY: ry, transformStyle: "preserve-3d" }}
       initial={{ opacity: 0, y: 40 }}
       animate={isInView ? { opacity: 1, y: 0 } : {}}
       transition={{ duration: 0.65, ease: [0.25, 0.46, 0.45, 0.94], delay: i * 0.09 }}
@@ -138,7 +135,7 @@ export default function ServicesSection() {
   return (
     <section className="py-32 px-4 md:px-8 relative">
       <div aria-hidden className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[400px] bg-neon-purple/3 blur-[140px] rounded-full" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[320px] h-[200px] md:w-[900px] md:h-[400px] bg-neon-purple/3 blur-[60px] md:blur-[140px] rounded-full" />
       </div>
 
       <div ref={ref} className="max-w-7xl mx-auto relative z-10">
