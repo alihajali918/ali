@@ -561,7 +561,7 @@ function SpeakersTab({ speakers, categories, onChanged }: { speakers: SpeakerRow
   return (
     <div className="flex flex-col gap-4 max-w-xl">
       <h2 className="text-lg font-black">الخطباء والمقيّمون</h2>
-      <p className="text-[11px] text-gray-500 -mt-2">أي إضافة أو حذف أو تعديل اسم بيصفّر أصوات فئته تلقائياً ويسمح بالتصويت من جديد.</p>
+      <p className="text-[11px] text-gray-500 -mt-2">تعديل اسم (تصحيح خطأ إملائي مثلاً) بيحافظ على أصوات الفئة. إضافة أو حذف خطيب بيصفّرها ويسمح بالتصويت من جديد.</p>
       <form onSubmit={add} className="flex flex-col sm:flex-row gap-2 bg-white/5 border border-white/10 rounded-xl p-3">
         <select value={categoryId} onChange={e => setCategoryId(Number(e.target.value))}
           className="bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm outline-none">

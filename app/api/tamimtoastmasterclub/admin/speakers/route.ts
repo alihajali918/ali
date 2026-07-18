@@ -30,8 +30,17 @@ export async function PATCH(req: NextRequest) {
   if (!await isClubAdmin(req)) return NextResponse.json({ error: "غير مصرح" }, { status: 401 });
   const { id, name } = await req.json();
   if (!id || !name) return NextResponse.json({ error: "الاسم مطلوب" }, { status: 400 });
-  const speaker = await db.clubSpeaker.update({ where: { id }, data: { name } });
-  await resetCategoryVoting(speaker.categoryId);
+  const existing = await db.clubSpeaker.findUnique({ where: { id } });
+  if (!existing) return NextResponse.json({ error: "غير موجود" }, { status: 404 });
+  // renaming (typo fix) is the same candidate — carry existing votes over to the new name,
+  // don't reset. Only add/delete count as an actual roster change.
+  const [speaker] = await db.$transaction([
+    db.clubSpeaker.update({ where: { id }, data: { name } }),
+    db.clubVote.updateMany({
+      where: { categoryId: existing.categoryId, candidate: existing.name },
+      data: { candidate: name },
+    }),
+  ]);
   return NextResponse.json(speaker);
 }
 
