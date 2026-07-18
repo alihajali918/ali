@@ -13,11 +13,16 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   if (!await isClubAdmin(req)) return NextResponse.json({ error: "غير مصرح" }, { status: 401 });
-  const { title, url, formId, color } = await req.json();
+  const { title, url, formId, color, textColor } = await req.json();
   if (!title || (!url && !formId)) return NextResponse.json({ error: "العنوان مطلوب مع رابط أو نموذج" }, { status: 400 });
   const count = await db.clubLink.count();
   const link = await db.clubLink.create({
-    data: { title, url: formId ? "" : url, formId: formId || null, color: formId ? null : (color || null), order: count },
+    data: {
+      title, url: formId ? "" : url, formId: formId || null,
+      color: formId ? null : (color || null),
+      textColor: formId ? null : (textColor || null),
+      order: count,
+    },
   });
   return NextResponse.json(link);
 }
@@ -31,10 +36,14 @@ export async function DELETE(req: NextRequest) {
 
 export async function PATCH(req: NextRequest) {
   if (!await isClubAdmin(req)) return NextResponse.json({ error: "غير مصرح" }, { status: 401 });
-  const { orderedIds } = await req.json();
-  if (!Array.isArray(orderedIds)) return NextResponse.json({ error: "بيانات غير صحيحة" }, { status: 400 });
-  await db.$transaction(
-    orderedIds.map((id: number, index: number) => db.clubLink.update({ where: { id }, data: { order: index } }))
-  );
-  return NextResponse.json({ ok: true });
+  const body = await req.json();
+  if (Array.isArray(body.orderedIds)) {
+    await db.$transaction(
+      body.orderedIds.map((id: number, index: number) => db.clubLink.update({ where: { id }, data: { order: index } }))
+    );
+    return NextResponse.json({ ok: true });
+  }
+  const { id, ...data } = body;
+  const link = await db.clubLink.update({ where: { id }, data });
+  return NextResponse.json(link);
 }

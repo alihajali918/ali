@@ -30,7 +30,7 @@ const OPTION_TYPES: FieldType[] = ["MULTIPLE_CHOICE", "CHECKBOXES", "DROPDOWN"];
 const GRID_TYPES: FieldType[] = ["MC_GRID", "CHECKBOX_GRID"];
 
 interface FormRow {
-  id: number; title: string; icon: string; color: string; order: number; active: boolean;
+  id: number; title: string; icon: string; color: string; textColor: string | null; order: number; active: boolean;
   _count: { fields: number; submissions: number };
 }
 interface FieldRow {
@@ -277,9 +277,11 @@ export default function FormsTab() {
   const [metaTitle, setMetaTitle] = useState("");
   const [metaIcon, setMetaIcon] = useState("ClipboardList");
   const [metaColor, setMetaColor] = useState("#00a3e0");
+  const [metaTextColor, setMetaTextColor] = useState("#ffffff");
   const [title, setTitle] = useState("");
   const [icon, setIcon] = useState("ClipboardList");
   const [color, setColor] = useState("#00a3e0");
+  const [textColor, setTextColor] = useState("#ffffff");
   const [saving, setSaving] = useState(false);
 
   const load = useCallback(async () => {
@@ -295,9 +297,9 @@ export default function FormsTab() {
     if (!title) return;
     setSaving(true);
     await fetch("/api/tamimtoastmasterclub/admin/forms", {
-      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ title, icon, color }),
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ title, icon, color, textColor }),
     });
-    setTitle(""); setIcon("ClipboardList"); setColor("#00a3e0"); setSaving(false);
+    setTitle(""); setIcon("ClipboardList"); setColor("#00a3e0"); setTextColor("#ffffff"); setSaving(false);
     load();
   };
 
@@ -309,7 +311,7 @@ export default function FormsTab() {
   };
 
   const startMetaEdit = (f: FormRow) => {
-    setMetaEditId(f.id); setMetaTitle(f.title); setMetaIcon(f.icon); setMetaColor(f.color);
+    setMetaEditId(f.id); setMetaTitle(f.title); setMetaIcon(f.icon); setMetaColor(f.color); setMetaTextColor(f.textColor || "#ffffff");
   };
 
   const saveMeta = async () => {
@@ -317,7 +319,7 @@ export default function FormsTab() {
     setSaving(true);
     await fetch("/api/tamimtoastmasterclub/admin/forms", {
       method: "PATCH", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: metaEditId, title: metaTitle, icon: metaIcon, color: metaColor }),
+      body: JSON.stringify({ id: metaEditId, title: metaTitle, icon: metaIcon, color: metaColor, textColor: metaTextColor }),
     });
     setMetaEditId(null); setSaving(false);
     load();
@@ -356,13 +358,16 @@ export default function FormsTab() {
     <div className="flex flex-col gap-4 max-w-2xl">
       <h2 className="text-lg font-black mb-2">النماذج المخصصة</h2>
 
-      <form onSubmit={add} className="flex flex-col sm:flex-row gap-2 bg-white/5 border border-white/10 rounded-xl p-3 items-start sm:items-end">
-        <IconPicker value={icon} onChange={setIcon} />
-        <div className="w-full sm:w-auto"><ColorPicker label="اللون" value={color} onChange={setColor} /></div>
+      <form onSubmit={add} className="flex flex-col gap-3 bg-white/5 border border-white/10 rounded-xl p-3">
         <input value={title} onChange={e => setTitle(e.target.value)} placeholder="عنوان النموذج"
-          className="flex-1 w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#00a3e0]/50" />
+          className="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#00a3e0]/50" />
+        <IconPicker value={icon} onChange={setIcon} />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <ColorPicker label="لون البوكس" value={color} onChange={setColor} />
+          <ColorPicker label="لون الخط" value={textColor} onChange={setTextColor} />
+        </div>
         <button type="submit" disabled={saving}
-          className="flex items-center justify-center gap-1.5 px-4 py-2 bg-[#00a3e0] text-[#1c2b39] font-black text-xs rounded-lg disabled:opacity-60 shrink-0">
+          className="self-start flex items-center justify-center gap-1.5 px-4 py-2 bg-[#00a3e0] text-[#1c2b39] font-black text-xs rounded-lg disabled:opacity-60">
           <Plus size={14} /> إضافة نموذج
         </button>
       </form>
@@ -375,12 +380,13 @@ export default function FormsTab() {
             const Icon = getClubIcon(f.icon);
             if (metaEditId === f.id) {
               return (
-                <div key={f.id} className="flex flex-col gap-3 bg-white/5 border border-[#00a3e0]/30 rounded-xl px-4 py-3">
-                  <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-end">
-                    <IconPicker value={metaIcon} onChange={setMetaIcon} />
-                    <div className="w-full sm:w-auto"><ColorPicker label="اللون" value={metaColor} onChange={setMetaColor} /></div>
-                    <input value={metaTitle} onChange={e => setMetaTitle(e.target.value)}
-                      className="flex-1 w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#00a3e0]/50" />
+                <div key={f.id} className="flex flex-col gap-3 bg-white/5 border border-[#00a3e0]/30 rounded-xl p-3">
+                  <input value={metaTitle} onChange={e => setMetaTitle(e.target.value)}
+                    className="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#00a3e0]/50" />
+                  <IconPicker value={metaIcon} onChange={setMetaIcon} />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <ColorPicker label="لون البوكس" value={metaColor} onChange={setMetaColor} />
+                    <ColorPicker label="لون الخط" value={metaTextColor} onChange={setMetaTextColor} />
                   </div>
                   <div className="flex items-center gap-2 self-end">
                     <button onClick={() => setMetaEditId(null)} className="px-3 py-1.5 text-xs font-bold text-gray-400 hover:text-white">إلغاء</button>

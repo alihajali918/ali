@@ -26,6 +26,7 @@ interface FormDef {
   title: string;
   icon: string;
   color: string;
+  textColor?: string | null;
   fields: FieldDef[];
 }
 
@@ -90,7 +91,7 @@ export default function FormSection({ form }: { form: FormDef }) {
     }
   };
 
-  const textColor = getContrastText(form.color);
+  const textColor = form.textColor || getContrastText(form.color);
 
   return (
     <div className="rounded-2xl p-6 border border-white/10 shadow-lg" style={{ background: form.color }}>

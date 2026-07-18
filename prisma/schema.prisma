@@ -82,6 +82,7 @@ model ClubLink {
   title     String
   url       String    @default("")
   color     String?
+  textColor String?
   formId    Int?
   form      ClubForm? @relation(fields: [formId], references: [id], onDelete: Cascade)
   order     Int       @default(0)
@@ -143,6 +144,7 @@ model ClubForm {
   title     String
   icon      String   @default("ClipboardList")
   color     String   @default("#00a3e0")
+  textColor String?
   order     Int      @default(0)
   active    Boolean  @default(true)
   createdAt DateTime @default(now())

@@ -16,7 +16,7 @@ interface Settings {
   colorPrimary: string; colorSecondary: string; colorAccent: string;
   titleFontSize: number; bodyFontScale: number;
 }
-interface LinkRow { id: number; title: string; url: string; color: string | null; formId: number | null; form?: { id: number; title: string; icon: string; color: string } | null; order: number; }
+interface LinkRow { id: number; title: string; url: string; color: string | null; textColor: string | null; formId: number | null; form?: { id: number; title: string; icon: string; color: string } | null; order: number; }
 interface FormOption { id: number; title: string; }
 interface CategoryRow { id: number; label: string; icon: string; order: number; }
 interface SpeakerRow { id: number; categoryId: number; name: string; }
@@ -237,7 +237,13 @@ function LinksTab({ links, onChanged }: { links: LinkRow[]; onChanged: () => voi
   const [formOptions, setFormOptions] = useState<FormOption[]>([]);
   const [formId, setFormId] = useState<number | "">("");
   const [color, setColor] = useState("#ffffff");
+  const [textColor, setTextColor] = useState("#1c2b39");
   const [saving, setSaving] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editUrl, setEditUrl] = useState("");
+  const [editColor, setEditColor] = useState("#ffffff");
+  const [editTextColor, setEditTextColor] = useState("#1c2b39");
 
   useEffect(() => {
     fetch("/api/tamimtoastmasterclub/admin/forms")
@@ -255,25 +261,25 @@ function LinksTab({ links, onChanged }: { links: LinkRow[]; onChanged: () => voi
   const add = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title) return;
-    const body: { title: string; url?: string; formId?: number; color?: string } = { title };
+    const body: { title: string; url?: string; formId?: number; color?: string; textColor?: string } = { title };
     if (mode === "file") {
       if (!file) return;
       if (file.size > 4 * 1024 * 1024) { alert("الملف أكبر من 4 ميغا، اختاري ملف أصغر."); return; }
       body.url = await fileToDataUrl(file);
-      body.color = color;
+      body.color = color; body.textColor = textColor;
     } else if (mode === "form") {
       if (!formId) return;
       body.formId = formId;
     } else {
       if (!url) return;
       body.url = url;
-      body.color = color;
+      body.color = color; body.textColor = textColor;
     }
     setSaving(true);
     await fetch("/api/tamimtoastmasterclub/admin/links", {
       method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
     });
-    setTitle(""); setUrl(""); setFile(null); setColor("#ffffff"); setSaving(false);
+    setTitle(""); setUrl(""); setFile(null); setColor("#ffffff"); setTextColor("#1c2b39"); setSaving(false);
     onChanged();
   };
 
@@ -297,10 +303,34 @@ function LinksTab({ links, onChanged }: { links: LinkRow[]; onChanged: () => voi
     onChanged();
   };
 
+  const startEdit = (l: LinkRow) => {
+    setEditingId(l.id);
+    setEditTitle(l.title);
+    setEditUrl(l.url.startsWith("data:") ? "" : l.url);
+    setEditColor(l.color || "#ffffff");
+    setEditTextColor(l.textColor || "#1c2b39");
+  };
+
+  const saveEdit = async () => {
+    if (!editingId || !editTitle) return;
+    const link = links.find(l => l.id === editingId);
+    const data: { title: string; url?: string; color?: string; textColor?: string } = { title: editTitle };
+    if (!link?.form) {
+      if (editUrl) data.url = editUrl;
+      data.color = editColor;
+      data.textColor = editTextColor;
+    }
+    await fetch("/api/tamimtoastmasterclub/admin/links", {
+      method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: editingId, ...data }),
+    });
+    setEditingId(null);
+    onChanged();
+  };
+
   return (
     <div className="flex flex-col gap-4 max-w-xl">
       <h2 className="text-lg font-black mb-2">الروابط الديناميكية</h2>
-      <form onSubmit={add} className="flex flex-col gap-2 bg-white/5 border border-white/10 rounded-xl p-3">
+      <form onSubmit={add} className="flex flex-col gap-3 bg-white/5 border border-white/10 rounded-xl p-3">
         <div className="flex gap-2">
           <button type="button" onClick={() => setMode("url")}
             className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all ${mode === "url" ? "bg-[#00a3e0]/15 text-[#00a3e0]" : "text-gray-500 hover:text-white"}`}>
@@ -315,38 +345,65 @@ function LinksTab({ links, onChanged }: { links: LinkRow[]; onChanged: () => voi
             نموذج
           </button>
         </div>
-        <div className="flex flex-col sm:flex-row gap-2">
-          <input value={title} onChange={e => setTitle(e.target.value)} placeholder="اسم الزر"
-            className="flex-1 bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#00a3e0]/50" />
-          {mode === "url" && (
-            <input value={url} onChange={e => setUrl(e.target.value)} placeholder="الرابط" dir="ltr"
-              className="flex-1 bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#00a3e0]/50" />
-          )}
-          {mode === "file" && (
-            <input type="file" accept="application/pdf,image/*" onChange={e => setFile(e.target.files?.[0] ?? null)}
-              className="flex-1 bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-xs text-gray-300 outline-none file:ml-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:bg-[#00a3e0]/20 file:text-[#00a3e0] file:text-xs file:font-bold" />
-          )}
-          {mode === "form" && (
-            formOptions.length === 0 ? (
-              <p className="flex-1 text-xs text-gray-500 self-center">أنشئ نموذجاً من تبويب "النماذج" أولاً</p>
-            ) : (
-              <select value={formId} onChange={e => setFormId(Number(e.target.value))}
-                className="flex-1 bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm outline-none">
-                {formOptions.map(f => <option key={f.id} value={f.id}>{f.title}</option>)}
-              </select>
-            )
-          )}
-          {mode !== "form" && <div className="w-full sm:w-auto"><ColorPicker label="اللون" value={color} onChange={setColor} /></div>}
-          <button type="submit" disabled={saving || (mode === "form" && formOptions.length === 0)}
-            className="flex items-center justify-center gap-1.5 px-4 py-2 bg-[#00a3e0] text-[#1c2b39] font-black text-xs rounded-lg disabled:opacity-60 shrink-0">
-            <Plus size={14} /> إضافة
-          </button>
-        </div>
+
+        <input value={title} onChange={e => setTitle(e.target.value)} placeholder="اسم الزر"
+          className="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#00a3e0]/50" />
+
+        {mode === "url" && (
+          <input value={url} onChange={e => setUrl(e.target.value)} placeholder="الرابط" dir="ltr"
+            className="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#00a3e0]/50" />
+        )}
+        {mode === "file" && (
+          <input type="file" accept="application/pdf,image/*" onChange={e => setFile(e.target.files?.[0] ?? null)}
+            className="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-xs text-gray-300 outline-none file:ml-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:bg-[#00a3e0]/20 file:text-[#00a3e0] file:text-xs file:font-bold" />
+        )}
+        {mode === "form" && (
+          formOptions.length === 0 ? (
+            <p className="text-xs text-gray-500">أنشئ نموذجاً من تبويب "النماذج" أولاً</p>
+          ) : (
+            <select value={formId} onChange={e => setFormId(Number(e.target.value))}
+              className="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm outline-none">
+              {formOptions.map(f => <option key={f.id} value={f.id}>{f.title}</option>)}
+            </select>
+          )
+        )}
+
+        {mode !== "form" && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <ColorPicker label="لون البوكس" value={color} onChange={setColor} />
+            <ColorPicker label="لون الخط" value={textColor} onChange={setTextColor} />
+          </div>
+        )}
+
+        <button type="submit" disabled={saving || (mode === "form" && formOptions.length === 0)}
+          className="self-start flex items-center justify-center gap-1.5 px-4 py-2 bg-[#00a3e0] text-[#1c2b39] font-black text-xs rounded-lg disabled:opacity-60">
+          <Plus size={14} /> إضافة
+        </button>
+
         {mode === "file" && <p className="text-[11px] text-gray-500">الملف بينحفظ مباشرة بقاعدة البيانات — يفضّل ملفات أصغر من 4 ميغا.</p>}
         {mode === "form" && <p className="text-[11px] text-gray-500">بيظهر بمكانه بالضبط بين الروابط، ويفتح ضمن نفس البطاقة عند الضغط عليها.</p>}
       </form>
       <div className="flex flex-col gap-2">
-        {links.map((l, i) => (
+        {links.map((l, i) => editingId === l.id ? (
+          <div key={l.id} className="flex flex-col gap-3 bg-white/5 border border-[#00a3e0]/30 rounded-xl p-3">
+            <input value={editTitle} onChange={e => setEditTitle(e.target.value)} placeholder="اسم الزر"
+              className="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#00a3e0]/50" />
+            {!l.form && (
+              <>
+                <input value={editUrl} onChange={e => setEditUrl(e.target.value)} placeholder="الرابط (اتركه فاضي لو ملف مرفوع)" dir="ltr"
+                  className="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#00a3e0]/50" />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <ColorPicker label="لون البوكس" value={editColor} onChange={setEditColor} />
+                  <ColorPicker label="لون الخط" value={editTextColor} onChange={setEditTextColor} />
+                </div>
+              </>
+            )}
+            <div className="flex items-center gap-2 self-end">
+              <button onClick={() => setEditingId(null)} className="px-3 py-1.5 text-xs font-bold text-gray-400 hover:text-white">إلغاء</button>
+              <button onClick={saveEdit} className="px-4 py-1.5 bg-[#00a3e0] text-[#1c2b39] font-black text-xs rounded-lg">حفظ</button>
+            </div>
+          </div>
+        ) : (
           <div key={l.id} className="flex items-center justify-between gap-3 bg-white/5 border border-white/10 rounded-xl px-4 py-3">
             <div className="flex flex-col shrink-0">
               <button onClick={() => move(i, -1)} disabled={i === 0}
@@ -369,6 +426,9 @@ function LinksTab({ links, onChanged }: { links: LinkRow[]; onChanged: () => voi
                 <p className="text-xs text-gray-500 truncate" dir="ltr">{l.url}</p>
               )}
             </div>
+            <button onClick={() => startEdit(l)} className="p-1.5 rounded-lg text-gray-500 hover:text-[#00a3e0] hover:bg-[#00a3e0]/10 shrink-0">
+              <Pencil size={14} />
+            </button>
             <button onClick={() => remove(l.id)} className="p-1.5 rounded-lg text-gray-500 hover:text-red-400 hover:bg-red-500/10 shrink-0">
               <Trash2 size={14} />
             </button>

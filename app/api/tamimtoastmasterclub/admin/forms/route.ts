@@ -13,11 +13,11 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   if (!await isClubAdmin(req)) return NextResponse.json({ error: "غير مصرح" }, { status: 401 });
-  const { title, icon, color } = await req.json();
+  const { title, icon, color, textColor } = await req.json();
   if (!title) return NextResponse.json({ error: "العنوان مطلوب" }, { status: 400 });
   const count = await db.clubForm.count();
   const form = await db.clubForm.create({
-    data: { title, icon: icon || "ClipboardList", color: color || "#00a3e0", order: count },
+    data: { title, icon: icon || "ClipboardList", color: color || "#00a3e0", textColor: textColor || null, order: count },
   });
   return NextResponse.json(form);
 }

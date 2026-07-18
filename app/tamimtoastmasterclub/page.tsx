@@ -17,9 +17,9 @@ export const metadata: Metadata = {
   alternates: { canonical: `${getSiteUrl()}/tamimtoastmasterclub` },
 };
 
-function linkStyle(title: string, color: string | null) {
+function linkStyle(title: string, color: string | null, textColor: string | null) {
   const t = title.toLowerCase();
-  if (color) return { bg: color, text: getContrastText(color), icon: CalendarDays };
+  if (color) return { bg: color, text: textColor || getContrastText(color), icon: CalendarDays };
   if (t.includes("ملخص") || t.includes("أجندة") || t.includes("اجندة")) {
     return { bg: "#074466", text: "#ffffff", icon: BookOpen };
   }
@@ -119,7 +119,7 @@ export default async function TamimToastmastersClubPage() {
                   </div>
                 );
               }
-              const style = linkStyle(link.title, link.color);
+              const style = linkStyle(link.title, link.color, link.textColor);
               const Icon = style.icon;
               const isFile = link.url.startsWith("data:");
               return (
