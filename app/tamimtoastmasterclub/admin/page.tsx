@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  LayoutDashboard, Link2, Mic, Vote, LogOut, Loader2, Trash2, Plus, X, ExternalLink, ChevronUp, ChevronDown, Menu, Tags, ClipboardList,
+  LayoutDashboard, Link2, Mic, Vote, LogOut, Loader2, Trash2, Plus, X, ExternalLink, ChevronUp, ChevronDown, Menu, Tags, ClipboardList, Pencil, Check,
 } from "lucide-react";
 import IconPicker from "./IconPicker";
 import ColorPicker from "./ColorPicker";
@@ -16,7 +16,7 @@ interface Settings {
   colorPrimary: string; colorSecondary: string; colorAccent: string;
   titleFontSize: number; bodyFontScale: number;
 }
-interface LinkRow { id: number; title: string; url: string; formId: number | null; form?: { id: number; title: string; icon: string; color: string } | null; order: number; }
+interface LinkRow { id: number; title: string; url: string; color: string | null; formId: number | null; form?: { id: number; title: string; icon: string; color: string } | null; order: number; }
 interface FormOption { id: number; title: string; }
 interface CategoryRow { id: number; label: string; icon: string; order: number; }
 interface SpeakerRow { id: number; categoryId: number; name: string; }
@@ -236,6 +236,7 @@ function LinksTab({ links, onChanged }: { links: LinkRow[]; onChanged: () => voi
   const [file, setFile] = useState<File | null>(null);
   const [formOptions, setFormOptions] = useState<FormOption[]>([]);
   const [formId, setFormId] = useState<number | "">("");
+  const [color, setColor] = useState("#ffffff");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -254,23 +255,25 @@ function LinksTab({ links, onChanged }: { links: LinkRow[]; onChanged: () => voi
   const add = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title) return;
-    const body: { title: string; url?: string; formId?: number } = { title };
+    const body: { title: string; url?: string; formId?: number; color?: string } = { title };
     if (mode === "file") {
       if (!file) return;
       if (file.size > 4 * 1024 * 1024) { alert("الملف أكبر من 4 ميغا، اختاري ملف أصغر."); return; }
       body.url = await fileToDataUrl(file);
+      body.color = color;
     } else if (mode === "form") {
       if (!formId) return;
       body.formId = formId;
     } else {
       if (!url) return;
       body.url = url;
+      body.color = color;
     }
     setSaving(true);
     await fetch("/api/tamimtoastmasterclub/admin/links", {
       method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
     });
-    setTitle(""); setUrl(""); setFile(null); setSaving(false);
+    setTitle(""); setUrl(""); setFile(null); setColor("#ffffff"); setSaving(false);
     onChanged();
   };
 
@@ -333,6 +336,7 @@ function LinksTab({ links, onChanged }: { links: LinkRow[]; onChanged: () => voi
               </select>
             )
           )}
+          {mode !== "form" && <div className="w-full sm:w-auto"><ColorPicker label="اللون" value={color} onChange={setColor} /></div>}
           <button type="submit" disabled={saving || (mode === "form" && formOptions.length === 0)}
             className="flex items-center justify-center gap-1.5 px-4 py-2 bg-[#00a3e0] text-[#1c2b39] font-black text-xs rounded-lg disabled:opacity-60 shrink-0">
             <Plus size={14} /> إضافة
@@ -354,6 +358,9 @@ function LinksTab({ links, onChanged }: { links: LinkRow[]; onChanged: () => voi
                 <ChevronDown size={14} />
               </button>
             </div>
+            {!l.form && (
+              <span className="w-3.5 h-3.5 rounded-full border border-white/20 shrink-0" style={{ background: l.color || "#ffffff" }} />
+            )}
             <div className="min-w-0 flex-1">
               <p className="text-sm font-bold truncate">{l.title}</p>
               {l.form ? (
@@ -454,6 +461,8 @@ function SpeakersTab({ speakers, categories, onChanged }: { speakers: SpeakerRow
   const [categoryId, setCategoryId] = useState<number | "">(categories[0]?.id ?? "");
   const [name, setName] = useState("");
   const [saving, setSaving] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editValue, setEditValue] = useState("");
 
   const add = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -467,10 +476,21 @@ function SpeakersTab({ speakers, categories, onChanged }: { speakers: SpeakerRow
   };
 
   const remove = async (id: number) => {
-    if (!confirm("حذف هذا الخطيب؟")) return;
+    if (!confirm("حذف هذا الخطيب؟ رح يمسح أي أصوات مرتبطة بفئته.")) return;
     await fetch("/api/tamimtoastmasterclub/admin/speakers", {
       method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }),
     });
+    onChanged();
+  };
+
+  const startEdit = (s: SpeakerRow) => { setEditingId(s.id); setEditValue(s.name); };
+
+  const saveEdit = async () => {
+    if (!editingId || !editValue) return;
+    await fetch("/api/tamimtoastmasterclub/admin/speakers", {
+      method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: editingId, name: editValue }),
+    });
+    setEditingId(null); setEditValue("");
     onChanged();
   };
 
@@ -480,7 +500,8 @@ function SpeakersTab({ speakers, categories, onChanged }: { speakers: SpeakerRow
 
   return (
     <div className="flex flex-col gap-4 max-w-xl">
-      <h2 className="text-lg font-black mb-2">الخطباء والمقيّمون</h2>
+      <h2 className="text-lg font-black">الخطباء والمقيّمون</h2>
+      <p className="text-[11px] text-gray-500 -mt-2">أي إضافة أو حذف أو تعديل اسم بيصفّر أصوات فئته تلقائياً ويسمح بالتصويت من جديد.</p>
       <form onSubmit={add} className="flex flex-col sm:flex-row gap-2 bg-white/5 border border-white/10 rounded-xl p-3">
         <select value={categoryId} onChange={e => setCategoryId(Number(e.target.value))}
           className="bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm outline-none">
@@ -498,12 +519,31 @@ function SpeakersTab({ speakers, categories, onChanged }: { speakers: SpeakerRow
           <p className="text-xs font-black text-gray-400 uppercase tracking-wider mb-2">{cat.label}</p>
           <div className="flex flex-col gap-2">
             {speakers.filter(s => s.categoryId === cat.id).map(s => (
-              <div key={s.id} className="flex items-center justify-between gap-3 bg-white/5 border border-white/10 rounded-xl px-4 py-2.5">
-                <p className="text-sm font-semibold">{s.name}</p>
-                <button onClick={() => remove(s.id)} className="p-1.5 rounded-lg text-gray-500 hover:text-red-400 hover:bg-red-500/10">
-                  <X size={14} />
-                </button>
-              </div>
+              editingId === s.id ? (
+                <div key={s.id} className="flex items-center gap-2 bg-white/5 border border-[#00a3e0]/30 rounded-xl px-4 py-2.5">
+                  <input value={editValue} onChange={e => setEditValue(e.target.value)} autoFocus
+                    onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); saveEdit(); } if (e.key === "Escape") setEditingId(null); }}
+                    className="flex-1 bg-black/20 border border-white/10 rounded-lg px-3 py-1.5 text-sm outline-none focus:border-[#00a3e0]/50" />
+                  <button onClick={saveEdit} className="p-1.5 rounded-lg text-emerald-400 hover:bg-emerald-500/10">
+                    <Check size={14} />
+                  </button>
+                  <button onClick={() => setEditingId(null)} className="p-1.5 rounded-lg text-gray-500 hover:text-white">
+                    <X size={14} />
+                  </button>
+                </div>
+              ) : (
+                <div key={s.id} className="flex items-center justify-between gap-3 bg-white/5 border border-white/10 rounded-xl px-4 py-2.5">
+                  <p className="text-sm font-semibold">{s.name}</p>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button onClick={() => startEdit(s)} className="p-1.5 rounded-lg text-gray-500 hover:text-[#00a3e0] hover:bg-[#00a3e0]/10">
+                      <Pencil size={14} />
+                    </button>
+                    <button onClick={() => remove(s.id)} className="p-1.5 rounded-lg text-gray-500 hover:text-red-400 hover:bg-red-500/10">
+                      <X size={14} />
+                    </button>
+                  </div>
+                </div>
+              )
             ))}
             {speakers.filter(s => s.categoryId === cat.id).length === 0 && (
               <p className="text-gray-600 text-xs px-1">لا يوجد أحد بهذه الفئة</p>

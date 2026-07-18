@@ -81,6 +81,7 @@ model ClubLink {
   id        Int       @id @default(autoincrement())
   title     String
   url       String    @default("")
+  color     String?
   formId    Int?
   form      ClubForm? @relation(fields: [formId], references: [id], onDelete: Cascade)
   order     Int       @default(0)

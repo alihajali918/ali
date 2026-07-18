@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { CircleCheck, Loader2, ChevronDown } from "lucide-react";
 import { getClubIcon } from "../lib/club-icons";
+import { getContrastText } from "../lib/contrast";
 
 type FieldType =
   | "SHORT_ANSWER" | "PARAGRAPH" | "MULTIPLE_CHOICE" | "CHECKBOXES" | "DROPDOWN"
@@ -89,10 +90,12 @@ export default function FormSection({ form }: { form: FormDef }) {
     }
   };
 
+  const textColor = getContrastText(form.color);
+
   return (
     <div className="rounded-2xl p-6 border border-white/10 shadow-lg" style={{ background: form.color }}>
       <button onClick={() => setOpen(v => !v)}
-        className="w-full flex items-center justify-between text-white transition font-bold text-[1.125em]">
+        className="w-full flex items-center justify-between transition font-bold text-[1.125em]" style={{ color: textColor }}>
         <span className="flex items-center gap-3">
           <Icon size={22} />
           <span>{form.title}</span>

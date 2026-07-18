@@ -6,6 +6,7 @@ import { db } from "../lib/db";
 import { getSiteUrl } from "../lib/site-url";
 import VotingWidget from "./VotingWidget";
 import FormSection from "./FormSection";
+import { getContrastText } from "../lib/contrast";
 import {
   CalendarDays, BookOpen, UserPlus, Instagram, ChevronLeft,
   Info, ArrowUpRight,
@@ -16,16 +17,17 @@ export const metadata: Metadata = {
   alternates: { canonical: `${getSiteUrl()}/tamimtoastmasterclub` },
 };
 
-function linkStyle(title: string) {
+function linkStyle(title: string, color: string | null) {
   const t = title.toLowerCase();
+  if (color) return { bg: color, text: getContrastText(color), icon: CalendarDays };
   if (t.includes("ملخص") || t.includes("أجندة") || t.includes("اجندة")) {
-    return { bg: "#074466", icon: BookOpen };
+    return { bg: "#074466", text: "#ffffff", icon: BookOpen };
   }
   if (t.includes("عضوية") || t.includes("طلب") || t.includes("انضمام")) {
     return { bg: "#fcea84", text: "#1c2b39", icon: UserPlus };
   }
   if (t.includes("انستا") || t.includes("انستغرام") || t.includes("instagram") || t.includes("حساب")) {
-    return { bg: "linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)", icon: Instagram };
+    return { bg: "linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)", text: "#ffffff", icon: Instagram };
   }
   return { bg: "#ffffff", text: "#1c2b39", icon: CalendarDays };
 }
@@ -117,7 +119,7 @@ export default async function TamimToastmastersClubPage() {
                   </div>
                 );
               }
-              const style = linkStyle(link.title);
+              const style = linkStyle(link.title, link.color);
               const Icon = style.icon;
               const isFile = link.url.startsWith("data:");
               return (

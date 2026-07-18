@@ -13,11 +13,11 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   if (!await isClubAdmin(req)) return NextResponse.json({ error: "غير مصرح" }, { status: 401 });
-  const { title, url, formId } = await req.json();
+  const { title, url, formId, color } = await req.json();
   if (!title || (!url && !formId)) return NextResponse.json({ error: "العنوان مطلوب مع رابط أو نموذج" }, { status: 400 });
   const count = await db.clubLink.count();
   const link = await db.clubLink.create({
-    data: { title, url: formId ? "" : url, formId: formId || null, order: count },
+    data: { title, url: formId ? "" : url, formId: formId || null, color: formId ? null : (color || null), order: count },
   });
   return NextResponse.json(link);
 }

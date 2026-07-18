@@ -26,6 +26,15 @@ export async function POST(req: NextRequest) {
   return NextResponse.json(speaker);
 }
 
+export async function PATCH(req: NextRequest) {
+  if (!await isClubAdmin(req)) return NextResponse.json({ error: "غير مصرح" }, { status: 401 });
+  const { id, name } = await req.json();
+  if (!id || !name) return NextResponse.json({ error: "الاسم مطلوب" }, { status: 400 });
+  const speaker = await db.clubSpeaker.update({ where: { id }, data: { name } });
+  await resetCategoryVoting(speaker.categoryId);
+  return NextResponse.json(speaker);
+}
+
 export async function DELETE(req: NextRequest) {
   if (!await isClubAdmin(req)) return NextResponse.json({ error: "غير مصرح" }, { status: 401 });
   const { id } = await req.json();

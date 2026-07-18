@@ -5,7 +5,8 @@
       "WebFetch(domain:www.thebusinessclock.com)",
       "WebFetch(domain:www.loidabritish.com)",
       "Bash(node -e ' *)",
-      "Bash(git commit -m ' *)"
+      "Bash(git commit -m ' *)",
+      "Bash(taskkill //F //PID 15836)"
     ]
   }
 }
