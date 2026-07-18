@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import {
   Plus, Trash2, ChevronUp, ChevronDown, Download, Eye, EyeOff,
-  ArrowRight, Loader2, X,
+  ArrowRight, Loader2, X, Pencil,
 } from "lucide-react";
 import IconPicker from "./IconPicker";
 import ColorPicker from "./ColorPicker";
@@ -35,7 +35,7 @@ interface FormRow {
 }
 interface FieldRow {
   id: number; type: FieldType; label: string; required: boolean; order: number;
-  config: { options?: string[]; min?: number; max?: number; minLabel?: string; maxLabel?: string; rows?: string[]; columns?: string[] };
+  config: { options?: string[]; allowOther?: boolean; min?: number; max?: number; minLabel?: string; maxLabel?: string; rows?: string[]; columns?: string[] };
 }
 
 function TagListEditor({ values, onChange, placeholder }: { values: string[]; onChange: (v: string[]) => void; placeholder: string }) {
@@ -73,11 +73,17 @@ function TagListEditor({ values, onChange, placeholder }: { values: string[]; on
 function FieldConfigEditor({ type, config, onChange }: { type: FieldType; config: FieldRow["config"]; onChange: (c: FieldRow["config"]) => void }) {
   if (OPTION_TYPES.includes(type)) {
     return (
-      <TagListEditor
-        values={config.options || []}
-        onChange={options => onChange({ ...config, options })}
-        placeholder="أضف خياراً واضغط Enter"
-      />
+      <div className="flex flex-col gap-2">
+        <TagListEditor
+          values={config.options || []}
+          onChange={options => onChange({ ...config, options })}
+          placeholder="أضف خياراً واضغط Enter"
+        />
+        <label className="flex items-center gap-2 text-xs text-gray-400">
+          <input type="checkbox" checked={!!config.allowOther} onChange={e => onChange({ ...config, allowOther: e.target.checked })} />
+          السماح بخيار "أخرى" (نص حر)
+        </label>
+      </div>
     );
   }
   if (type === "LINEAR_SCALE") {
@@ -118,6 +124,7 @@ function FieldConfigEditor({ type, config, onChange }: { type: FieldType; config
 function FieldsEditor({ form, onBack }: { form: FormRow; onBack: () => void }) {
   const [fields, setFields] = useState<FieldRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [editingFieldId, setEditingFieldId] = useState<number | null>(null);
   const [type, setType] = useState<FieldType>("SHORT_ANSWER");
   const [label, setLabel] = useState("");
   const [required, setRequired] = useState(false);
@@ -132,15 +139,35 @@ function FieldsEditor({ form, onBack }: { form: FormRow; onBack: () => void }) {
 
   useEffect(() => { load(); }, [load]);
 
-  const add = async (e: React.FormEvent) => {
+  const resetForm = () => {
+    setEditingFieldId(null); setLabel(""); setRequired(false); setConfig({}); setType("SHORT_ANSWER");
+  };
+
+  const startEdit = (f: FieldRow) => {
+    setEditingFieldId(f.id);
+    setType(f.type);
+    setLabel(f.label);
+    setRequired(f.required);
+    setConfig(f.config || {});
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const save = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!label) return;
     setSaving(true);
-    await fetch(`/api/tamimtoastmasterclub/admin/forms/${form.id}/fields`, {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ type, label, required, config }),
-    });
-    setLabel(""); setRequired(false); setConfig({}); setType("SHORT_ANSWER"); setSaving(false);
+    if (editingFieldId) {
+      await fetch(`/api/tamimtoastmasterclub/admin/forms/${form.id}/fields`, {
+        method: "PATCH", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: editingFieldId, type, label, required, config }),
+      });
+    } else {
+      await fetch(`/api/tamimtoastmasterclub/admin/forms/${form.id}/fields`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type, label, required, config }),
+      });
+    }
+    resetForm(); setSaving(false);
     load();
   };
 
@@ -171,7 +198,10 @@ function FieldsEditor({ form, onBack }: { form: FormRow; onBack: () => void }) {
       </button>
       <h2 className="text-lg font-black">حقول: {form.title}</h2>
 
-      <form onSubmit={add} className="flex flex-col gap-3 bg-white/5 border border-white/10 rounded-xl p-4">
+      <form onSubmit={save} className="flex flex-col gap-3 bg-white/5 border border-white/10 rounded-xl p-4">
+        {editingFieldId && (
+          <p className="text-xs font-bold text-[#00a3e0]">تعديل حقل موجود</p>
+        )}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <select value={type} onChange={e => { setType(e.target.value as FieldType); setConfig({}); }}
             className="bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm outline-none">
@@ -190,10 +220,17 @@ function FieldsEditor({ form, onBack }: { form: FormRow; onBack: () => void }) {
             <input type="checkbox" checked={required} onChange={e => setRequired(e.target.checked)} />
             حقل إلزامي
           </label>
-          <button type="submit" disabled={saving}
-            className="flex items-center gap-1.5 px-4 py-2 bg-[#00a3e0] text-[#1c2b39] font-black text-xs rounded-lg disabled:opacity-60">
-            <Plus size={14} /> إضافة الحقل
-          </button>
+          <div className="flex items-center gap-2">
+            {editingFieldId && (
+              <button type="button" onClick={resetForm} className="px-3 py-2 text-xs font-bold text-gray-400 hover:text-white">
+                إلغاء
+              </button>
+            )}
+            <button type="submit" disabled={saving}
+              className="flex items-center gap-1.5 px-4 py-2 bg-[#00a3e0] text-[#1c2b39] font-black text-xs rounded-lg disabled:opacity-60">
+              <Plus size={14} /> {editingFieldId ? "حفظ التعديل" : "إضافة الحقل"}
+            </button>
+          </div>
         </div>
       </form>
 
@@ -217,6 +254,9 @@ function FieldsEditor({ form, onBack }: { form: FormRow; onBack: () => void }) {
                 <p className="text-sm font-bold truncate">{f.label} {f.required && <span className="text-red-400">*</span>}</p>
                 <p className="text-[11px] text-gray-500">{FIELD_TYPE_LABEL[f.type]}</p>
               </div>
+              <button onClick={() => startEdit(f)} className="p-1.5 rounded-lg text-gray-500 hover:text-[#00a3e0] hover:bg-[#00a3e0]/10 shrink-0">
+                <Pencil size={14} />
+              </button>
               <button onClick={() => remove(f.id)} className="p-1.5 rounded-lg text-gray-500 hover:text-red-400 hover:bg-red-500/10 shrink-0">
                 <Trash2 size={14} />
               </button>
@@ -233,6 +273,10 @@ export default function FormsTab() {
   const [forms, setForms] = useState<FormRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [metaEditId, setMetaEditId] = useState<number | null>(null);
+  const [metaTitle, setMetaTitle] = useState("");
+  const [metaIcon, setMetaIcon] = useState("ClipboardList");
+  const [metaColor, setMetaColor] = useState("#00a3e0");
   const [title, setTitle] = useState("");
   const [icon, setIcon] = useState("ClipboardList");
   const [color, setColor] = useState("#00a3e0");
@@ -261,6 +305,21 @@ export default function FormsTab() {
     await fetch("/api/tamimtoastmasterclub/admin/forms", {
       method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: f.id, active: !f.active }),
     });
+    load();
+  };
+
+  const startMetaEdit = (f: FormRow) => {
+    setMetaEditId(f.id); setMetaTitle(f.title); setMetaIcon(f.icon); setMetaColor(f.color);
+  };
+
+  const saveMeta = async () => {
+    if (!metaEditId) return;
+    setSaving(true);
+    await fetch("/api/tamimtoastmasterclub/admin/forms", {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: metaEditId, title: metaTitle, icon: metaIcon, color: metaColor }),
+    });
+    setMetaEditId(null); setSaving(false);
     load();
   };
 
@@ -314,6 +373,23 @@ export default function FormsTab() {
         <div className="flex flex-col gap-2">
           {forms.map((f, i) => {
             const Icon = getClubIcon(f.icon);
+            if (metaEditId === f.id) {
+              return (
+                <div key={f.id} className="flex flex-col gap-3 bg-white/5 border border-[#00a3e0]/30 rounded-xl px-4 py-3">
+                  <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-end">
+                    <IconPicker value={metaIcon} onChange={setMetaIcon} />
+                    <div className="w-full sm:w-auto"><ColorPicker label="اللون" value={metaColor} onChange={setMetaColor} /></div>
+                    <input value={metaTitle} onChange={e => setMetaTitle(e.target.value)}
+                      className="flex-1 w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#00a3e0]/50" />
+                  </div>
+                  <div className="flex items-center gap-2 self-end">
+                    <button onClick={() => setMetaEditId(null)} className="px-3 py-1.5 text-xs font-bold text-gray-400 hover:text-white">إلغاء</button>
+                    <button onClick={saveMeta} disabled={saving}
+                      className="px-4 py-1.5 bg-[#00a3e0] text-[#1c2b39] font-black text-xs rounded-lg disabled:opacity-60">حفظ</button>
+                  </div>
+                </div>
+              );
+            }
             return (
               <div key={f.id} className="flex flex-col gap-2 bg-white/5 border border-white/10 rounded-xl px-4 py-3">
                 <div className="flex items-center justify-between gap-3">
@@ -332,6 +408,9 @@ export default function FormsTab() {
                     <p className="text-sm font-bold truncate">{f.title}</p>
                     <p className="text-[11px] text-gray-500">{f._count.fields} حقل · {f._count.submissions} رد</p>
                   </div>
+                  <button onClick={() => startMetaEdit(f)} className="p-1.5 rounded-lg text-gray-500 hover:text-[#00a3e0] hover:bg-[#00a3e0]/10 shrink-0">
+                    <Pencil size={14} />
+                  </button>
                   <button onClick={() => toggleActive(f)} title={f.active ? "إخفاء من الصفحة" : "إظهار بالصفحة"}
                     className={`p-1.5 rounded-lg shrink-0 ${f.active ? "text-emerald-400 hover:bg-emerald-500/10" : "text-gray-600 hover:bg-white/5"}`}>
                     {f.active ? <Eye size={14} /> : <EyeOff size={14} />}

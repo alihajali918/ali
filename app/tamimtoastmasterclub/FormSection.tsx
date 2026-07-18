@@ -14,7 +14,7 @@ interface FieldDef {
   label: string;
   required: boolean;
   config: {
-    options?: string[];
+    options?: string[]; allowOther?: boolean;
     min?: number; max?: number; minLabel?: string; maxLabel?: string;
     rows?: string[]; columns?: string[];
   };
@@ -42,6 +42,8 @@ function fileToDataUrl(file: File) {
 export default function FormSection({ form }: { form: FormDef }) {
   const [open, setOpen] = useState(false);
   const [answers, setAnswers] = useState<Record<number, unknown>>({});
+  const [otherActive, setOtherActive] = useState<Record<number, boolean>>({});
+  const [otherText, setOtherText] = useState<Record<number, string>>({});
   const [sending, setSending] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -58,10 +60,20 @@ export default function FormSection({ form }: { form: FormDef }) {
     setSending(true);
     setError(null);
     try {
+      const finalAnswers: Record<number, unknown> = { ...answers };
+      for (const field of form.fields) {
+        if (!field.config.allowOther || !otherActive[field.id]) continue;
+        if (field.type === "CHECKBOXES") {
+          const arr = (Array.isArray(answers[field.id]) ? answers[field.id] : []) as string[];
+          finalAnswers[field.id] = otherText[field.id] ? [...arr, otherText[field.id]] : arr;
+        } else {
+          finalAnswers[field.id] = otherText[field.id] || "";
+        }
+      }
       const res = await fetch(`/api/tamimtoastmasterclub/forms/${form.id}/submit`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ answers }),
+        body: JSON.stringify({ answers: finalAnswers }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -123,11 +135,27 @@ export default function FormSection({ form }: { form: FormDef }) {
                   )}
 
                   {field.type === "DROPDOWN" && (
-                    <select required={field.required} className={inputCls}
-                      value={(answers[field.id] as string) || ""} onChange={e => set(field.id, e.target.value)}>
-                      <option value="" disabled>اختر...</option>
-                      {(field.config.options || []).map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                    </select>
+                    <div className="flex flex-col gap-1.5">
+                      <select required={field.required} className={inputCls}
+                        value={otherActive[field.id] ? "__other__" : (answers[field.id] as string) || ""}
+                        onChange={e => {
+                          if (e.target.value === "__other__") {
+                            setOtherActive(a => ({ ...a, [field.id]: true }));
+                          } else {
+                            setOtherActive(a => ({ ...a, [field.id]: false }));
+                            set(field.id, e.target.value);
+                          }
+                        }}>
+                        <option value="" disabled>اختر...</option>
+                        {(field.config.options || []).map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                        {field.config.allowOther && <option value="__other__">أخرى...</option>}
+                      </select>
+                      {field.config.allowOther && otherActive[field.id] && (
+                        <input value={otherText[field.id] || ""} placeholder="اكتب إجابتك"
+                          onChange={e => setOtherText(t => ({ ...t, [field.id]: e.target.value }))}
+                          className={inputCls} />
+                      )}
+                    </div>
                   )}
 
                   {field.type === "MULTIPLE_CHOICE" && (
@@ -135,10 +163,22 @@ export default function FormSection({ form }: { form: FormDef }) {
                       {(field.config.options || []).map(opt => (
                         <label key={opt} className="flex items-center gap-2 text-sm">
                           <input type="radio" name={`field-${field.id}`} required={field.required}
-                            checked={answers[field.id] === opt} onChange={() => set(field.id, opt)} />
+                            checked={!otherActive[field.id] && answers[field.id] === opt}
+                            onChange={() => { setOtherActive(a => ({ ...a, [field.id]: false })); set(field.id, opt); }} />
                           {opt}
                         </label>
                       ))}
+                      {field.config.allowOther && (
+                        <label className="flex items-center gap-2 text-sm">
+                          <input type="radio" name={`field-${field.id}`}
+                            checked={!!otherActive[field.id]}
+                            onChange={() => setOtherActive(a => ({ ...a, [field.id]: true }))} />
+                          أخرى:
+                          <input value={otherText[field.id] || ""} disabled={!otherActive[field.id]}
+                            onChange={e => setOtherText(t => ({ ...t, [field.id]: e.target.value }))}
+                            className="flex-1 border-b border-gray-300 outline-none text-sm px-1 disabled:opacity-40" />
+                        </label>
+                      )}
                     </div>
                   )}
 
@@ -154,6 +194,16 @@ export default function FormSection({ form }: { form: FormDef }) {
                           </label>
                         );
                       })}
+                      {field.config.allowOther && (
+                        <label className="flex items-center gap-2 text-sm">
+                          <input type="checkbox" checked={!!otherActive[field.id]}
+                            onChange={e => setOtherActive(a => ({ ...a, [field.id]: e.target.checked }))} />
+                          أخرى:
+                          <input value={otherText[field.id] || ""} disabled={!otherActive[field.id]}
+                            onChange={e => setOtherText(t => ({ ...t, [field.id]: e.target.value }))}
+                            className="flex-1 border-b border-gray-300 outline-none text-sm px-1 disabled:opacity-40" />
+                        </label>
+                      )}
                     </div>
                   )}
 
