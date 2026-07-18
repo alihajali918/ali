@@ -50,7 +50,7 @@ export default async function TamimToastmastersClubPage() {
 
   const alreadyVoted: Record<number, boolean> = {};
   for (const c of categories) {
-    alreadyVoted[c.id] = !!cookieStore.get(`voted_${c.id}_${settings.votingRound}`);
+    alreadyVoted[c.id] = !!cookieStore.get(`voted_${c.id}_${c.votingRound}`);
   }
 
   return (

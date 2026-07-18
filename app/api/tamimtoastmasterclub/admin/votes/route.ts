@@ -20,7 +20,7 @@ export async function DELETE(req: NextRequest) {
   if (!await isClubAdmin(req)) return NextResponse.json({ error: "غير مصرح" }, { status: 401 });
   await db.$transaction([
     db.clubVote.deleteMany(),
-    db.clubSettings.update({ where: { id: 1 }, data: { votingRound: { increment: 1 } } }),
+    db.clubVoteCategory.updateMany({ data: { votingRound: { increment: 1 } } }),
   ]);
   return NextResponse.json({ ok: true });
 }

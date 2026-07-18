@@ -73,7 +73,6 @@ model ClubSettings {
   colorAccent    String @default("#00a3e0")
   titleFontSize  Int    @default(48)
   bodyFontScale  Int    @default(100)
-  votingRound    Int    @default(1)
 
   @@map("club_settings")
 }
@@ -91,11 +90,12 @@ model ClubLink {
 }
 
 model ClubVoteCategory {
-  id        Int      @id @default(autoincrement())
-  label     String
-  icon      String   @default("Vote")
-  order     Int      @default(0)
-  createdAt DateTime @default(now())
+  id          Int      @id @default(autoincrement())
+  label       String
+  icon        String   @default("Vote")
+  order       Int      @default(0)
+  votingRound Int      @default(1)
+  createdAt   DateTime @default(now())
 
   speakers  ClubSpeaker[]
   votes     ClubVote[]

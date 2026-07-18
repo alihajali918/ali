@@ -8,8 +8,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "بيانات غير صحيحة" }, { status: 400 });
     }
 
-    const settings = await db.clubSettings.upsert({ where: { id: 1 }, update: {}, create: { id: 1 } });
-    const cookieName = `voted_${categoryId}_${settings.votingRound}`;
+    const category = await db.clubVoteCategory.findUnique({ where: { id: categoryId } });
+    if (!category) return NextResponse.json({ error: "الفئة غير موجودة" }, { status: 404 });
+    const cookieName = `voted_${categoryId}_${category.votingRound}`;
     if (req.cookies.get(cookieName)) {
       return NextResponse.json({ error: "لقد صوّتّ بهذه الفئة مسبقاً" }, { status: 409 });
     }
