@@ -5,19 +5,22 @@ import { isClubAdmin } from "../../../../lib/club-auth";
 export async function GET(req: NextRequest) {
   if (!await isClubAdmin(req)) return NextResponse.json({ error: "غير مصرح" }, { status: 401 });
   const tally = await db.clubVote.groupBy({
-    by: ["category", "candidate"],
+    by: ["categoryId", "candidate"],
     _count: { candidate: true },
     orderBy: { _count: { candidate: "desc" } },
   });
   const total = await db.clubVote.count();
   return NextResponse.json({
     total,
-    tally: tally.map(t => ({ category: t.category, candidate: t.candidate, votes: t._count.candidate })),
+    tally: tally.map(t => ({ categoryId: t.categoryId, candidate: t.candidate, votes: t._count.candidate })),
   });
 }
 
 export async function DELETE(req: NextRequest) {
   if (!await isClubAdmin(req)) return NextResponse.json({ error: "غير مصرح" }, { status: 401 });
-  await db.clubVote.deleteMany();
+  await db.$transaction([
+    db.clubVote.deleteMany(),
+    db.clubSettings.update({ where: { id: 1 }, data: { votingRound: { increment: 1 } } }),
+  ]);
   return NextResponse.json({ ok: true });
 }

@@ -5,6 +5,7 @@ import { cookies } from "next/headers";
 import { db } from "../lib/db";
 import { getSiteUrl } from "../lib/site-url";
 import VotingWidget from "./VotingWidget";
+import FormSection from "./FormSection";
 import {
   CalendarDays, BookOpen, UserPlus, Instagram, ChevronLeft,
   Info, ArrowUpRight,
@@ -14,8 +15,6 @@ export const metadata: Metadata = {
   title: "نادي تميم توستماسترز",
   alternates: { canonical: `${getSiteUrl()}/tamimtoastmasterclub` },
 };
-
-type Category = "PREPARED" | "EVALUATION" | "IMPROMPTU";
 
 function linkStyle(title: string) {
   const t = title.toLowerCase();
@@ -32,21 +31,25 @@ function linkStyle(title: string) {
 }
 
 export default async function TamimToastmastersClubPage() {
-  const [settings, links, speakers, cookieStore] = await Promise.all([
+  const [settings, links, categories, forms, cookieStore] = await Promise.all([
     db.clubSettings.upsert({ where: { id: 1 }, update: {}, create: { id: 1 } }),
     db.clubLink.findMany({ orderBy: { order: "asc" } }),
-    db.clubSpeaker.findMany({ orderBy: { createdAt: "asc" } }),
+    db.clubVoteCategory.findMany({ orderBy: { order: "asc" }, include: { speakers: { orderBy: { createdAt: "asc" } } } }),
+    db.clubForm.findMany({ where: { active: true }, orderBy: { order: "asc" }, include: { fields: { orderBy: { order: "asc" } } } }),
     cookies(),
   ]);
 
-  const speakersByCategory: Record<Category, string[]> = { PREPARED: [], EVALUATION: [], IMPROMPTU: [] };
-  for (const s of speakers) speakersByCategory[s.category as Category].push(s.name);
+  const votingCategories = categories.map(c => ({
+    id: c.id,
+    label: c.label,
+    icon: c.icon,
+    speakers: c.speakers.map(s => s.name),
+  }));
 
-  const alreadyVoted: Record<Category, boolean> = {
-    PREPARED: !!cookieStore.get("voted_PREPARED"),
-    EVALUATION: !!cookieStore.get("voted_EVALUATION"),
-    IMPROMPTU: !!cookieStore.get("voted_IMPROMPTU"),
-  };
+  const alreadyVoted: Record<number, boolean> = {};
+  for (const c of categories) {
+    alreadyVoted[c.id] = !!cookieStore.get(`voted_${c.id}_${settings.votingRound}`);
+  }
 
   return (
     <div
@@ -130,7 +133,7 @@ export default async function TamimToastmastersClubPage() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-            <VotingWidget speakers={speakersByCategory} alreadyVoted={alreadyVoted} />
+            <VotingWidget categories={votingCategories} alreadyVoted={alreadyVoted} />
 
             {/* about */}
             <div className="lg:col-span-5">
@@ -150,6 +153,11 @@ export default async function TamimToastmastersClubPage() {
               </a>
             </div>
           </div>
+
+          {/* استمارات مخصصة */}
+          {forms.map(form => (
+            <FormSection key={form.id} form={form as any} />
+          ))}
         </div>
       </div>
 

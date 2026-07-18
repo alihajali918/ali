@@ -3,8 +3,12 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  LayoutDashboard, Link2, Mic, Vote, LogOut, Loader2, Trash2, Plus, X, ExternalLink, ChevronUp, ChevronDown, Menu,
+  LayoutDashboard, Link2, Mic, Vote, LogOut, Loader2, Trash2, Plus, X, ExternalLink, ChevronUp, ChevronDown, Menu, Tags, ClipboardList,
 } from "lucide-react";
+import IconPicker from "./IconPicker";
+import ColorPicker from "./ColorPicker";
+import FormsTab from "./FormsTab";
+import { getClubIcon } from "../../lib/club-icons";
 
 interface Settings {
   clubName: string; description: string; logoUrl: string; logoAltUrl: string;
@@ -13,18 +17,17 @@ interface Settings {
   titleFontSize: number; bodyFontScale: number;
 }
 interface LinkRow { id: number; title: string; url: string; order: number; }
-interface SpeakerRow { id: number; category: "PREPARED" | "EVALUATION" | "IMPROMPTU"; name: string; }
-interface VoteTally { category: string; candidate: string; votes: number; }
-
-const CATEGORY_LABEL: Record<string, string> = {
-  PREPARED: "خطبة معدة", EVALUATION: "خطبة تقييم", IMPROMPTU: "خطبة ارتجالية",
-};
+interface CategoryRow { id: number; label: string; icon: string; order: number; }
+interface SpeakerRow { id: number; categoryId: number; name: string; }
+interface VoteTally { categoryId: number; candidate: string; votes: number; }
 
 const NAV = [
-  { id: "settings", label: "الإعدادات", icon: LayoutDashboard },
-  { id: "links",    label: "الروابط",   icon: Link2 },
-  { id: "speakers", label: "الخطباء",   icon: Mic },
-  { id: "votes",    label: "التصويت",   icon: Vote },
+  { id: "settings",   label: "الإعدادات", icon: LayoutDashboard },
+  { id: "links",      label: "الروابط",   icon: Link2 },
+  { id: "categories", label: "الفئات",    icon: Tags },
+  { id: "speakers",   label: "الخطباء",   icon: Mic },
+  { id: "votes",      label: "التصويت",   icon: Vote },
+  { id: "forms",      label: "النماذج",   icon: ClipboardList },
 ];
 
 export default function ClubAdminPage() {
@@ -34,20 +37,23 @@ export default function ClubAdminPage() {
   const [loading, setLoading] = useState(true);
   const [settings, setSettings] = useState<Settings | null>(null);
   const [links, setLinks] = useState<LinkRow[]>([]);
+  const [categories, setCategories] = useState<CategoryRow[]>([]);
   const [speakers, setSpeakers] = useState<SpeakerRow[]>([]);
   const [votes, setVotes] = useState<{ total: number; tally: VoteTally[] }>({ total: 0, tally: [] });
 
   // silent refresh — used after add/edit/delete/reorder so the UI doesn't flash back to the spinner
   const refresh = useCallback(async () => {
-    const [s, l, sp, v] = await Promise.all([
+    const [s, l, c, sp, v] = await Promise.all([
       fetch("/api/tamimtoastmasterclub/admin/settings"),
       fetch("/api/tamimtoastmasterclub/admin/links"),
+      fetch("/api/tamimtoastmasterclub/admin/categories"),
       fetch("/api/tamimtoastmasterclub/admin/speakers"),
       fetch("/api/tamimtoastmasterclub/admin/votes"),
     ]);
     if (s.status === 401) { router.push("/tamimtoastmasterclub/admin/login"); return; }
     setSettings(await s.json());
     setLinks(await l.json());
+    setCategories(await c.json());
     setSpeakers(await sp.json());
     setVotes(await v.json());
   }, [router]);
@@ -150,10 +156,12 @@ export default function ClubAdminPage() {
 
       {/* content */}
       <main className="flex-1 min-w-0 p-4 sm:p-6 md:p-8 max-w-4xl">
-        {active === "settings" && <SettingsTab settings={settings} onSaved={refresh} />}
-        {active === "links"    && <LinksTab links={links} onChanged={refresh} />}
-        {active === "speakers" && <SpeakersTab speakers={speakers} onChanged={refresh} />}
-        {active === "votes"    && <VotesTab votes={votes} onChanged={refresh} />}
+        {active === "settings"   && <SettingsTab settings={settings} onSaved={refresh} />}
+        {active === "links"      && <LinksTab links={links} onChanged={refresh} />}
+        {active === "categories" && <CategoriesTab categories={categories} onChanged={refresh} />}
+        {active === "speakers"   && <SpeakersTab speakers={speakers} categories={categories} onChanged={refresh} />}
+        {active === "votes"      && <VotesTab votes={votes} categories={categories} onChanged={refresh} />}
+        {active === "forms"      && <FormsTab />}
       </main>
     </div>
   );
@@ -196,9 +204,9 @@ function SettingsTab({ settings, onSaved }: { settings: Settings; onSaved: () =>
       <Field label="عنوان النبذة" value={form.aboutTitle} onChange={set("aboutTitle")} />
       <Field label="نص النبذة" value={form.aboutText} onChange={set("aboutText")} textarea />
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <Field label="اللون الأساسي" value={form.colorPrimary} onChange={set("colorPrimary")} />
-        <Field label="اللون الثانوي" value={form.colorSecondary} onChange={set("colorSecondary")} />
-        <Field label="لون التمييز" value={form.colorAccent} onChange={set("colorAccent")} />
+        <ColorPicker label="اللون الأساسي" value={form.colorPrimary} onChange={set("colorPrimary")} />
+        <ColorPicker label="اللون الثانوي" value={form.colorSecondary} onChange={set("colorSecondary")} />
+        <ColorPicker label="لون التمييز" value={form.colorAccent} onChange={set("colorAccent")} />
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="flex flex-col gap-1.5">
@@ -332,17 +340,94 @@ function LinksTab({ links, onChanged }: { links: LinkRow[]; onChanged: () => voi
   );
 }
 
-function SpeakersTab({ speakers, onChanged }: { speakers: SpeakerRow[]; onChanged: () => void }) {
-  const [category, setCategory] = useState<SpeakerRow["category"]>("PREPARED");
+function CategoriesTab({ categories, onChanged }: { categories: CategoryRow[]; onChanged: () => void }) {
+  const [label, setLabel] = useState("");
+  const [icon, setIcon] = useState("Vote");
+  const [saving, setSaving] = useState(false);
+
+  const add = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!label) return;
+    setSaving(true);
+    await fetch("/api/tamimtoastmasterclub/admin/categories", {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ label, icon }),
+    });
+    setLabel(""); setIcon("Vote"); setSaving(false);
+    onChanged();
+  };
+
+  const remove = async (id: number) => {
+    if (!confirm("حذف هذه الفئة؟ رح ينحذف كل الخطباء والأصوات المرتبطين فيها.")) return;
+    await fetch("/api/tamimtoastmasterclub/admin/categories", {
+      method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }),
+    });
+    onChanged();
+  };
+
+  const move = async (index: number, direction: -1 | 1) => {
+    const target = index + direction;
+    if (target < 0 || target >= categories.length) return;
+    const reordered = [...categories];
+    [reordered[index], reordered[target]] = [reordered[target], reordered[index]];
+    await fetch("/api/tamimtoastmasterclub/admin/categories", {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ orderedIds: reordered.map(c => c.id) }),
+    });
+    onChanged();
+  };
+
+  return (
+    <div className="flex flex-col gap-4 max-w-xl">
+      <h2 className="text-lg font-black mb-2">فئات التصويت</h2>
+      <form onSubmit={add} className="flex flex-col sm:flex-row gap-2 bg-white/5 border border-white/10 rounded-xl p-3">
+        <IconPicker value={icon} onChange={setIcon} />
+        <input value={label} onChange={e => setLabel(e.target.value)} placeholder="اسم الفئة (مثال: أفضل خطبة ترحيبية)"
+          className="flex-1 bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#00a3e0]/50" />
+        <button type="submit" disabled={saving}
+          className="flex items-center justify-center gap-1.5 px-4 py-2 bg-[#00a3e0] text-[#1c2b39] font-black text-xs rounded-lg disabled:opacity-60 shrink-0">
+          <Plus size={14} /> إضافة
+        </button>
+      </form>
+      <div className="flex flex-col gap-2">
+        {categories.map((c, i) => {
+          const Icon = getClubIcon(c.icon);
+          return (
+            <div key={c.id} className="flex items-center justify-between gap-3 bg-white/5 border border-white/10 rounded-xl px-4 py-3">
+              <div className="flex flex-col shrink-0">
+                <button onClick={() => move(i, -1)} disabled={i === 0}
+                  className="p-0.5 rounded text-gray-500 hover:text-white disabled:opacity-20 disabled:hover:text-gray-500">
+                  <ChevronUp size={14} />
+                </button>
+                <button onClick={() => move(i, 1)} disabled={i === categories.length - 1}
+                  className="p-0.5 rounded text-gray-500 hover:text-white disabled:opacity-20 disabled:hover:text-gray-500">
+                  <ChevronDown size={14} />
+                </button>
+              </div>
+              <Icon size={16} className="text-[#00a3e0] shrink-0" />
+              <p className="text-sm font-bold flex-1">{c.label}</p>
+              <button onClick={() => remove(c.id)} className="p-1.5 rounded-lg text-gray-500 hover:text-red-400 hover:bg-red-500/10 shrink-0">
+                <Trash2 size={14} />
+              </button>
+            </div>
+          );
+        })}
+        {categories.length === 0 && <p className="text-gray-500 text-sm text-center py-6">لا توجد فئات بعد</p>}
+      </div>
+    </div>
+  );
+}
+
+function SpeakersTab({ speakers, categories, onChanged }: { speakers: SpeakerRow[]; categories: CategoryRow[]; onChanged: () => void }) {
+  const [categoryId, setCategoryId] = useState<number | "">(categories[0]?.id ?? "");
   const [name, setName] = useState("");
   const [saving, setSaving] = useState(false);
 
   const add = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name) return;
+    if (!name || !categoryId) return;
     setSaving(true);
     await fetch("/api/tamimtoastmasterclub/admin/speakers", {
-      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ category, name }),
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ categoryId, name }),
     });
     setName(""); setSaving(false);
     onChanged();
@@ -356,15 +441,17 @@ function SpeakersTab({ speakers, onChanged }: { speakers: SpeakerRow[]; onChange
     onChanged();
   };
 
+  if (categories.length === 0) {
+    return <p className="text-gray-500 text-sm">أضف فئة تصويت واحدة على الأقل من تبويب "الفئات" قبل ما تضيف خطباء.</p>;
+  }
+
   return (
     <div className="flex flex-col gap-4 max-w-xl">
       <h2 className="text-lg font-black mb-2">الخطباء والمقيّمون</h2>
       <form onSubmit={add} className="flex flex-col sm:flex-row gap-2 bg-white/5 border border-white/10 rounded-xl p-3">
-        <select value={category} onChange={e => setCategory(e.target.value as SpeakerRow["category"])}
+        <select value={categoryId} onChange={e => setCategoryId(Number(e.target.value))}
           className="bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm outline-none">
-          <option value="PREPARED">خطبة معدة</option>
-          <option value="EVALUATION">خطبة تقييم</option>
-          <option value="IMPROMPTU">خطبة ارتجالية</option>
+          {categories.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
         </select>
         <input value={name} onChange={e => setName(e.target.value)} placeholder="الاسم"
           className="flex-1 bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#00a3e0]/50" />
@@ -373,11 +460,11 @@ function SpeakersTab({ speakers, onChanged }: { speakers: SpeakerRow[]; onChange
           <Plus size={14} /> إضافة
         </button>
       </form>
-      {(["PREPARED", "EVALUATION", "IMPROMPTU"] as const).map(cat => (
-        <div key={cat}>
-          <p className="text-xs font-black text-gray-400 uppercase tracking-wider mb-2">{CATEGORY_LABEL[cat]}</p>
+      {categories.map(cat => (
+        <div key={cat.id}>
+          <p className="text-xs font-black text-gray-400 uppercase tracking-wider mb-2">{cat.label}</p>
           <div className="flex flex-col gap-2">
-            {speakers.filter(s => s.category === cat).map(s => (
+            {speakers.filter(s => s.categoryId === cat.id).map(s => (
               <div key={s.id} className="flex items-center justify-between gap-3 bg-white/5 border border-white/10 rounded-xl px-4 py-2.5">
                 <p className="text-sm font-semibold">{s.name}</p>
                 <button onClick={() => remove(s.id)} className="p-1.5 rounded-lg text-gray-500 hover:text-red-400 hover:bg-red-500/10">
@@ -385,7 +472,7 @@ function SpeakersTab({ speakers, onChanged }: { speakers: SpeakerRow[]; onChange
                 </button>
               </div>
             ))}
-            {speakers.filter(s => s.category === cat).length === 0 && (
+            {speakers.filter(s => s.categoryId === cat.id).length === 0 && (
               <p className="text-gray-600 text-xs px-1">لا يوجد أحد بهذه الفئة</p>
             )}
           </div>
@@ -395,16 +482,16 @@ function SpeakersTab({ speakers, onChanged }: { speakers: SpeakerRow[]; onChange
   );
 }
 
-function VotesTab({ votes, onChanged }: { votes: { total: number; tally: VoteTally[] }; onChanged: () => void }) {
+function VotesTab({ votes, categories, onChanged }: { votes: { total: number; tally: VoteTally[] }; categories: CategoryRow[]; onChanged: () => void }) {
   const clear = async () => {
-    if (!confirm("مسح كل نتائج التصويت؟ لا يمكن التراجع.")) return;
+    if (!confirm("مسح كل نتائج التصويت وبدء جولة جديدة؟ الكل رح يقدر يصوّت من جديد فوراً.")) return;
     await fetch("/api/tamimtoastmasterclub/admin/votes", { method: "DELETE" });
     onChanged();
   };
 
-  const grouped = (["PREPARED", "EVALUATION", "IMPROMPTU"] as const).map(cat => ({
+  const grouped = categories.map(cat => ({
     cat,
-    rows: votes.tally.filter(v => v.category === cat).sort((a, b) => b.votes - a.votes),
+    rows: votes.tally.filter(v => v.categoryId === cat.id).sort((a, b) => b.votes - a.votes),
   }));
 
   return (
@@ -412,12 +499,12 @@ function VotesTab({ votes, onChanged }: { votes: { total: number; tally: VoteTal
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-black">نتائج التصويت ({votes.total})</h2>
         <button onClick={clear} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-red-400 border border-red-500/20 hover:bg-red-500/10">
-          <Trash2 size={13} /> مسح النتائج
+          <Trash2 size={13} /> بدء جولة جديدة
         </button>
       </div>
       {grouped.map(({ cat, rows }) => (
-        <div key={cat}>
-          <p className="text-xs font-black text-gray-400 uppercase tracking-wider mb-2">{CATEGORY_LABEL[cat]}</p>
+        <div key={cat.id}>
+          <p className="text-xs font-black text-gray-400 uppercase tracking-wider mb-2">{cat.label}</p>
           <div className="flex flex-col gap-2">
             {rows.map(r => (
               <div key={r.candidate} className="flex items-center justify-between bg-white/5 border border-white/10 rounded-xl px-4 py-2.5">

@@ -60,12 +60,6 @@ model Contact {
 //  TAMIM TOASTMASTERS CLUB
 // ══════════════════════════════════════════
 
-enum ClubSpeechCategory {
-  PREPARED
-  EVALUATION
-  IMPROMPTU
-}
-
 model ClubSettings {
   id             Int    @id @default(1)
   clubName       String @default("نادي تميم توستماسترز")
@@ -79,6 +73,7 @@ model ClubSettings {
   colorAccent    String @default("#00a3e0")
   titleFontSize  Int    @default(48)
   bodyFontScale  Int    @default(100)
+  votingRound    Int    @default(1)
 
   @@map("club_settings")
 }
@@ -93,21 +88,88 @@ model ClubLink {
   @@map("club_links")
 }
 
+model ClubVoteCategory {
+  id        Int      @id @default(autoincrement())
+  label     String
+  icon      String   @default("Vote")
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+
+  speakers  ClubSpeaker[]
+  votes     ClubVote[]
+
+  @@map("club_vote_categories")
+}
+
 model ClubSpeaker {
-  id        Int                @id @default(autoincrement())
-  category  ClubSpeechCategory
-  name      String
-  createdAt DateTime           @default(now())
+  id         Int              @id @default(autoincrement())
+  categoryId Int
+  category   ClubVoteCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  name       String
+  createdAt  DateTime         @default(now())
 
   @@map("club_speakers")
 }
 
 model ClubVote {
-  id        Int                @id @default(autoincrement())
-  category  ClubSpeechCategory
-  candidate String
-  createdAt DateTime           @default(now())
+  id         Int              @id @default(autoincrement())
+  categoryId Int
+  category   ClubVoteCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  candidate  String
+  createdAt  DateTime         @default(now())
 
   @@map("club_votes")
+}
+
+enum ClubFieldType {
+  SHORT_ANSWER
+  PARAGRAPH
+  MULTIPLE_CHOICE
+  CHECKBOXES
+  DROPDOWN
+  FILE_UPLOAD
+  LINEAR_SCALE
+  MC_GRID
+  CHECKBOX_GRID
+  DATE
+  TIME
+}
+
+model ClubForm {
+  id        Int      @id @default(autoincrement())
+  title     String
+  icon      String   @default("ClipboardList")
+  color     String   @default("#00a3e0")
+  order     Int      @default(0)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  fields      ClubFormField[]
+  submissions ClubFormSubmission[]
+
+  @@map("club_forms")
+}
+
+model ClubFormField {
+  id       Int           @id @default(autoincrement())
+  formId   Int
+  form     ClubForm      @relation(fields: [formId], references: [id], onDelete: Cascade)
+  type     ClubFieldType
+  label    String
+  required Boolean       @default(false)
+  order    Int           @default(0)
+  config   Json          @default("{}")
+
+  @@map("club_form_fields")
+}
+
+model ClubFormSubmission {
+  id        Int      @id @default(autoincrement())
+  formId    Int
+  form      ClubForm @relation(fields: [formId], references: [id], onDelete: Cascade)
+  answers   Json
+  createdAt DateTime @default(now())
+
+  @@map("club_form_submissions")
 }
 

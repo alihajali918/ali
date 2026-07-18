@@ -1,22 +1,24 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, Circle, CircleCheck, Loader2, SquareCheck, Mic, Zap, Vote } from "lucide-react";
+import { ChevronDown, Circle, CircleCheck, Loader2, Vote } from "lucide-react";
+import { getClubIcon } from "../lib/club-icons";
 
-type Category = "PREPARED" | "EVALUATION" | "IMPROMPTU";
+interface CategoryData {
+  id: number;
+  label: string;
+  icon: string;
+  speakers: string[];
+}
 
-const CATEGORY_META: Record<Category, { label: string; icon: typeof Mic; color: string }> = {
-  PREPARED:   { label: "أفضل خطبة معدة",              icon: Mic,         color: "#7a222c" },
-  EVALUATION: { label: "أفضل مقيّم خطبة",             icon: SquareCheck, color: "#074466" },
-  IMPROMPTU:  { label: "أفضل خطبة ارتجالية",           icon: Zap,         color: "#b45309" },
-};
+const PALETTE = ["#7a222c", "#074466", "#b45309", "#3f6212", "#5b21b6"];
 
 export default function VotingWidget({
-  speakers,
+  categories,
   alreadyVoted,
 }: {
-  speakers: Record<Category, string[]>;
-  alreadyVoted: Record<Category, boolean>;
+  categories: CategoryData[];
+  alreadyVoted: Record<number, boolean>;
 }) {
   const [open, setOpen] = useState(false);
   const [voted, setVoted] = useState(alreadyVoted);
@@ -24,14 +26,14 @@ export default function VotingWidget({
   const [toast, setToast] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const castVote = async (category: Category, candidate: string) => {
+  const castVote = async (categoryId: number, candidate: string) => {
     setPending(candidate);
     setError(null);
     try {
       const res = await fetch("/api/tamimtoastmasterclub/vote", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ category, candidate }),
+        body: JSON.stringify({ categoryId, candidate }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -39,7 +41,7 @@ export default function VotingWidget({
         setPending(null);
         return;
       }
-      setVoted(v => ({ ...v, [category]: true }));
+      setVoted(v => ({ ...v, [categoryId]: true }));
       setToast(true);
       setTimeout(() => setToast(false), 3500);
     } catch {
@@ -48,8 +50,6 @@ export default function VotingWidget({
       setPending(null);
     }
   };
-
-  const categories = Object.keys(speakers) as Category[];
 
   return (
     <div className="lg:col-span-7 bg-[#7a222c] rounded-2xl p-6 border border-white/10 shadow-lg">
@@ -66,23 +66,22 @@ export default function VotingWidget({
 
       {open && (
         <div className="mt-4 bg-white rounded-xl p-4 space-y-4 shadow-inner text-right text-[#1c2b39]">
-          {categories.map(category => {
-            const list = speakers[category];
-            if (!list || list.length === 0) return null;
-            const meta = CATEGORY_META[category];
-            const Icon = meta.icon;
-            const hasVoted = voted[category];
+          {categories.map((cat, i) => {
+            if (!cat.speakers.length) return null;
+            const Icon = getClubIcon(cat.icon);
+            const color = PALETTE[i % PALETTE.length];
+            const hasVoted = voted[cat.id];
             return (
-              <div key={category}>
-                <h4 className="text-[0.75em] md:text-[0.875em] font-bold border-b pb-2 mb-3" style={{ color: meta.color }}>
-                  <Icon size={13} className="inline-block ml-1" /> {meta.label}:
+              <div key={cat.id}>
+                <h4 className="text-[0.75em] md:text-[0.875em] font-bold border-b pb-2 mb-3" style={{ color }}>
+                  <Icon size={13} className="inline-block ml-1" /> {cat.label}:
                 </h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {list.map(name => (
+                  {cat.speakers.map(name => (
                     <button
                       key={name}
                       disabled={hasVoted || pending === name}
-                      onClick={() => castVote(category, name)}
+                      onClick={() => castVote(cat.id, name)}
                       className="w-full text-right p-3 rounded-lg bg-gray-50 hover:enabled:bg-amber-50 hover:enabled:text-amber-900 border border-gray-200 text-[0.75em] md:text-[0.875em] font-semibold transition flex items-center justify-between group disabled:opacity-70"
                     >
                       <span className="flex items-center gap-1">
