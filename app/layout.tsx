@@ -22,18 +22,18 @@ export const metadata: Metadata = {
     default: "Ali Hajali | مبرمج مواقع احترافي",
     template: "%s | Ali Hajali",
   },
-  description: "متخصص في برمجة مواقع Next.js وتصميم واجهات فخمة في قطر",
+  description: "مبرمج مواقع في قطر متخصص بـ Next.js — مواقع تعريفية، متاجر إلكترونية، وأنظمة إدارة مخصصة. من الفكرة للإطلاق، بسرعة وباحترافية.",
   openGraph: {
     type: "website",
     locale: "ar_QA",
     siteName: "Ali Hajali",
     title: "Ali Hajali | مبرمج مواقع احترافي",
-    description: "متخصص في برمجة مواقع Next.js وتصميم واجهات فخمة في قطر",
+    description: "مبرمج مواقع في قطر متخصص بـ Next.js — مواقع تعريفية، متاجر إلكترونية، وأنظمة إدارة مخصصة. من الفكرة للإطلاق، بسرعة وباحترافية.",
   },
   twitter: {
     card: "summary_large_image",
     title: "Ali Hajali | مبرمج مواقع احترافي",
-    description: "متخصص في برمجة مواقع Next.js وتصميم واجهات فخمة في قطر",
+    description: "مبرمج مواقع في قطر متخصص بـ Next.js — مواقع تعريفية، متاجر إلكترونية، وأنظمة إدارة مخصصة. من الفكرة للإطلاق، بسرعة وباحترافية.",
   },
   robots: { index: true, follow: true },
 };
